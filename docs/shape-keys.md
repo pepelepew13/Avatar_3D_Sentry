@@ -21,4 +21,13 @@ Este documento describe las *shape keys* creadas en Blender para animar los fone
 | Surprise | Abrir la boca y elevar cejas en gesto de sorpresa. |
 | Angry | Fruncir el ceño y tensar la boca en gesto de enojo. |
 
-El archivo `wwwroot/models/avatar_shape_keys.glb` contiene el modelo exportado con todas estas claves.
+## Uso
+
+Se recomienda utilizar **Blender 3.6 LTS** para generar las *shape keys*.
+Desde la raíz del repositorio, ejecuta:
+
+```bash
+blender --background --python scripts/generate_shape_keys.py
+```
+
+El archivo generado se guardará en `wwwroot/models/avatar_shape_keys.glb`.
