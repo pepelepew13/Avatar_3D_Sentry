@@ -1,4 +1,6 @@
 using Avatar_3D_Sentry.Services;
+using Avatar_3D_Sentry.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<PhraseGenerator>();
 builder.Services.AddSingleton<ITtsService, PollyTtsService>();
+builder.Services.AddDbContext<AvatarContext>(opt =>
+    opt.UseInMemoryDatabase("AvatarDb"));
 
 var app = builder.Build();
 
@@ -21,6 +25,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();
