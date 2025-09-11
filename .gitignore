@@ -9,6 +9,7 @@
 # Certificates
 certs/
 *.pfx
+*.db
 
 # User-specific files
 *.rsuser
@@ -486,3 +487,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+AvatarAdmin/wwwroot/favicon.png
