@@ -1,0 +1,25 @@
+@page "/avatar/background"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@using System.Net.Http.Json
+
+<h3>Elegir fondo</h3>
+<select @bind="fondo">
+    <option value="oficina">Oficina</option>
+    <option value="playa">Playa</option>
+</select>
+<button class="btn btn-primary" @onclick="Guardar">Guardar</button>
+<div id="backgroundViewer" style="width:400px;height:400px;"></div>
+
+@code {
+    string empresa = "demo";
+    string sede = "demo";
+    string fondo = "oficina";
+
+    private async Task Guardar()
+    {
+        var req = new { Fondo = fondo };
+        await Http.PostAsJsonAsync($"/AvatarEditor/{empresa}/{sede}", req);
+        await JS.InvokeVoidAsync("avatarViewer.show", "backgroundViewer");
+    }
+}
