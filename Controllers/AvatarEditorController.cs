@@ -5,6 +5,8 @@ using Avatar_3D_Sentry.Modelos;
 using System.IO;
 using System.Linq;
 using Microsoft.AspNetCore.Hosting;
+using Avatar_3D_Sentry.Services;
+using System.Collections.Generic;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -17,13 +19,15 @@ public class AvatarEditorController : ControllerBase
 {
     private readonly AvatarContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly ITtsService _tts;
     private readonly long _fileSizeLimit = 2 * 1024 * 1024; // 2MB
     private readonly string[] _permittedExtensions = [".jpg", ".jpeg", ".png"];
 
-    public AvatarEditorController(AvatarContext context, IWebHostEnvironment env)
+    public AvatarEditorController(AvatarContext context, IWebHostEnvironment env, ITtsService tts)
     {
         _context = context;
         _env = env;
+        _tts = tts;
     }
 
     /// <summary>
@@ -86,7 +90,7 @@ public class AvatarEditorController : ControllerBase
     }
 
     /// <summary>
-    /// Actualiza vestimenta y fondo del avatar.
+    /// Actualiza vestimenta, fondo y voz del avatar.
     /// </summary>
     [HttpPost("{empresa}/{sede}")]
     public async Task<ActionResult> UpdateConfig(string empresa, string sede, [FromBody] UpdateRequest request)
@@ -102,10 +106,25 @@ public class AvatarEditorController : ControllerBase
 
         config.Vestimenta = request.Vestimenta;
         config.Fondo = request.Fondo;
+        config.ProveedorTts = request.ProveedorTts;
+        config.Voz = request.Voz;
 
         await _context.SaveChangesAsync();
 
         return Ok(config);
+    }
+
+    /// <summary>
+    /// Obtiene las voces disponibles agrupadas por proveedor.
+    /// </summary>
+    [HttpGet("voces")]
+    public ActionResult<IDictionary<string, IDictionary<string, IEnumerable<string>>>> GetVoces()
+    {
+        var voces = new Dictionary<string, IDictionary<string, IEnumerable<string>>>()
+        {
+            ["polly"] = _tts.GetAvailableVoices().ToDictionary(kvp => kvp.Key, kvp => (IEnumerable<string>)kvp.Value)
+        };
+        return Ok(voces);
     }
 
     /// <summary>
@@ -115,6 +134,8 @@ public class AvatarEditorController : ControllerBase
     {
         public string? Vestimenta { get; set; }
         public string? Fondo { get; set; }
+        public string? ProveedorTts { get; set; }
+        public string? Voz { get; set; }
     }
 }
 
