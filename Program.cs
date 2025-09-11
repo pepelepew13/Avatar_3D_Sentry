@@ -10,6 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<PhraseGenerator>();
+builder.Services.AddSingleton<ITtsService, PollyTtsService>();
 
 var app = builder.Build();
 
