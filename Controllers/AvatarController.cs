@@ -1,4 +1,5 @@
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Avatar_3D_Sentry.Controllers;
@@ -7,24 +8,26 @@ namespace Avatar_3D_Sentry.Controllers;
 [Route("[controller]")]
 public class AvatarController : ControllerBase
 {
-    private static readonly string[] Plantillas =
-    [
-        "Bienvenido {nombre} a {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
-        "Hola {nombre}, {empresa} te espera en la sede {sede}, módulo {modulo}, turno {turno}.",
-        "{nombre}, por favor dirígete a {empresa} - {sede}, módulo {modulo}, turno {turno}."
-    ];
+    private readonly PhraseGenerator _generator;
+
+    public AvatarController(PhraseGenerator generator)
+    {
+        _generator = generator;
+    }
 
     [HttpPost("anunciar")]
-    public IActionResult Anunciar([FromBody] SolicitudAnuncio solicitud)
+    public IActionResult Anunciar([FromQuery] string idioma, [FromBody] SolicitudAnuncio solicitud)
     {
-        var plantilla = Plantillas[Random.Shared.Next(Plantillas.Length)];
-        var texto = plantilla
-            .Replace("{empresa}", solicitud.Empresa)
-            .Replace("{sede}", solicitud.Sede)
-            .Replace("{modulo}", solicitud.Modulo)
-            .Replace("{turno}", solicitud.Turno)
-            .Replace("{nombre}", solicitud.Nombre);
+        var campos = new Dictionary<string, string>
+        {
+            ["empresa"] = solicitud.Empresa,
+            ["sede"] = solicitud.Sede,
+            ["modulo"] = solicitud.Modulo,
+            ["turno"] = solicitud.Turno,
+            ["nombre"] = solicitud.Nombre
+        };
 
+        var texto = _generator.Generate(idioma, campos);
         return Ok(new { texto });
     }
 }
