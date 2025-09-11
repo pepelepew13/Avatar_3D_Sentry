@@ -13,10 +13,11 @@ namespace Avatar_3D_Sentry.Services;
 public class PollyTtsService : ITtsService
 {
     private readonly AmazonPollyClient _client;
-    private static readonly Dictionary<string, VoiceId> _voices = new()
+    private static readonly Dictionary<string, List<string>> _availableVoices = new()
     {
-        ["es"] = VoiceId.Lucia,
-        ["en"] = VoiceId.Joanna
+        ["es"] = new() { "Lucia", "Lupe", "Mia" },
+        ["pt"] = new() { "Camila" },
+        ["en"] = new() { "Joanna", "Matthew" }
     };
 
     private static readonly Dictionary<string, string> _visemeToShape = new()
@@ -41,18 +42,21 @@ public class PollyTtsService : ITtsService
         _client = new AmazonPollyClient(RegionEndpoint.GetBySystemName(regionName));
     }
 
-    public async Task<TtsResultado> SynthesizeAsync(string texto, string idioma)
+    public async Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
     {
-        if (!_voices.TryGetValue(idioma, out var voice))
+        if (!_availableVoices.TryGetValue(idioma, out var voices) || !voices.Contains(voz))
         {
-            throw new ArgumentException($"Idioma no soportado: {idioma}", nameof(idioma));
+            throw new ArgumentException($"Voz no soportada: {voz} para idioma {idioma}", nameof(voz));
         }
+
+        var voiceId = VoiceId.FindValue(voz);
 
         var audioRequest = new SynthesizeSpeechRequest
         {
             Text = texto,
-            VoiceId = voice,
-            OutputFormat = OutputFormat.Mp3
+            VoiceId = voiceId,
+            OutputFormat = OutputFormat.Mp3,
+            Engine = Engine.Neural
         };
         var audioResponse = await _client.SynthesizeSpeechAsync(audioRequest);
         using var ms = new MemoryStream();
@@ -62,9 +66,10 @@ public class PollyTtsService : ITtsService
         var marksRequest = new SynthesizeSpeechRequest
         {
             Text = texto,
-            VoiceId = voice,
+            VoiceId = voiceId,
             OutputFormat = OutputFormat.Json,
-            SpeechMarkTypes = new List<string> { "viseme" }
+            SpeechMarkTypes = new List<string> { "viseme" },
+            Engine = Engine.Neural
         };
         var marksResponse = await _client.SynthesizeSpeechAsync(marksRequest);
         var visemas = new List<Visema>();
@@ -91,4 +96,6 @@ public class PollyTtsService : ITtsService
             Visemas = visemas
         };
     }
+
+    public IReadOnlyDictionary<string, List<string>> GetAvailableVoices() => _availableVoices;
 }

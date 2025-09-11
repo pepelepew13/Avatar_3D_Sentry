@@ -25,5 +25,15 @@ public class AvatarConfig
     /// Configuración del fondo para el avatar.
     /// </summary>
     public string? Fondo { get; set; }
+
+    /// <summary>
+    /// Proveedor del servicio TTS seleccionado.
+    /// </summary>
+    public string? ProveedorTts { get; set; }
+
+    /// <summary>
+    /// Voz empleada al generar el audio del avatar.
+    /// </summary>
+    public string? Voz { get; set; }
 }
 
