@@ -1,0 +1,25 @@
+@page "/avatar/outfit"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@using System.Net.Http.Json
+
+<h3>Elegir vestimenta</h3>
+<select @bind="vestimenta">
+    <option value="casual">Casual</option>
+    <option value="formal">Formal</option>
+</select>
+<button class="btn btn-primary" @onclick="Guardar">Guardar</button>
+<div id="outfitViewer" style="width:400px;height:400px;"></div>
+
+@code {
+    string empresa = "demo";
+    string sede = "demo";
+    string vestimenta = "casual";
+
+    private async Task Guardar()
+    {
+        var req = new { Vestimenta = vestimenta };
+        await Http.PostAsJsonAsync($"/AvatarEditor/{empresa}/{sede}", req);
+        await JS.InvokeVoidAsync("avatarViewer.show", "outfitViewer");
+    }
+}
