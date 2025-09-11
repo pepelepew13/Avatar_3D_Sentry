@@ -1,0 +1,20 @@
+{
+  "es": [
+    "Bienvenido {nombre} a {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
+    "Hola {nombre}, {empresa} te espera en la sede {sede}, módulo {modulo}, turno {turno}.",
+    "{nombre}, por favor dirígete a {empresa} - {sede}, módulo {modulo}, turno {turno}.",
+    "{empresa} anuncia el turno {turno} para {nombre} en la sede {sede}, módulo {modulo}.",
+    "Atención {nombre}, preséntate en {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
+    "{nombre}, {empresa} te asigna el módulo {modulo} en la sede {sede} para el turno {turno}.",
+    "Se solicita a {nombre} acudir a {empresa} en {sede}, módulo {modulo}, turno {turno}."
+  ],
+  "en": [
+    "Welcome {nombre} to {empresa}, {sede} branch, module {modulo}, shift {turno}.",
+    "Hello {nombre}, {empresa} awaits you at {sede}, module {modulo}, shift {turno}.",
+    "{nombre}, please proceed to {empresa} - {sede}, module {modulo}, shift {turno}.",
+    "{empresa} announces shift {turno} for {nombre} at {sede}, module {modulo}.",
+    "Attention {nombre}, report to {empresa}, {sede} location, module {modulo}, shift {turno}.",
+    "{nombre}, {empresa} assigns you to module {modulo} at {sede} for shift {turno}.",
+    "{nombre} is requested at {empresa} in {sede}, module {modulo}, shift {turno}."
+  ]
+}
