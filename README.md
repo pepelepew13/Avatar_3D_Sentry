@@ -4,17 +4,17 @@ Sistema de gestion y personalización de agente 3D de sentry
 ## Certificados HTTPS
 
 El repositorio no incluye certificados. Para habilitar HTTPS, coloca el archivo
-`*.pfx` en una ubicación segura fuera del control de versiones y establece las
-variables de entorno:
+`*.pfx` en una ubicación segura fuera del control de versiones (por ejemplo,
+`/etc/ssl/private/aspnetapp.pfx`) y establece las variables de entorno:
 
-- `CERT_PATH`: ruta al archivo del certificado.
-- `CERT_PASSWORD`: contraseña del certificado (opcional).
+- `Kestrel__Certificates__Default__Path`: ruta al archivo del certificado.
+- `Kestrel__Certificates__Default__Password`: contraseña del certificado (opcional).
 
 ### Entorno local
 
 ```bash
-export CERT_PATH=/ruta/al/certificado/aspnetapp.pfx
-export CERT_PASSWORD=mi_contraseña  # si aplica
+export Kestrel__Certificates__Default__Path=/ruta/externa/aspnetapp.pfx
+export Kestrel__Certificates__Default__Password=mi_contraseña  # si aplica
 dotnet run
 ```
 

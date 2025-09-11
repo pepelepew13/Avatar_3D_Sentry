@@ -6,8 +6,8 @@ using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var certPath = builder.Configuration["CERT_PATH"];
-var certPassword = builder.Configuration["CERT_PASSWORD"];
+var certPath = builder.Configuration["Kestrel:Certificates:Default:Path"];
+var certPassword = builder.Configuration["Kestrel:Certificates:Default:Password"];
 if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
 {
     builder.WebHost.ConfigureKestrel(options =>
