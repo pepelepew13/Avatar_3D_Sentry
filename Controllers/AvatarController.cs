@@ -51,7 +51,16 @@ public class AvatarController : ControllerBase
             return BadRequest($"No hay voz disponible para el idioma {idioma}.");
         }
 
-        var tts = await _tts.SynthesizeAsync(texto, idioma, voice);
+        TtsResultado tts;
+        try
+        {
+            tts = await _tts.SynthesizeAsync(texto, idioma, voice);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, ex.Message);
+        }
+
         var audioUrl = $"data:audio/mpeg;base64,{Convert.ToBase64String(tts.Audio)}";
 
         var response = new AnnouncementResponse
