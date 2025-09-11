@@ -1,6 +1,8 @@
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Data;
+using Avatar_3D_Sentry.Middleware;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
 
@@ -43,8 +45,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+app.UseHttpsRedirection();
+app.UseMiddleware<MiddlewareAutenticacionToken>();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+public partial class Program {}
