@@ -22,3 +22,12 @@ dotnet run
 
 Configura las mismas variables de entorno en el servidor y asegúrate de que el
 archivo del certificado esté disponible en la ruta indicada.
+
+## AvatarAdmin
+
+Para preparar la base de datos y ejecutar la aplicación de administración, puede
+utilizar el siguiente comando:
+
+```bash
+cd AvatarAdmin && dotnet ef database update && dotnet run
+```
