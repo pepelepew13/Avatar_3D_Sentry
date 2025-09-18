@@ -16,5 +16,14 @@
     "Attention {nombre}, report to {empresa}, {sede} location, module {modulo}, shift {turno}.",
     "{nombre}, {empresa} assigns you to module {modulo} at {sede} for shift {turno}.",
     "{nombre} is requested at {empresa} in {sede}, module {modulo}, shift {turno}."
+  ],
+  "pt": [
+    "Bem-vindo {nombre} à {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
+    "Olá {nombre}, {empresa} espera por você na sede {sede}, módulo {modulo}, turno {turno}.",
+    "{nombre}, por favor dirija-se à {empresa} - {sede}, módulo {modulo}, turno {turno}.",
+    "{empresa} anuncia o turno {turno} para {nombre} na sede {sede}, módulo {modulo}.",
+    "Atenção {nombre}, apresente-se na {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
+    "{nombre}, {empresa} designou você para o módulo {modulo} na sede {sede} no turno {turno}.",
+    "Solicita-se a {nombre} comparecer à {empresa} em {sede}, módulo {modulo}, turno {turno}."
   ]
 }
