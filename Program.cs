@@ -55,7 +55,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddSingleton<PhraseGenerator>();
-builder.Services.AddSingleton<ITtsService, PollyTtsService>();
+
+var awsAccessKey = builder.Configuration["AWS:AccessKeyId"];
+var awsSecretKey = builder.Configuration["AWS:SecretAccessKey"];
+if (!string.IsNullOrWhiteSpace(awsAccessKey) && !string.IsNullOrWhiteSpace(awsSecretKey))
+{
+    builder.Services.AddSingleton<ITtsService, PollyTtsService>();
+}
+else
+{
+    builder.Services.AddSingleton<ITtsService, NullTtsService>();
+}
 builder.Services.AddDbContext<AvatarContext>(opt =>
     opt.UseInMemoryDatabase("AvatarDb"));
 
