@@ -5,6 +5,7 @@ using System.Text.Json;
 using Amazon;
 using Amazon.Polly;
 using Amazon.Polly.Model;
+using Amazon.Runtime;
 using Microsoft.Extensions.Configuration;
 using Avatar_3D_Sentry.Modelos;
 
@@ -39,7 +40,14 @@ public class PollyTtsService : ITtsService
     public PollyTtsService(IConfiguration configuration)
     {
         var regionName = configuration["AWS:Region"] ?? RegionEndpoint.USEast1.SystemName;
-        _client = new AmazonPollyClient(RegionEndpoint.GetBySystemName(regionName));
+        var accessKey = configuration["AWS:AccessKeyId"];
+        var secretKey = configuration["AWS:SecretAccessKey"];
+        if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException("Faltan credenciales de AWS. Configure AWS:AccessKeyId y AWS:SecretAccessKey.");
+        }
+        var credentials = new BasicAWSCredentials(accessKey, secretKey);
+        _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }
 
     public async Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
