@@ -56,8 +56,9 @@ public class AvatarApiClient
 
         using var response = await _httpClient.PostAsync(requestUri, form, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var doc = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
+
         if (doc.RootElement.TryGetProperty("logoPath", out var value))
         {
             return value.GetString();
