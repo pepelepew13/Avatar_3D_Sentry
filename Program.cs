@@ -2,7 +2,7 @@ using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Middleware;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography.X509Certificates;
+using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
 
@@ -28,10 +28,44 @@ if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
 builder.Services.AddControllers();
 // Aprende más sobre la configuración de Swagger/OpenAPI en https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Token de autorización en formato 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            }, Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddSingleton<PhraseGenerator>();
-builder.Services.AddSingleton<ITtsService, PollyTtsService>();
+
+var awsAccessKey = builder.Configuration["AWS:AccessKeyId"];
+var awsSecretKey = builder.Configuration["AWS:SecretAccessKey"];
+if (!string.IsNullOrWhiteSpace(awsAccessKey) && !string.IsNullOrWhiteSpace(awsSecretKey))
+{
+    builder.Services.AddSingleton<ITtsService, PollyTtsService>();
+}
+else
+{
+    builder.Services.AddSingleton<ITtsService, NullTtsService>();
+}
 builder.Services.AddDbContext<AvatarContext>(opt =>
     opt.UseInMemoryDatabase("AvatarDb"));
 
