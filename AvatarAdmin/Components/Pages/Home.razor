@@ -10,7 +10,7 @@
         <h1>Asistente 3D para turnos Sentry</h1>
         <p>Personaliza el avatar que anunciará los turnos en sala: configura su vestimenta, idioma, voz, fondo y logo corporativo desde un mismo panel.</p>
 
-        <EditForm class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync">
+        <EditForm class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync" FormName="load-config">
             <DataAnnotationsValidator />
             <div class="input-group">
                 <label for="empresaInput">Empresa</label>
