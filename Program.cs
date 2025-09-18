@@ -1,7 +1,9 @@
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Middleware;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
@@ -66,10 +68,44 @@ else
 {
     builder.Services.AddSingleton<ITtsService, NullTtsService>();
 }
+
+var connectionString = builder.Configuration.GetConnectionString("AvatarDatabase");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("The connection string 'AvatarDatabase' was not found.");
+}
+
+var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
+if (string.IsNullOrWhiteSpace(sqliteBuilder.DataSource))
+{
+    throw new InvalidOperationException("The SQLite connection string must define a Data Source.");
+}
+
+var dataSourcePath = sqliteBuilder.DataSource;
+if (!Path.IsPathRooted(dataSourcePath))
+{
+    dataSourcePath = Path.Combine(builder.Environment.ContentRootPath, dataSourcePath);
+}
+
+var dataDirectory = Path.GetDirectoryName(dataSourcePath);
+if (!string.IsNullOrEmpty(dataDirectory))
+{
+    Directory.CreateDirectory(dataDirectory);
+}
+
+sqliteBuilder.DataSource = dataSourcePath;
+var finalConnectionString = sqliteBuilder.ToString();
+
 builder.Services.AddDbContext<AvatarContext>(opt =>
-    opt.UseInMemoryDatabase("AvatarDb"));
+    opt.UseSqlite(finalConnectionString));
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AvatarContext>();
+    context.Database.Migrate();
+}
 
 // Configura la canalización de solicitudes HTTP.
 if (app.Environment.IsDevelopment())
