@@ -31,3 +31,17 @@ utilizar el siguiente comando:
 ```bash
 cd AvatarAdmin && dotnet ef database update && dotnet run
 ```
+
+### Prueba manual: carga de configuración desde la UI
+
+1. Inicie la aplicación de administración con el comando anterior y abra
+   `https://localhost:5001` (o el puerto configurado) en el navegador.
+2. En el panel principal, complete los campos **Empresa** y **Sede** con valores
+   válidos para su entorno y presione **Cargar configuración**.
+3. Verifique en las herramientas de desarrollo del navegador que la petición a
+   `GET /api/avatar-config/{empresa}/{sede}` se complete correctamente y que el
+   formulario muestre los datos recuperados (logo, vestimenta, idioma, voz y
+   fondo).
+4. Confirme que no aparece ningún mensaje de error ni se registran excepciones
+   en la consola del navegador o en los logs del servidor; esto valida que la
+   acción `LoadConfigAsync` se ejecuta sin ser rechazada por el runtime.
