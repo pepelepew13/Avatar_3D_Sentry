@@ -75,29 +75,43 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("The connection string 'AvatarDatabase' was not found.");
 }
 
-var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
-if (string.IsNullOrWhiteSpace(sqliteBuilder.DataSource))
-{
-    throw new InvalidOperationException("The SQLite connection string must define a Data Source.");
-}
-
-var dataSourcePath = sqliteBuilder.DataSource;
-if (!Path.IsPathRooted(dataSourcePath))
-{
-    dataSourcePath = Path.Combine(builder.Environment.ContentRootPath, dataSourcePath);
-}
-
-var dataDirectory = Path.GetDirectoryName(dataSourcePath);
-if (!string.IsNullOrEmpty(dataDirectory))
-{
-    Directory.CreateDirectory(dataDirectory);
-}
-
-sqliteBuilder.DataSource = dataSourcePath;
-var finalConnectionString = sqliteBuilder.ToString();
-
+var configuredProvider = builder.Configuration.GetValue<string>("Database:Provider");
 builder.Services.AddDbContext<AvatarContext>(opt =>
-    opt.UseSqlite(finalConnectionString));
+{
+    var provider = (configuredProvider ?? "Sqlite").Trim();
+
+    if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
+    {
+        opt.UseSqlServer(connectionString);
+        return;
+    }
+
+    if (provider.Length > 0 && !string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException($"Unsupported database provider '{provider}'.");
+    }
+
+    var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
+    if (string.IsNullOrWhiteSpace(sqliteBuilder.DataSource))
+    {
+        throw new InvalidOperationException("The SQLite connection string must define a Data Source.");
+    }
+
+    var dataSourcePath = sqliteBuilder.DataSource;
+    if (!Path.IsPathRooted(dataSourcePath))
+    {
+        dataSourcePath = Path.Combine(builder.Environment.ContentRootPath, dataSourcePath);
+    }
+
+    var dataDirectory = Path.GetDirectoryName(dataSourcePath);
+    if (!string.IsNullOrEmpty(dataDirectory))
+    {
+        Directory.CreateDirectory(dataDirectory);
+    }
+
+    sqliteBuilder.DataSource = dataSourcePath;
+    opt.UseSqlite(sqliteBuilder.ToString());
+});
 
 var app = builder.Build();
 
