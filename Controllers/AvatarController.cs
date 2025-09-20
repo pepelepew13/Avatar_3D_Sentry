@@ -45,15 +45,8 @@ public class AvatarController : ControllerBase
             ? (config?.Idioma ?? "es")
             : idioma;
 
-        string texto;
-        try
-        {
-            texto = _generator.Generate(idiomaSeleccionado, campos);
-        }
-        catch (UnsupportedLanguageException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var texto = _generator.Generate(idiomaSeleccionado, campos);
+
 
         var availableVoices = _tts.GetAvailableVoices();
         availableVoices.TryGetValue(idiomaSeleccionado, out var vocesIdioma);

@@ -4,6 +4,8 @@ using Avatar_3D_Sentry.Middleware;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
@@ -58,24 +60,20 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddSingleton<PhraseGenerator>();
 
-var awsAccessKey = builder.Configuration["AWS:AccessKeyId"];
-var awsSecretKey = builder.Configuration["AWS:SecretAccessKey"];
-if (!string.IsNullOrWhiteSpace(awsAccessKey) && !string.IsNullOrWhiteSpace(awsSecretKey))
-{
-    builder.Services.AddSingleton<ITtsService, PollyTtsService>();
-}
-else
-{
-    builder.Services.AddSingleton<ITtsService, NullTtsService>();
-}
 
-var connectionString = builder.Configuration.GetConnectionString("AvatarDatabase");
-if (string.IsNullOrWhiteSpace(connectionString))
+builder.Services.AddSingleton<ITtsService>(sp =>
 {
-    throw new InvalidOperationException("The connection string 'AvatarDatabase' was not found.");
-}
-
-var configuredProvider = builder.Configuration.GetValue<string>("Database:Provider");
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("TtsInitialization");
+    try
+    {
+        return ActivatorUtilities.CreateInstance<PollyTtsService>(sp);
+    }
+    catch (InvalidOperationException ex)
+    {
+        logger.LogWarning(ex, "No se pudieron cargar credenciales de AWS Polly. Se usará NullTtsService.");
+        return new NullTtsService();
+    }
+});
 builder.Services.AddDbContext<AvatarContext>(opt =>
 {
     var provider = (configuredProvider ?? "Sqlite").Trim();

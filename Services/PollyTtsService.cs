@@ -42,11 +42,46 @@ public class PollyTtsService : ITtsService
         var regionName = configuration["AWS:Region"] ?? RegionEndpoint.USEast1.SystemName;
         var accessKey = configuration["AWS:AccessKeyId"];
         var secretKey = configuration["AWS:SecretAccessKey"];
-        if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
+
+        var sessionToken = configuration["AWS:SessionToken"];
+
+        if (string.IsNullOrWhiteSpace(accessKey))
         {
-            throw new InvalidOperationException("Faltan credenciales de AWS. Configure AWS:AccessKeyId y AWS:SecretAccessKey.");
+            accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
         }
-        var credentials = new BasicAWSCredentials(accessKey, secretKey);
+
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+        }
+
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+        }
+
+        AWSCredentials credentials;
+
+        if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
+        {
+            credentials = string.IsNullOrWhiteSpace(sessionToken)
+                ? new BasicAWSCredentials(accessKey, secretKey)
+                : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        }
+        else
+        {
+            try
+            {
+                credentials = FallbackCredentialsFactory.GetCredentials();
+            }
+            catch (AmazonClientException ex)
+            {
+                throw new InvalidOperationException(
+                    "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.",
+                    ex);
+            }
+        }
+
         _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }
 
