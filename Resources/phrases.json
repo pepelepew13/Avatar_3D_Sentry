@@ -20,10 +20,10 @@
   "pt": [
     "Bem-vindo {nombre} à {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
     "Olá {nombre}, {empresa} espera por você na sede {sede}, módulo {modulo}, turno {turno}.",
-    "{nombre}, por favor dirija-se à {empresa} - {sede}, módulo {modulo}, turno {turno}.",
-    "{empresa} anuncia o turno {turno} para {nombre} na sede {sede}, módulo {modulo}.",
-    "Atenção {nombre}, apresente-se na {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
-    "{nombre}, {empresa} designou você para o módulo {modulo} na sede {sede} no turno {turno}.",
-    "Solicita-se a {nombre} comparecer à {empresa} em {sede}, módulo {modulo}, turno {turno}."
+    "{nombre}, dirija-se à {empresa} - {sede}, módulo {modulo}, turno {turno}.",
+    "{empresa} convoca {nombre} para o turno {turno} na sede {sede}, módulo {modulo}.",
+    "Atenção {nombre}, apresente-se em {empresa}, sede {sede}, módulo {modulo}, turno {turno}.",
+    "{nombre}, {empresa} reservou o módulo {modulo} na sede {sede} para o turno {turno}.",
+    "Solicitamos a presença de {nombre} na {empresa}, sede {sede}, módulo {modulo}, turno {turno}."
   ]
 }
