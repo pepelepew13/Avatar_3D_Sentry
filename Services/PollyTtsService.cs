@@ -42,6 +42,7 @@ public class PollyTtsService : ITtsService
         var regionName = configuration["AWS:Region"] ?? RegionEndpoint.USEast1.SystemName;
         var accessKey = configuration["AWS:AccessKeyId"];
         var secretKey = configuration["AWS:SecretAccessKey"];
+
         var sessionToken = configuration["AWS:SessionToken"];
 
         if (string.IsNullOrWhiteSpace(accessKey))

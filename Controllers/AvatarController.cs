@@ -47,6 +47,7 @@ public class AvatarController : ControllerBase
 
         var texto = _generator.Generate(idiomaSeleccionado, campos);
 
+
         var availableVoices = _tts.GetAvailableVoices();
         availableVoices.TryGetValue(idiomaSeleccionado, out var vocesIdioma);
         var voice = config?.Voz ?? vocesIdioma?.FirstOrDefault();
