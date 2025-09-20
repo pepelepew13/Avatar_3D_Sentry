@@ -5,6 +5,7 @@ using System.Text.Json;
 using Amazon;
 using Amazon.Polly;
 using Amazon.Polly.Model;
+using Amazon.Runtime;
 using Microsoft.Extensions.Configuration;
 using Avatar_3D_Sentry.Modelos;
 
@@ -39,7 +40,48 @@ public class PollyTtsService : ITtsService
     public PollyTtsService(IConfiguration configuration)
     {
         var regionName = configuration["AWS:Region"] ?? RegionEndpoint.USEast1.SystemName;
-        _client = new AmazonPollyClient(RegionEndpoint.GetBySystemName(regionName));
+        var accessKey = configuration["AWS:AccessKeyId"];
+        var secretKey = configuration["AWS:SecretAccessKey"];
+        var sessionToken = configuration["AWS:SessionToken"];
+
+        if (string.IsNullOrWhiteSpace(accessKey))
+        {
+            accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+        }
+
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+        }
+
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+        }
+
+        AWSCredentials credentials;
+
+        if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
+        {
+            credentials = string.IsNullOrWhiteSpace(sessionToken)
+                ? new BasicAWSCredentials(accessKey, secretKey)
+                : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        }
+        else
+        {
+            try
+            {
+                credentials = FallbackCredentialsFactory.GetCredentials();
+            }
+            catch (AmazonClientException ex)
+            {
+                throw new InvalidOperationException(
+                    "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.",
+                    ex);
+            }
+        }
+
+        _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }
 
     public async Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
