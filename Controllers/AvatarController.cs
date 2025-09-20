@@ -50,9 +50,9 @@ public class AvatarController : ControllerBase
         {
             texto = _generator.Generate(idiomaSeleccionado, campos);
         }
-        catch (ArgumentException ex)
+        catch (UnsupportedLanguageException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
 
         var availableVoices = _tts.GetAvailableVoices();
