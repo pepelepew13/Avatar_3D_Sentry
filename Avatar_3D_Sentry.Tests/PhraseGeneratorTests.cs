@@ -64,6 +64,7 @@ public class PhraseGeneratorTests
         {
             Assert.Contains(field, result);
         }
+        Assert.DoesNotContain("{", result);
     }
 
     [Fact]

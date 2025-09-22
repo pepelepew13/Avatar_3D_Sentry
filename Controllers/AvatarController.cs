@@ -45,7 +45,15 @@ public class AvatarController : ControllerBase
             ? (config?.Idioma ?? "es")
             : idioma;
 
-        var texto = _generator.Generate(idiomaSeleccionado, campos);
+        string texto;
+        try
+        {
+            texto = _generator.Generate(idiomaSeleccionado, campos);
+        }
+        catch (UnsupportedLanguageException)
+        {
+            return BadRequest($"No hay plantillas disponibles para el idioma {idiomaSeleccionado}.");
+        }
 
 
         var availableVoices = _tts.GetAvailableVoices();
