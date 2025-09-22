@@ -74,6 +74,15 @@ builder.Services.AddSingleton<ITtsService>(sp =>
         return new NullTtsService();
     }
 });
+
+var connectionString = builder.Configuration.GetConnectionString("AvatarDatabase");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("No se encontró la cadena de conexión 'AvatarDatabase'.");
+}
+
+var configuredProvider = builder.Configuration["Database:Provider"];
+
 builder.Services.AddDbContext<AvatarContext>(opt =>
 {
     var provider = (configuredProvider ?? "Sqlite").Trim();
