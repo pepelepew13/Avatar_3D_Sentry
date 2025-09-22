@@ -71,6 +71,8 @@ cd AvatarAdmin && dotnet ef database update && dotnet run
    formulario muestre los datos recuperados (logo, vestimenta, idioma, voz y
    fondo).
 4. Confirme que no aparece ningún mensaje de error ni se registran excepciones
-   en la consola del navegador o en los logs del servidor; esto valida que la
-   acción `LoadConfigAsync` se ejecuta sin ser rechazada por el runtime.
+   en la consola del navegador o en los logs del servidor, en especial el texto
+   “The POST request does not specify which form is being submitted”; esto
+   valida que la acción `LoadConfigAsync` se ejecuta sin ser rechazada por el
+   runtime.
 
