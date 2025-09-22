@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
+using Amazon.Runtime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Avatar_3D_Sentry.Data;
@@ -68,6 +69,14 @@ public class AvatarController : ControllerBase
         try
         {
             tts = await _tts.SynthesizeAsync(texto, idiomaSeleccionado, voice);
+        }
+        catch (AmazonClientException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Configura las credenciales de AWS Polly antes de anunciar.");
+        }
+        catch (AmazonServiceException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Configura las credenciales de AWS Polly antes de anunciar.");
         }
         catch (InvalidOperationException ex)
         {
