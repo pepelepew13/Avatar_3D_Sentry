@@ -7,10 +7,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Amazon.Runtime;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
-using Avatar_3D_Sentry.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -18,7 +16,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
 namespace Avatar_3D_Sentry.Tests;
@@ -73,7 +70,9 @@ public sealed class AvatarApplicationFactory : WebApplicationFactory<Program>
             var overrides = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:AvatarDatabase"] = "Data Source=integration-tests.db",
-                ["TokenAutorizacion"] = TokenAutorizacion
+                ["TokenAutorizacion"] = TokenAutorizacion,
+                ["AWS:AccessKeyId"] = string.Empty,
+                ["AWS:SecretAccessKey"] = string.Empty
             };
 
             configurationBuilder.AddInMemoryCollection(overrides!);
@@ -91,9 +90,6 @@ public sealed class AvatarApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddDbContext<AvatarContext>(options => options.UseSqlite(_connection));
-
-            services.RemoveAll<ITtsService>();
-            services.AddSingleton<ITtsService, FailingTtsService>();
 
             var provider = services.BuildServiceProvider();
             try
@@ -119,18 +115,4 @@ public sealed class AvatarApplicationFactory : WebApplicationFactory<Program>
         }
     }
 
-    private sealed class FailingTtsService : ITtsService
-    {
-        private static readonly IReadOnlyDictionary<string, List<string>> Voices = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["es"] = new() { "Lucia" }
-        };
-
-        public IReadOnlyDictionary<string, List<string>> GetAvailableVoices() => Voices;
-
-        public Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
-        {
-            throw new AmazonClientException("Missing AWS credentials");
-        }
-    }
 }
