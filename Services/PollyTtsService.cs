@@ -42,7 +42,6 @@ public class PollyTtsService : ITtsService
         var regionName = configuration["AWS:Region"] ?? RegionEndpoint.USEast1.SystemName;
         var accessKey = configuration["AWS:AccessKeyId"];
         var secretKey = configuration["AWS:SecretAccessKey"];
-
         var sessionToken = configuration["AWS:SessionToken"];
 
         if (string.IsNullOrWhiteSpace(accessKey))
@@ -60,27 +59,21 @@ public class PollyTtsService : ITtsService
             sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
         }
 
-        AWSCredentials credentials;
+        if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException(
+                "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.");
+        }
 
-        if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
+        if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
         {
-            credentials = string.IsNullOrWhiteSpace(sessionToken)
-                ? new BasicAWSCredentials(accessKey, secretKey)
-                : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+            throw new InvalidOperationException(
+                "Las credenciales de AWS Polly están incompletas. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.");
         }
-        else
-        {
-            try
-            {
-                credentials = FallbackCredentialsFactory.GetCredentials();
-            }
-            catch (AmazonClientException ex)
-            {
-                throw new InvalidOperationException(
-                    "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.",
-                    ex);
-            }
-        }
+
+        var credentials = string.IsNullOrWhiteSpace(sessionToken)
+            ? new BasicAWSCredentials(accessKey, secretKey)
+            : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
 
         _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }

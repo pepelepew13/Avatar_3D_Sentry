@@ -22,6 +22,6 @@ public class NullTtsService : ITtsService
 
     public Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
     {
-        throw new InvalidOperationException("No hay un proveedor TTS configurado. Agrega credenciales para habilitar la síntesis de voz.");
+        throw new InvalidOperationException("Configura las credenciales de AWS Polly antes de anunciar.");
     }
 }
