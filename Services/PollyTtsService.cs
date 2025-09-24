@@ -71,9 +71,15 @@ public class PollyTtsService : ITtsService
                 "Las credenciales de AWS Polly están incompletas. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.");
         }
 
-        var credentials = string.IsNullOrWhiteSpace(sessionToken)
-            ? new BasicAWSCredentials(accessKey, secretKey)
-            : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        AWSCredentials credentials;
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            credentials = new BasicAWSCredentials(accessKey, secretKey);
+        }
+        else
+        {
+            credentials = new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        }
 
         _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }
