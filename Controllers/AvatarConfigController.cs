@@ -21,6 +21,12 @@ public class AvatarConfigController : ControllerBase
     {
         var config = await _context.AvatarConfigs
             .FirstOrDefaultAsync(c => c.Empresa == empresa && c.Sede == sede);
-        return config is null ? NotFound() : Ok(config);
+        if (config is null)
+        {
+            config = new AvatarConfig { Empresa = empresa, Sede = sede };
+            _context.AvatarConfigs.Add(config);
+            await _context.SaveChangesAsync();
+        }
+        return Ok(config);
     }
 }

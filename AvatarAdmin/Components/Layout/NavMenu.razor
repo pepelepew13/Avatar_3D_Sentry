@@ -1,89 +1,68 @@
-﻿@implements IDisposable
+@implements IDisposable
 
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">AvatarAdmin</a>
-    </div>
-</div>
+<nav class="nav-shell">
+    <header class="nav-brand">
+        <p class="nav-brand-title">Sentry · Panel de avatar 3D</p>
+        <p class="nav-brand-subtitle">Personalización corporativa</p>
+    </header>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <section class="nav-card">
+        <div class="nav-card-header">
+            <span class="nav-card-icon nav-card-icon-panel" aria-hidden="true"></span>
+            <div>
+                <p class="nav-card-title">Panel</p>
+                <p class="nav-card-description">Accede al editor principal</p>
+            </div>
+        </div>
+        <NavLink class="nav-card-link" href="" Match="NavLinkMatch.All">
+            <span class="nav-card-link-icon nav-card-link-icon-home" aria-hidden="true"></span>
+            <span>Panel principal</span>
+        </NavLink>
+    </section>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="avatar/logo">
-                <span class="bi bi-image" aria-hidden="true"></span> Logo
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="avatar/outfit">
-                <span class="bi bi-person-bounding-box" aria-hidden="true"></span> Outfit
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="avatar/background">
-                <span class="bi bi-brush" aria-hidden="true"></span> Background
-            </NavLink>
-        </div>
-
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
+    <AuthorizeView>
+        <Authorized>
+            <section class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-card-icon nav-card-icon-session" aria-hidden="true"></span>
+                    <div>
+                        <p class="nav-card-title">Tu sesión</p>
+                        <p class="nav-card-description">@context.User.Identity?.Name</p>
+                    </div>
                 </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
+                <form action="Account/Logout" method="post" class="nav-card-form">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                    <button type="submit" class="nav-card-link as-button">
+                        <span class="nav-card-link-icon nav-card-link-icon-logout" aria-hidden="true"></span>
+                        <span>Cerrar sesión</span>
+                    </button>
+                </form>
+            </section>
+        </Authorized>
+        <NotAuthorized>
+            <section class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-card-icon nav-card-icon-access" aria-hidden="true"></span>
+                    <div>
+                        <p class="nav-card-title">Acceso</p>
+                        <p class="nav-card-description">Gestiona tu cuenta</p>
+                    </div>
                 </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
+                <NavLink class="nav-card-link" href="Account/Login">
+                    <span class="nav-card-link-icon nav-card-link-icon-login" aria-hidden="true"></span>
+                    <span>Iniciar sesión</span>
+                </NavLink>
+                <NavLink class="nav-card-link" href="Account/Register">
+                    <span class="nav-card-link-icon nav-card-link-icon-register" aria-hidden="true"></span>
+                    <span>Crear cuenta</span>
+                </NavLink>
+            </section>
+        </NotAuthorized>
+    </AuthorizeView>
+</nav>
 
 @code {
     private string? currentUrl;
@@ -105,4 +84,3 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-
