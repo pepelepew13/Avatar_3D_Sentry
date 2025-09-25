@@ -1,7 +1,10 @@
 @page "/"
 @using System.ComponentModel.DataAnnotations
+@implements IAsyncDisposable
 @inject AvatarApiClient ApiClient
 @inject ILogger<Home> Logger
+@inject IJSRuntime JS
+
 
 <PageTitle>Panel del avatar</PageTitle>
 
@@ -10,7 +13,7 @@
         <h1>Asistente 3D para turnos Sentry</h1>
         <p>Personaliza el avatar que anunciará los turnos en sala: configura su vestimenta, idioma, voz, fondo y logo corporativo desde un mismo panel.</p>
 
-        <EditForm FormName="home-selector-config" class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync">
+        <EditForm class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync">
             <DataAnnotationsValidator />
             <div class="input-group">
                 <label for="empresaInput">Empresa</label>
@@ -118,6 +121,14 @@
                     }
                 </div>
                 <div class="@GetPreviewClass()">
+                    <canvas class="avatar-viewer-canvas" @ref="avatarCanvasRef"></canvas>
+                    <div class="viewer-overlay">
+                        <div class="viewer-pill">@GetLanguageLabel(config.Idioma)</div>
+                        <div class="viewer-pill">@(string.IsNullOrWhiteSpace(config.Voz) ? "Sin voz" : config.Voz)</div>
+                    </div>
+                </div>
+                <div class="viewer-actions">
+                    <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">@(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")</button>
                     <div class="stage-overlay"></div>
                     <div class="preview-avatar">
                         <AvatarViewer ModelPath="DefaultModelPath" LogoUrl="CurrentLogoUrl" Outfit="config?.Vestimenta" Background="config?.Fondo" />
@@ -136,7 +147,6 @@
     private const long MaxLogoSize = 2 * 1024 * 1024;
     private const string DefaultProvider = "polly";
     private const string DefaultModelPath = "/Resources/AvatarReWork.glb";
-
     private readonly SelectorModel selector = new();
     private AvatarConfigDto? config;
     private IReadOnlyDictionary<string, IReadOnlyList<string>> voiceCatalog = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
@@ -144,6 +154,12 @@
     private bool isSaving;
     private string? errorMessage;
     private string? successMessage;
+    private bool viewerInitialized;
+    private bool pendingViewerUpdate;
+    private ElementReference avatarCanvasRef;
+    private bool hasRenderedOnce;
+    private bool isPreviewPlaying;
+
 
     private static readonly IReadOnlyList<OptionItem> Outfits = new List<OptionItem>
     {
@@ -181,10 +197,27 @@
     }
 
     private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
+    private string ModelUrl => ApiClient.BuildAssetUrl("models/Avatar.glb") ?? "models/Avatar.glb";
 
     protected override async Task OnInitializedAsync()
     {
         await LoadVoicesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        hasRenderedOnce = true;
+
+        if (config is null)
+        {
+            return;
+        }
+
+        if (!viewerInitialized || pendingViewerUpdate)
+        {
+            pendingViewerUpdate = false;
+            await InitializeOrUpdateViewerAsync();
+        }
     }
 
     private async Task LoadVoicesAsync()
@@ -213,6 +246,7 @@
             config = result;
             NormalizeConfig();
             successMessage = "Configuración cargada correctamente.";
+            RequestViewerRefresh();
         }
         catch (Exception ex)
         {
@@ -288,6 +322,7 @@
             config = await ApiClient.UpdateConfigAsync(selector.Empresa, selector.Sede, update);
             NormalizeConfig();
             successMessage = successText;
+            RequestViewerRefresh();
         }
         catch (Exception ex)
         {
@@ -327,6 +362,7 @@
             {
                 config.LogoPath = path;
                 successMessage = "Logo actualizado correctamente.";
+                RequestViewerRefresh();
             }
         }
         catch (Exception ex)
@@ -413,6 +449,95 @@
 
         var match = Languages.FirstOrDefault(l => l.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
         return match?.Label ?? Languages[0].Label;
+    }
+
+    private async Task InitializeOrUpdateViewerAsync()
+    {
+        if (config is null || !hasRenderedOnce)
+        {
+            return;
+        }
+
+        try
+        {
+            var options = new
+            {
+                modelUrl = ModelUrl,
+                logoUrl = CurrentLogoUrl,
+                outfit = config.Vestimenta,
+                background = config.Fondo,
+                hairColor = (string?)null
+            };
+
+            if (!viewerInitialized)
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.init", avatarCanvasRef, options);
+                viewerInitialized = true;
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", options);
+            }
+        }
+        catch (JSException jsEx)
+        {
+            Logger.LogError(jsEx, "No fue posible inicializar el visor 3D del avatar");
+            errorMessage ??= "El visor 3D no pudo inicializarse. Revisa la consola del navegador.";
+        }
+    }
+
+    private void RequestViewerRefresh()
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        pendingViewerUpdate = true;
+        if (hasRenderedOnce)
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task PlayPreviewAsync()
+    {
+        if (!viewerInitialized)
+        {
+            return;
+        }
+
+        if (isPreviewPlaying)
+        {
+            await JS.InvokeVoidAsync("AvatarViewer.stopTalking");
+            isPreviewPlaying = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await JS.InvokeVoidAsync("AvatarViewer.playTalking", 2600);
+        isPreviewPlaying = true;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(2600);
+            isPreviewPlaying = false;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (viewerInitialized)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.dispose");
+            }
+            catch (JSException)
+            {
+                // Ignorar errores de limpieza cuando la página ya se está cerrando.
+            }
+        }
     }
 
     private sealed class SelectorModel

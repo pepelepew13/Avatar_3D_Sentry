@@ -61,7 +61,6 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddSingleton<PhraseGenerator>();
 
-
 builder.Services.AddSingleton<ITtsService>(sp =>
 {
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("TtsInitialization");
