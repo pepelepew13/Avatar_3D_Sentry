@@ -1,0 +1,99 @@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+
+<div class="viewer-wrapper">
+    <canvas @ref="canvas"></canvas>
+</div>
+
+@code {
+    private ElementReference canvas;
+    private IJSObjectReference? module;
+    private IJSObjectReference? viewerInstance;
+    private bool initialized;
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+
+    [Parameter]
+    public string ModelPath { get; set; } = "/Resources/AvatarReWork.glb";
+
+    [Parameter]
+    public string? LogoUrl { get; set; }
+
+    [Parameter]
+    public string? Outfit { get; set; }
+
+    [Parameter]
+    public string? Background { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (!firstRender)
+        {
+            return;
+        }
+
+        module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/AvatarViewer.razor.js");
+        viewerInstance = await module.InvokeAsync<IJSObjectReference>("createViewer", canvas, new
+        {
+            modelUrl = ModelPath,
+            logoUrl = LogoUrl,
+            outfit = Outfit,
+            background = Background
+        });
+        initialized = true;
+        await SyncStateAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (!initialized)
+        {
+            return;
+        }
+
+        await SyncStateAsync();
+    }
+
+    private async Task SyncStateAsync()
+    {
+        if (viewerInstance is null)
+        {
+            return;
+        }
+
+        await viewerInstance.InvokeVoidAsync("setLogo", LogoUrl);
+        await viewerInstance.InvokeVoidAsync("setOutfit", Outfit);
+        await viewerInstance.InvokeVoidAsync("setBackground", Background);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (viewerInstance is not null)
+        {
+            try
+            {
+                await viewerInstance.InvokeVoidAsync("dispose");
+                await viewerInstance.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

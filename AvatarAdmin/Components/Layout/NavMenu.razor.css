@@ -5,6 +5,12 @@
     color: #ffffff;
 }
 
+.nav-shell a{
+    color: #000000;
+    text-decoration: none;
+}
+
+
 .nav-brand {
     display: flex;
     flex-direction: column;
@@ -87,6 +93,19 @@
     color: rgba(255, 255, 255, 0.75);
 }
 
+.nav-card-link{
+    background-color: white !important;
+    border-radius: 50px !important;
+    flex: unset !important;
+    display: flex !important;
+    padding: 10px;
+    align-content: center !important;
+    justify-content: space-evenly !important;
+    align-items: center !important;
+    flex-wrap: nowrap;
+    flex-direction: row !important;
+}
+
 .nav-card-link,
 .nav-card-link.as-button {
     display: flex;
@@ -119,14 +138,17 @@
 }
 
 .nav-card-link-icon {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 14px;
-    background: rgba(176, 0, 32, 0.12);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50px;
+    background: rgb(255, 0, 0);
     display: grid;
     place-items: center;
-    font-size: 1.1rem;
-    color: #b00020;
+    font-size: 1.5rem;
+    color: #ffffff;
+    text-decoration: none !important;
+    align-content: space-between;
+    align-items: center;
 }
 
 .nav-card-link-icon::before {
