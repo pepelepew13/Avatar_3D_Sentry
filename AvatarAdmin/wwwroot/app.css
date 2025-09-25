@@ -66,6 +66,8 @@ select,
     padding: 0.65rem 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     box-shadow: none;
+    background-color: var(--surface-contrast);
+    color: var(--text-primary);
 }
 
 input:focus,
@@ -73,6 +75,16 @@ select:focus,
 .form-control:focus {
     border-color: var(--brand-primary);
     box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.18);
+}
+
+.header-card .form-control::placeholder,
+.header-card input::placeholder {
+    color: rgba(43, 43, 43, 0.65);
+}
+
+.header-card .form-control {
+    background-color: rgba(255, 255, 255, 0.96);
+    color: var(--text-primary);
 }
 
 .editor-page {
