@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Amazon.Runtime;
+using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Avatar_3D_Sentry.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Avatar_3D_Sentry.Controllers;
@@ -46,7 +47,15 @@ public class AvatarController : ControllerBase
             ? (config?.Idioma ?? "es")
             : idioma;
 
-        var texto = _generator.Generate(idiomaSeleccionado, campos);
+        string texto;
+        try
+        {
+            texto = _generator.Generate(idiomaSeleccionado, campos);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
 
         var availableVoices = _tts.GetAvailableVoices();
         availableVoices.TryGetValue(idiomaSeleccionado, out var vocesIdioma);
@@ -60,6 +69,16 @@ public class AvatarController : ControllerBase
         try
         {
             tts = await _tts.SynthesizeAsync(texto, idiomaSeleccionado, voice);
+        }
+        catch (AmazonServiceException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                $"El proveedor TTS no está disponible: {ex.Message}");
+        }
+        catch (AmazonClientException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                $"No fue posible comunicarse con el servicio TTS: {ex.Message}");
         }
         catch (InvalidOperationException ex)
         {

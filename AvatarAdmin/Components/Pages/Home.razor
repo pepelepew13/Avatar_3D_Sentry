@@ -12,7 +12,7 @@
         <h1>Asistente 3D para turnos Sentry</h1>
         <p>Personaliza el avatar que anunciará los turnos en sala: configura su vestimenta, idioma, voz, fondo y logo corporativo desde un mismo panel.</p>
 
-        <EditForm class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync">
+        <EditForm class="selector-form" FormName="selector-config" Model="@selector" OnValidSubmit="LoadConfigAsync">
             <DataAnnotationsValidator />
             <div class="input-group">
                 <label for="empresaInput">Empresa</label>
@@ -76,6 +76,19 @@
                     }
                 </div>
                 <small class="form-text">Las prendas son modelos preparados por el equipo 3D y se aplican instantáneamente al avatar.</small>
+            </section>
+
+            <section class="editor-card">
+                <h2>Color de cabello</h2>
+                <p>Selecciona el tono que mejor represente a tu marca.</p>
+                <div class="option-pills">
+                    @foreach (var hair in HairColors)
+                    {
+                        var active = hair.Value.Equals(config.ColorCabello, StringComparison.OrdinalIgnoreCase);
+                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectHairColorAsync(hair.Value)" disabled="@isSaving">@hair.Label</button>
+                    }
+                </div>
+                <small class="form-text">El tono predeterminado usa la paleta de la vestimenta seleccionada. Las demás opciones fijan un color específico.</small>
             </section>
 
             <section class="editor-card">
@@ -158,6 +171,14 @@
         new("casual", "Servicio al cliente")
     };
 
+    private static readonly IReadOnlyList<HairColorOption> HairColors = new List<HairColorOption>
+    {
+        new("predeterminado", "Predeterminado", null),
+        new("negro", "Negro", 0x1f1b18),
+        new("castano", "Castaño", 0x4b2e21),
+        new("rubio", "Rubio", 0xd3b26b)
+    };
+
     private static readonly IReadOnlyList<OptionItem> Backgrounds = new List<OptionItem>
     {
         new("oficina", "Lobby corporativo", "preview-office"),
@@ -187,7 +208,9 @@
     }
 
     private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
-    private string ModelUrl => ApiClient.BuildAssetUrl("models/Avatar.glb") ?? "models/Avatar.glb";
+    private string ModelUrl => ApiClient.BuildAssetUrl("models/AvatarReWork.glb")
+        ?? ApiClient.BuildAssetUrl("models/Avatar.glb")
+        ?? "models/AvatarReWork.glb";
 
     protected override async Task OnInitializedAsync()
     {
@@ -285,6 +308,11 @@
         {
             config.Fondo = Backgrounds[0].Value;
         }
+
+        if (string.IsNullOrWhiteSpace(config.ColorCabello) || !HairColors.Any(h => h.Value.Equals(config.ColorCabello, StringComparison.OrdinalIgnoreCase)))
+        {
+            config.ColorCabello = HairColors[0].Value;
+        }
     }
 
     private async Task PersistConfigAsync(string successText)
@@ -306,7 +334,8 @@
                 Fondo = config.Fondo,
                 ProveedorTts = config.ProveedorTts ?? DefaultProvider,
                 Voz = config.Voz,
-                Idioma = config.Idioma
+                Idioma = config.Idioma,
+                ColorCabello = config.ColorCabello
             };
 
             config = await ApiClient.UpdateConfigAsync(selector.Empresa, selector.Sede, update);
@@ -384,6 +413,17 @@
         await PersistConfigAsync("Fondo actualizado.");
     }
 
+    private async Task SelectHairColorAsync(string value)
+    {
+        if (config is null || string.Equals(config.ColorCabello, value, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.ColorCabello = value;
+        await PersistConfigAsync("Color de cabello actualizado.");
+    }
+
     private async Task OnLanguageChangedAsync(ChangeEventArgs args)
     {
         if (config is null)
@@ -456,7 +496,7 @@
                 logoUrl = CurrentLogoUrl,
                 outfit = config.Vestimenta,
                 background = config.Fondo,
-                hairColor = (string?)null
+                hairColor = GetHairColorHex(config.ColorCabello)
             };
 
             if (!viewerInitialized)
@@ -474,6 +514,17 @@
             Logger.LogError(jsEx, "No fue posible inicializar el visor 3D del avatar");
             errorMessage ??= "El visor 3D no pudo inicializarse. Revisa la consola del navegador.";
         }
+    }
+
+    private static int? GetHairColorHex(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var match = HairColors.FirstOrDefault(h => h.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
+        return match?.Hex;
     }
 
     private void RequestViewerRefresh()
@@ -550,4 +601,6 @@
     private sealed record OptionItem(string Value, string Label, string? CssClass = null);
 
     private sealed record LanguageOption(string Value, string Label);
+
+    private sealed record HairColorOption(string Value, string Label, int? Hex);
 }

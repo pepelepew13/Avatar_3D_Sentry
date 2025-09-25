@@ -28,9 +28,9 @@
     };
 
     const backgroundPresets = {
-        oficina: { background: 0xeaf1ff, ground: 0xffffff, rim: 0xdbe3f2 },
-        moderno: { background: 0xf5f6fa, ground: 0xe2e3ea, rim: 0xd2d3dc },
-        naturaleza: { background: 0xe6f3ec, ground: 0xd6ebdc, rim: 0xc5e0ce }
+        oficina: { background: 0xe9f6f1, ground: 0xffffff, rim: 0xd6ede4 },
+        moderno: { background: 0xe4f1ed, ground: 0xd8e7e2, rim: 0xc7ddd6 },
+        naturaleza: { background: 0xe9f7ef, ground: 0xd5ecda, rim: 0xc2dfca }
     };
 
     const outfitPalettes = {
@@ -202,7 +202,7 @@
         applyBackground(options.background);
         applyOutfit(options.outfit);
         applyLogo(options.logoUrl);
-        if (options.hairColor) {
+        if (Object.prototype.hasOwnProperty.call(options, "hairColor") && options.hairColor !== null && typeof options.hairColor !== "undefined") {
             applyHairColor(options.hairColor);
         }
     }

@@ -40,5 +40,10 @@ public class AvatarConfig
     /// Idioma preferido para la narración del avatar.
     /// </summary>
     public string? Idioma { get; set; }
+
+    /// <summary>
+    /// Color de cabello seleccionado para el avatar.
+    /// </summary>
+    public string? ColorCabello { get; set; }
 }
 

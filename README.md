@@ -52,56 +52,37 @@ del control de versiones) con la sección `AWS`:
 En entornos productivos se recomienda usar perfiles compartidos de AWS o un
 servicio de gestión de secretos compatible.
 
-## Configurar AWS Polly
+## Autenticación de la API
 
-Para habilitar la síntesis de voz real con Amazon Polly debes proporcionar
-credenciales válidas. **No** almacenes las llaves en el repositorio; usa variables
-de entorno o `dotnet user-secrets` durante el desarrollo.
+La API protege todos los endpoints mediante un token Bearer. El valor se
+define en `appsettings.json` con la clave `TokenAutorizacion`. Para realizar
+peticiones debes incluir el encabezado:
 
-```bash
-export AWS_ACCESS_KEY_ID="<tu_access_key>"
-export AWS_SECRET_ACCESS_KEY="<tu_secret_key>"
-export AWS_REGION="us-east-1"  # opcional, por defecto us-east-1
-dotnet run
+```
+Authorization: Bearer <token-configurado>
 ```
 
-También puedes crear un archivo `appsettings.Development.json` local (excluido
-del control de versiones) con la sección `AWS`:
+Durante el desarrollo puedes deshabilitar temporalmente el middleware de
+autenticación estableciendo `"RequerirToken": false` en
+`appsettings.Development.json`. La aplicación registrará una advertencia en
+tiempo de ejecución para recordarte que esta configuración solo debe usarse en
+entornos locales.
 
-```json
-{
-  "AWS": {
-    "Region": "us-east-1",
-    "AccessKeyId": "<tu_access_key>",
-    "SecretAccessKey": "<tu_secret_key>"
-  }
-}
-```
+## Persistencia de configuraciones del avatar
 
-En entornos productivos se recomienda usar perfiles compartidos de AWS o un
-servicio de gestión de secretos compatible.
-## AvatarAdmin
+Las preferencias (logo, fondo, voz, idioma, etc.) se guardan en SQLite. Por
+defecto el archivo se crea en `Data/avatar.db` dentro del directorio raíz del
+proyecto. Si deseas almacenar la base en otra ubicación o usar un proveedor
+diferente, edita la cadena de conexión `ConnectionStrings:AvatarDb` en
+`appsettings.json` o sobrescribe el valor mediante variables de entorno.
 
-Para preparar la base de datos y ejecutar la aplicación de administración, puede
-utilizar el siguiente comando:
+En entornos de desarrollo se recomienda utilizar un archivo distinto (por
+ejemplo, `Data/avatar-dev.db`). El archivo está excluido del control de
+versiones, por lo que cada entorno mantiene su propia base.
 
-```bash
-cd AvatarAdmin && dotnet ef database update && dotnet run
-```
+## Logo de Sentry en el panel AvatarAdmin
 
-### Prueba manual: carga de configuración desde la UI
-
-1. Inicie la aplicación de administración con el comando anterior y abra
-   `https://localhost:5001` (o el puerto configurado) en el navegador.
-2. En el panel principal, complete los campos **Empresa** y **Sede** con valores
-   válidos para su entorno y presione **Cargar configuración**.
-3. Verifique en las herramientas de desarrollo del navegador que la petición a
-   `GET /api/avatar-config/{empresa}/{sede}` se complete correctamente y que el
-   formulario muestre los datos recuperados (logo, vestimenta, idioma, voz y
-   fondo).
-4. Confirme que no aparece ningún mensaje de error ni se registran excepciones
-   en la consola del navegador o en los logs del servidor, en especial el texto
-   “The POST request does not specify which form is being submitted”; esto
-   valida que la acción `LoadConfigAsync` se ejecuta sin ser rechazada por el
-   runtime.
-
+El logotipo que aparece en la cabecera del panel no se versiona para evitar
+subir binarios innecesarios. Copia manualmente el archivo proporcionado por el
+equipo de diseño en la ruta `AvatarAdmin/wwwroot/img/Logo_Sentry.png` antes de
+compilar. Si necesitas cambiarlo, reemplaza el archivo en esa misma ubicación.

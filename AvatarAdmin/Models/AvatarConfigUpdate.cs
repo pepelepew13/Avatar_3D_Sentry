@@ -7,4 +7,5 @@ public class AvatarConfigUpdate
     public string? ProveedorTts { get; set; }
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
+    public string? ColorCabello { get; set; }
 }

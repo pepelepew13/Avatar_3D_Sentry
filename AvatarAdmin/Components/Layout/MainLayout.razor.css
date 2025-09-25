@@ -2,20 +2,20 @@
     min-height: 100vh;
     display: grid;
     grid-template-columns: clamp(260px, 24vw, 320px) 1fr;
-    background: radial-gradient(circle at top left, rgba(255, 0, 0, 0.14), transparent 55%),
-                radial-gradient(circle at 85% 15%, rgba(0, 40, 85, 0.12), transparent 50%),
-                linear-gradient(125deg, rgba(245, 246, 250, 0.96), rgba(245, 246, 250, 0.75));
+    background: radial-gradient(circle at top left, rgba(15, 157, 104, 0.12), transparent 55%),
+                radial-gradient(circle at 85% 15%, rgba(11, 93, 64, 0.1), transparent 50%),
+                linear-gradient(125deg, rgba(243, 247, 245, 0.98), rgba(236, 244, 240, 0.85));
 }
 
 .layout-sidebar {
     backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.92);
-    border-right: 1px solid rgba(230, 231, 235, 0.8);
+    background: rgba(255, 255, 255, 0.94);
+    border-right: 1px solid rgba(214, 228, 222, 0.9);
     padding: 2.25rem 1.75rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    box-shadow: 4px 0 24px rgba(0, 40, 85, 0.04);
+    box-shadow: 4px 0 24px rgba(17, 120, 88, 0.08);
 }
 
 .layout-brand {
@@ -24,17 +24,10 @@
     gap: 1rem;
 }
 
-.brand-symbol {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(135deg, rgba(255, 0, 0, 0.92), rgba(179, 0, 22, 0.96));
-    color: #fff;
-    font-weight: 700;
-    font-size: 1.45rem;
-    letter-spacing: 0.02em;
+.brand-logo {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
 }
 
 .brand-copy {
@@ -53,13 +46,13 @@
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(102, 102, 102, 0.8);
+    color: rgba(17, 120, 88, 0.7);
 }
 
 .layout-main {
     padding: 2.5rem clamp(1.5rem, 3vw, 3.5rem);
     overflow-x: hidden;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 246, 250, 0.65));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 245, 242, 0.85));
 }
 
 .layout-content {
@@ -98,11 +91,11 @@
         justify-content: space-between;
         padding: 1.5rem clamp(1rem, 5vw, 2rem);
         border-right: none;
-        border-bottom: 1px solid rgba(179, 0, 22, 0.12);
+        border-bottom: 1px solid rgba(17, 120, 88, 0.12);
         position: sticky;
         top: 0;
         z-index: 10;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(15px);
     }
 

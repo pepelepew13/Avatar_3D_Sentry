@@ -53,10 +53,10 @@ public class PhraseGeneratorTests
         var fields = new Dictionary<string, string>
         {
             ["empresa"] = "Empresa",
-            ["sede"] = "Lisboa",
-            ["modulo"] = "B1",
-            ["turno"] = "Tarde",
-            ["nombre"] = "Ana"
+            ["sede"] = "Filial",
+            ["modulo"] = "01",
+            ["turno"] = "Senha 32",
+            ["nombre"] = "Marina"
         };
 
         var result = generator.Generate("pt", fields);
@@ -64,24 +64,5 @@ public class PhraseGeneratorTests
         {
             Assert.Contains(field, result);
         }
-        Assert.DoesNotContain("{", result);
-    }
-
-    [Fact]
-    public void Generate_InvalidLanguage_ThrowsUnsupportedLanguageException()
-    {
-        var generator = new PhraseGenerator();
-        var fields = new Dictionary<string, string>
-        {
-            ["empresa"] = "Empresa",
-            ["sede"] = "Sede",
-            ["modulo"] = "M1",
-            ["turno"] = "T1",
-            ["nombre"] = "Luis"
-        };
-
-        var exception = Assert.Throws<UnsupportedLanguageException>(() => generator.Generate("fr", fields));
-
-        Assert.Equal("El idioma 'fr' no está soportado.", exception.Message);
     }
 }

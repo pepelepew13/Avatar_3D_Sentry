@@ -6,8 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
 
@@ -74,49 +72,52 @@ builder.Services.AddSingleton<ITtsService>(sp =>
         return new NullTtsService();
     }
 });
-builder.Services.AddDbContext<AvatarContext>(opt =>
+var connectionString = builder.Configuration.GetConnectionString("AvatarDb");
+
+if (!string.IsNullOrWhiteSpace(connectionString))
 {
-    var provider = (configuredProvider ?? "Sqlite").Trim();
-
-    if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
-    {
-        opt.UseSqlServer(connectionString);
-        return;
-    }
-
-    if (provider.Length > 0 && !string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
-    {
-        throw new InvalidOperationException($"Unsupported database provider '{provider}'.");
-    }
-
     var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString);
-    if (string.IsNullOrWhiteSpace(sqliteBuilder.DataSource))
+    var dataSource = sqliteBuilder.DataSource;
+
+    if (!Path.IsPathRooted(dataSource))
     {
-        throw new InvalidOperationException("The SQLite connection string must define a Data Source.");
+        var fullPath = Path.Combine(builder.Environment.ContentRootPath, dataSource);
+        var directory = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+        sqliteBuilder.DataSource = fullPath;
+    }
+    else
+    {
+        var directory = Path.GetDirectoryName(dataSource);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
     }
 
-    var dataSourcePath = sqliteBuilder.DataSource;
-    if (!Path.IsPathRooted(dataSourcePath))
-    {
-        dataSourcePath = Path.Combine(builder.Environment.ContentRootPath, dataSourcePath);
-    }
+    builder.Services.AddDbContext<AvatarContext>(opt =>
+        opt.UseSqlite(sqliteBuilder.ConnectionString));
+}
+else
+{
+    builder.Services.AddDbContext<AvatarContext>(opt =>
+        opt.UseInMemoryDatabase("AvatarDb"));
+}
 
-    var dataDirectory = Path.GetDirectoryName(dataSourcePath);
-    if (!string.IsNullOrEmpty(dataDirectory))
-    {
-        Directory.CreateDirectory(dataDirectory);
-    }
-
-    sqliteBuilder.DataSource = dataSourcePath;
-    opt.UseSqlite(sqliteBuilder.ToString());
-});
+var requerirToken = builder.Configuration.GetValue("RequerirToken", true);
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AvatarContext>();
-    context.Database.Migrate();
+    var db = scope.ServiceProvider.GetRequiredService<AvatarContext>();
+    if (db.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        db.Database.Migrate();
+    }
 }
 
 // Configura la canalización de solicitudes HTTP.
@@ -133,7 +134,14 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Resources"
 });
 app.UseHttpsRedirection();
-app.UseMiddleware<MiddlewareAutenticacionToken>();
+if (requerirToken)
+{
+    app.UseMiddleware<MiddlewareAutenticacionToken>();
+}
+else
+{
+    app.Logger.LogWarning("La autenticación por token está deshabilitada según la configuración actual. No utilices este modo en producción.");
+}
 app.UseAuthorization();
 
 app.MapControllers();

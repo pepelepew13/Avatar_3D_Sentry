@@ -15,31 +15,31 @@
     border-radius: 14px;
     font-weight: 600;
     color: var(--text-primary);
-    background: rgba(0, 40, 85, 0.05);
+    background: rgba(15, 157, 104, 0.08);
     text-decoration: none;
     transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .menu-link:hover,
 .menu-link.active {
-    background: rgba(255, 0, 0, 0.14);
+    background: rgba(15, 157, 104, 0.18);
     color: var(--brand-primary);
-    box-shadow: 0 12px 25px rgba(179, 0, 22, 0.18);
+    box-shadow: 0 12px 25px rgba(15, 157, 104, 0.18);
 }
 
 .menu-link.as-button {
     width: 100%;
     border: none;
-    background: rgba(179, 0, 22, 0.12);
-    color: #7a0a14;
+    background: rgba(17, 120, 88, 0.12);
+    color: #0f5c4f;
     justify-content: flex-start;
     text-align: left;
 }
 
 .menu-link.as-button:hover {
-    background: rgba(179, 0, 22, 0.22);
-    color: #5c040c;
-    box-shadow: 0 12px 24px rgba(179, 0, 22, 0.2);
+    background: rgba(17, 120, 88, 0.22);
+    color: #0b3f35;
+    box-shadow: 0 12px 24px rgba(17, 120, 88, 0.2);
 }
 
 .logout-form {
@@ -52,7 +52,7 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: rgba(255, 0, 0, 0.12);
+    background: rgba(15, 157, 104, 0.18);
     color: var(--brand-primary);
     font-size: 1rem;
 }
@@ -89,12 +89,12 @@
     padding: 0.6rem 1rem;
     border-radius: 14px;
     font-weight: 600;
-    color: rgba(0, 40, 85, 0.75);
-    background: rgba(0, 40, 85, 0.08);
+    color: rgba(15, 157, 104, 0.85);
+    background: rgba(15, 157, 104, 0.12);
 }
 
 .menu-user .menu-icon {
-    background: rgba(255, 0, 0, 0.18);
+    background: rgba(15, 157, 104, 0.22);
     color: var(--brand-primary);
 }
 
