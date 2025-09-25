@@ -8,6 +8,15 @@
     "{nombre}, {empresa} te asigna el módulo {modulo} en la sede {sede} para el turno {turno}.",
     "Se solicita a {nombre} acudir a {empresa} en {sede}, módulo {modulo}, turno {turno}."
   ],
+  "pt": [
+    "Bem-vindo {nombre} à {empresa}, unidade {sede}, guichê {modulo}, senha {turno}.",
+    "Olá {nombre}, a {empresa} aguarda você na unidade {sede}, guichê {modulo}, senha {turno}.",
+    "{nombre}, dirija-se por favor à {empresa} - {sede}, guichê {modulo}, senha {turno}.",
+    "A {empresa} chama a senha {turno} para {nombre} na unidade {sede}, guichê {modulo}.",
+    "Atenção {nombre}, apresente-se na {empresa}, unidade {sede}, guichê {modulo}, senha {turno}.",
+    "{nombre}, a {empresa} reservou o guichê {modulo} na unidade {sede} para a senha {turno}.",
+    "Solicitamos que {nombre} compareça à {empresa} em {sede}, guichê {modulo}, senha {turno}."
+  ],
   "en": [
     "Welcome {nombre} to {empresa}, {sede} branch, module {modulo}, shift {turno}.",
     "Hello {nombre}, {empresa} awaits you at {sede}, module {modulo}, shift {turno}.",
