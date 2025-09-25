@@ -1,8 +1,7 @@
-using Avatar_3D_Sentry.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-
-#nullable disable
+using Avatar_3D_Sentry.Data;
+using Avatar_3D_Sentry.Modelos;
 
 namespace Avatar_3D_Sentry.Migrations;
 
@@ -11,14 +10,17 @@ partial class AvatarContextModelSnapshot : ModelSnapshot
 {
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
-#pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
 
-        modelBuilder.Entity("Avatar_3D_Sentry.Modelos.AvatarConfig", b =>
+        modelBuilder.Entity<AvatarConfig>(b =>
         {
             b.Property<int>("Id")
                 .ValueGeneratedOnAdd()
-                .HasColumnType("INTEGER");
+                .HasColumnType("INTEGER")
+                .HasAnnotation("Sqlite:Autoincrement", true);
+
+            b.Property<string>("ColorCabello")
+                .HasColumnType("TEXT");
 
             b.Property<string>("Empresa")
                 .IsRequired()
@@ -53,6 +55,5 @@ partial class AvatarContextModelSnapshot : ModelSnapshot
 
             b.ToTable("AvatarConfigs");
         });
-#pragma warning restore 612, 618
     }
 }
