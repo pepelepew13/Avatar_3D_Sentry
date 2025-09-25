@@ -90,7 +90,7 @@
                     </header>
 
                     <div class="editor-modal-body">
-                        <div class="editor-shell floating-shell">
+                        <div class="editor-shell game-layout">
                             <aside class="editor-sidebar">
                                 <div class="sidebar-header">
                                     <h2>Modo personalización</h2>
@@ -171,11 +171,25 @@
                                     </div>
                                 </div>
 
-                                <footer class="stage-toolbar">
-                                    <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">
-                                        @(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")
-                                    </button>
-                                    <span class="stage-hint">Pulsa el botón para ver el ciclo de animación con los visemas.</span>
+                                <footer class="stage-toolbar gamebar">
+                                    <div class="gamebar-left">
+                                        <button type="button" class="icon-btn" title="Girar 360°" @onclick="TurntableAsync">⟳</button>
+                                        <button type="button" class="icon-btn" title="Centrar" @onclick="FrameAsync">⊕</button>
+                                        <button type="button" class="icon-btn" title="Captura" @onclick="ScreenshotAsync">📷</button>
+                                    </div>
+
+                                    <div class="gamebar-mid">
+                                        <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
+                                        <span class="hint">mover</span>
+                                        <span class="sep"></span>
+                                        <span class="kbd">Wheel</span><span class="hint">zoom</span>
+                                    </div>
+
+                                    <div class="gamebar-right">
+                                        <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">
+                                            @(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")
+                                        </button>
+                                    </div>
                                 </footer>
                             </section>
 
@@ -204,31 +218,51 @@
                                     case PanelOutfit:
                                         <div class="control-card">
                                             <h3>Vestimenta y estilo</h3>
-                                            <p>Escoge la prenda oficial y ajusta el tono del cabello para la experiencia presencial.</p>
-                                            <div class="option-pills">
+                                            <p>Elige un preset y ajusta detalles como en un creador de personaje.</p>
+
+                                            <h4 class="section-title">Presets</h4>
+                                            <div class="preset-grid">
                                                 @foreach (var outfit in Outfits)
                                                 {
                                                     var active = outfit.Value.Equals(config.Vestimenta, StringComparison.OrdinalIgnoreCase);
-                                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectOutfitAsync(outfit.Value)" disabled="@isSaving">@outfit.Label</button>
+                                                    <button type="button"
+                                                            class="preset-tile @(active ? "active" : null)"
+                                                            title="@outfit.Label"
+                                                            @onclick="() => SelectOutfitAsync(outfit.Value)"
+                                                            disabled="@isSaving">
+                                                        <img src="@($"/img/{outfit.Value}.jpg")" alt="@outfit.Label" />
+                                                        <span>@outfit.Label</span>
+                                                    </button>
                                                 }
                                             </div>
 
                                             <div class="section-divider"></div>
 
-                                            <h4>Color de cabello</h4>
-                                            <div class="option-pills">
+                                            <h4 class="section-title">Color de cabello</h4>
+                                            <div class="swatch-row">
                                                 @foreach (var hair in HairColors)
                                                 {
                                                     var active = hair.Value.Equals(config.ColorCabello, StringComparison.OrdinalIgnoreCase);
-                                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectHairColorAsync(hair.Value)" disabled="@isSaving">@hair.Label</button>
+                                                    <button type="button"
+                                                            class="swatch @(active ? "active" : null)"
+                                                            title="@hair.Label"
+                                                            style="--sw:@(hair.Hex is null ? "#ccc" : $"#{hair.Hex.Value:X6}")"
+                                                            @onclick="() => SelectHairColorAsync(hair.Value)"
+                                                            disabled="@isSaving">
+                                                        <span></span>
+                                                    </button>
                                                 }
                                             </div>
-                                            <small class="form-text">El tono predeterminado usa la paleta de la vestimenta. Las demás opciones fijan un color concreto.</small>
+
+                                            <div class="quick-actions">
+                                                <button type="button" class="icon-btn" title="Aleatorio" @onclick="RandomizeLook">🎲</button>
+                                                <button type="button" class="icon-btn" title="Reiniciar" @onclick="ResetLook">↺</button>
+                                            </div>
                                         </div>
                                         break;
 
                                     case PanelVoice:
-                                        <div class="control-card">
+                                        <div class="control-card" style="display: grid;">
                                             <h3>Idioma y locución</h3>
                                             <p>Define la voz neutra que anunciará los turnos. Puedes cambiarla cuando necesites campañas bilingües.</p>
                                             <div class="mb-3">
@@ -885,6 +919,31 @@
             Sede = Sede.Trim();
         }
     }
+
+    private async Task RandomizeLook()
+    {
+        if (config is null) return;
+        var rnd = new Random();
+        var outfit = Outfits[rnd.Next(Outfits.Count)].Value;
+        var hair = HairColors[rnd.Next(HairColors.Count)].Value;
+        config.Vestimenta = outfit;
+        config.ColorCabello = hair;
+        await PersistConfigAsync("Apariencia aleatoria aplicada.");
+    }
+
+    private async Task ResetLook()
+    {
+        if (config is null) return;
+        config.Vestimenta = Outfits[0].Value;
+        config.ColorCabello = HairColors[0].Value;
+        await PersistConfigAsync("Apariencia restablecida.");
+    }
+
+    private Task TurntableAsync() => JS.InvokeVoidAsync("AvatarViewer.turntable", 3000).AsTask();
+    private Task FrameAsync()      => JS.InvokeVoidAsync("AvatarViewer.frame").AsTask();
+    private Task ScreenshotAsync() => JS.InvokeVoidAsync("AvatarViewer.screenshot").AsTask();
+
+
 
     private sealed record OutfitOption(string Value, string Label, string ModelPath);
 

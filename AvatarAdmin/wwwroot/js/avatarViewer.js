@@ -144,7 +144,10 @@ globalScope.THREE.OrbitControls = OrbitControls;
         state.scene.add(state.ground);
 
         state.controls = new THREE.OrbitControls(state.camera, canvas);
-        state.controls.enableZoom = false;
+        state.controls.enableZoom = true;
+        state.controls.zoomSpeed = 0.9;
+        state.controls.enableDamping = true;
+        state.controls.dampingFactor = 0.08;
         state.controls.enablePan = false;
         state.controls.minPolarAngle = Math.PI / 3;
         state.controls.maxPolarAngle = Math.PI / 2.1;
@@ -231,6 +234,47 @@ globalScope.THREE.OrbitControls = OrbitControls;
             }
         );
     }
+
+    // Gira el modelo suavemente en 'ms' milisegundos (por defecto 3000)
+    function turntable(ms = 3000) {
+        if (!state.root) return;
+        const start = performance.now();
+        const startY = state.root.rotation.y;
+        const duration = Math.max(500, ms);
+        const fullTurn = startY + Math.PI * 2;
+
+        function step(t) {
+            const p = Math.min((t - start) / duration, 1);
+            // easing suave
+            const eased = p < 0.5 ? 2*p*p : -1 + (4 - 2*p) * p;
+            state.root.rotation.y = startY + (fullTurn - startY) * eased;
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    // Encadra el avatar (fit to view)
+    function frame() {
+        centerModel();
+        if (state.controls) {
+            state.controls.update();
+        }
+    }
+
+    // Descarga una captura PNG del canvas
+    function screenshot() {
+        if (!state.canvas) return;
+        // asegura un render antes de capturar
+        if (state.renderer && state.scene && state.camera) {
+            state.renderer.render(state.scene, state.camera);
+        }
+        const url = state.canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'avatar.png';
+        a.click();
+    }
+
 
     function disposeCurrentModel() {
         if (state.root && state.scene) {
@@ -625,11 +669,15 @@ globalScope.THREE.OrbitControls = OrbitControls;
         state.pendingAppearance = null;
     }
 
+    
     AvatarViewer.init = init;
     AvatarViewer.updateAppearance = updateAppearance;
     AvatarViewer.playTalking = playTalking;
     AvatarViewer.stopTalking = stopTalking;
     AvatarViewer.applyVisemes = applyVisemes;
+    AvatarViewer.turntable = turntable;
+    AvatarViewer.frame = frame;
+    AvatarViewer.screenshot = screenshot;
     AvatarViewer.dispose = dispose;
 
     global.AvatarViewer = AvatarViewer;

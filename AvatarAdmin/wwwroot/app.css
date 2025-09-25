@@ -200,6 +200,9 @@ select:focus,
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.72);
+    border-radius: 20px;
 }
 
 .sidebar-btn {
@@ -259,6 +262,7 @@ select:focus,
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    color: black;
 }
 
 .sidebar-summary h3 {
@@ -386,7 +390,7 @@ select:focus,
 }
 
 .editor-modal {
-    width: min(1100px, 95vw);
+    width: auto;
     max-height: 92vh;
     background: var(--surface-contrast);
     border-radius: 34px;
@@ -474,6 +478,7 @@ select:focus,
     display: flex;
     flex-direction: column;
     gap: 1.05rem;
+    align-items: center !important;
 }
 
 .control-card h3 {
@@ -485,14 +490,14 @@ select:focus,
 .control-card p {
     margin: 0;
     font-size: 0.92rem;
-    color: var(--text-muted);
+    color: #b6b8c1;;
 }
 
 .control-card h4 {
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #d1d1d1;
 }
 
 .section-divider {
@@ -504,6 +509,8 @@ select:focus,
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
+    flex-direction: row-reverse;
+    justify-content: space-around;
 }
 
 .option-pill {
@@ -511,16 +518,16 @@ select:focus,
     border-radius: 999px;
     border: 1px solid transparent;
     background-color: #f0f0f0;
-    color: var(--text-muted);
+    color: var(--border-soft);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .option-pill.active {
-    background: rgba(255, 0, 0, 0.12);
+    background: rgb(255 255 255);
     color: var(--brand-primary);
-    border-color: rgba(255, 0, 0, 0.32);
+    border-color: var(--brand-primary);
     box-shadow: 0 12px 28px rgba(255, 0, 0, 0.18);
 }
 
@@ -647,6 +654,7 @@ small.form-text {
 input[type="file"] {
     padding: 0.5rem 0.75rem;
     background: #f4f7f6;
+    width: 350px;
 }
 
 .validation-message {
@@ -671,6 +679,262 @@ input[type="file"] {
     color: #000000;
     text-decoration: none;
 }
+
+.config-summary-card{
+    background: linear-gradient(140deg, rgba(255, 0, 0, 0.95), rgba(192, 0, 0, 0.92));
+    padding: 30px;
+    border-radius: 50px;
+    box-shadow: var(--shadow-soft);
+    display: inline-grid; /* como pediste */
+    gap: 1rem;
+    color: #fff;
+}
+  
+/* texto dentro: títulos y párrafos legibles sobre rojo */
+.config-summary-card header h2{
+    margin: 0;
+    color: #fff;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 2vw + 1.5rem, 2.4rem);
+}
+
+.config-summary-card header p{
+    margin: .25rem 0 0;
+    color: rgba(255,255,255,.85);
+}
+
+/* lista de pares “dt / dd” */
+.config-summary-card .summary-grid{
+    margin: 0;
+    display: grid;
+    gap: .75rem 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.config-summary-card dt{
+    margin: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: rgba(255,255,255,.85);
+}
+
+.config-summary-card dd{
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* footer del bloque */
+.config-summary-card .summary-actions{
+    margin-top: .5rem;
+}
+
+/* (opcional) botón invertido para que contraste mejor sobre fondo rojo */
+.config-summary-card .btn.btn-primary{
+    background: #fff;
+    color: var(--brand-primary);
+    box-shadow: 0 10px 26px rgba(255,255,255,.15);
+    border: none;
+}
+
+.config-summary-card .btn.btn-primary:hover{
+    background: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(255,255,255,.22);
+}
+
+/* ======= Game-like UI ======= */
+.stage-canvas { position: relative; }
+.gamebar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.75rem; padding:.6rem .8rem; border-radius:14px;
+  background: linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02));
+  border:1px solid rgba(0,0,0,.06);
+}
+.gamebar-left,.gamebar-right{ display:flex; gap:.5rem; align-items:center; }
+.gamebar-mid{ display:flex; align-items:center; gap:.35rem; opacity:.8; }
+.gamebar-mid .sep{ width:1px; height:16px; background:rgba(0,0,0,.15); margin:0 .4rem; }
+.kbd{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:.75rem; padding:.15rem .35rem; border-radius:6px;
+  border:1px solid rgba(0,0,0,.18); background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.04);
+}
+.hint{ font-size:.8rem; color:var(--text-muted); margin-left:.1rem; }
+
+.icon-btn{
+  display:inline-grid; place-items:center; min-width:36px; height:36px;
+  padding:0; border-radius:10px; border:1px solid rgba(0,0,0,.08);
+  background:#fff; box-shadow:0 4px 12px rgba(0,0,0,.08);
+  transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.icon-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 22px rgba(0,0,0,.12); }
+.icon-btn:active{ transform:translateY(0); }
+
+.section-title{ margin:.25rem 0 .35rem; font-weight:700; }
+
+.preset-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:.9rem;
+}
+.preset-tile{
+    appearance: none;
+    background: #2a2d36;
+    border: 1px solid #e3e5ec;
+    border-radius: 14px;
+    padding: .5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+}
+.preset-tile img{ width:100%; aspect-ratio: 1.4 / 1; object-fit:cover; border-radius:12px; background:#fff; }
+.preset-tile span{ font-weight:600; font-size:.9rem; color:rgba(255,255,255,.85); }
+.preset-tile:hover{ transform:translateY(-1px); box-shadow:0 16px 28px rgba(0,0,0,.1); }
+.preset-tile.active{     
+    border-color: #e30000;
+    box-shadow: 0 10px 20px rgba(255, 0, 0, .12);
+    background: #2a2d36; 
+}
+
+.swatch-row{ display:flex; flex-wrap:wrap; gap:.6rem; }
+.swatch{
+  --sw:#ccc;
+  width:36px; height:36px; border-radius:999px; padding:2px;
+  border:2px solid rgba(0,0,0,.08); background:linear-gradient(180deg,#fff, #f1f1f1);
+  position:relative;
+}
+.swatch span{
+  display:block; width:100%; height:100%; border-radius:999px; background:var(--sw);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+}
+.swatch.active{ border-color: rgba(255,0,0,.55); box-shadow:0 6px 14px rgba(255,0,0,.18); }
+
+.quick-actions{ display:flex; gap:.5rem; margin-top:.6rem; }
+
+/* === Layout tipo videojuego (2 columnas) === */
+.game-layout{
+    display:grid;
+    grid-template-columns: 360px 1fr;   /* izquierda toolbox, derecha preview */
+    grid-auto-rows: min-content;
+    gap: 1.25rem;
+  }
+  
+  /* Ubicar elementos en la grilla sin cambiar el markup */
+  .game-layout .editor-sidebar{ grid-column:1; grid-row:1; }
+  .game-layout .control-stack { grid-column:1; grid-row:2; }
+  .game-layout .preview-stage  { grid-column:2; grid-row:1 / span 2; min-height: 540px; }
+  
+  /* Sidebar estilo “toolbox” oscuro */
+  .game-layout .editor-sidebar{
+    background: #1f2127f0;
+    color: #e8e9ef;
+    border-radius: 22px;
+    padding: 1.1rem;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+  }
+  .game-layout .sidebar-header h2{ color:#fff; }
+  .game-layout .sidebar-header p{ color:#b6b8c1; }
+  
+  .game-layout .sidebar-btn{
+    background: #2a2d36;
+    color: #e8e9ef;
+    border: 1px solid #333744;
+  }
+  .game-layout .sidebar-btn:hover,
+  .game-layout .sidebar-btn.active{
+    background: #343848;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  .game-layout .sidebar-icon{
+    background: #3b3f50;
+    color: #fff;
+  }
+  
+  /* Paneles de edición apilados bajo el menú (izquierda) */
+  .game-layout .control-stack{
+    background: #f8f9fb;
+    border-radius: 22px;
+    box-shadow: var(--shadow-soft);
+  }
+  .game-layout .control-card{
+    background: #1f2127f0;
+    border-radius: 18px;
+    padding: 1rem;
+    color: var(--border-soft);
+  }
+  
+  /* Preview grande a la derecha */
+  .game-layout .preview-stage{
+    background: #1f2127f0;
+    border-radius: 18px;
+    padding: 1rem;
+    color: white;
+  }
+  .game-layout .stage-header h2{ color:#fff; }
+  .game-layout .stage-header p{ color:#a9b1c7; }
+  .game-layout .stage-tag{ background:#2a2d36; color:#fff; }
+  
+  /* Barra inferior tipo HUD (controles de cámara) */
+  .gamebar{
+    background: rgba(255,255,255,.04);
+    border-radius: 14px;
+    padding: .5rem .75rem;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:.75rem; margin-top:.6rem;
+  }
+  .icon-btn{
+    border: none;
+    background: #dc3545;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+  }
+  .icon-btn:hover{ background:#3a3e50; transform:translateY(-1px); }
+  .kbd{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:.78rem; color:#e8e9ef; background:#2a2d36; border:1px solid #3a3e4a;
+    padding:.2rem .45rem; border-radius:6px; margin-right:.25rem;
+  }
+  .gamebar .hint{ color:#b6b8c1; margin-left:.25rem; margin-right:.5rem; }
+  .gamebar .sep{ width:1px; height:18px; background:#3a3e4a; display:inline-block; margin:0 .6rem; }
+  
+  /* Presets tipo “tiles” y swatches tipo juego */
+  .preset-grid{     
+        display: grid;
+        grid-template-columns: repeat(3, minmax(70px, 1fr));
+        gap: .6rem;
+        border-radius: 18px;
+        padding: 1rem;
+        color: var(--border-soft);
+        background: #b6b8c124; 
+    }
+  .preset-tile{
+    appearance:none; background:#2a2d36; border:1px solid #e3e5ec; border-radius:14px;
+    padding:.5rem; display:flex; flex-direction:column; align-items:center; gap:.4rem; cursor:pointer;
+  }
+  .preset-tile img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; }
+  .preset-tile span{ font-size:.8rem; font-weight:600; color:var(--border-soft); }
+  .preset-tile.active{ border-color:#ff0000; box-shadow:0 10px 20px rgba(255,0,0,.12); }
+  
+  .swatch-row{     
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        background: #b6b8c124;
+        padding: 1rem;
+        border-radius: 20px;
+    }
+  .swatch{
+    width:36px; height:36px; border-radius:999px; border:2px solid #fff; outline:2px solid rgba(0,0,0,.08);
+    background: var(--sw, #ccc);
+  }
+  .swatch.active{ outline-color: rgba(255,0,0,.35); box-shadow:0 8px 18px rgba(255,0,0,.18); }  
 
 @media (max-width: 1200px) {
     .editor-shell {

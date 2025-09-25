@@ -1,5 +1,5 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from '/lib/three/three.module.min.js';
+import { GLTFLoader } from '/lib/three/GLTFLoader.js';
 
 const outfitPalettes = {
     corporativo: { color: '#1c8f6d', emissive: '#174d3c' },
