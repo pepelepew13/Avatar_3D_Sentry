@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace Avatar_3D_Sentry.Services;
@@ -18,7 +19,7 @@ public class PhraseGenerator
     {
         if (!_phrases.TryGetValue(language, out var templates) || templates.Length == 0)
         {
-            throw new ArgumentException($"Idioma no soportado: {language}", nameof(language));
+            throw new UnsupportedLanguageException(language);
         }
 
         var template = templates[_random.Next(templates.Length)];
