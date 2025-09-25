@@ -1,3 +1,12 @@
+import * as THREE from '../lib/three/three.module.min.js';
+import { GLTFLoader } from '../lib/three/GLTFLoader.js';
+import { OrbitControls } from '../lib/three/OrbitControls.js';
+
+const globalScope = typeof window !== "undefined" ? window : globalThis;
+globalScope.THREE = THREE;
+globalScope.THREE.GLTFLoader = GLTFLoader;
+globalScope.THREE.OrbitControls = OrbitControls;
+
 (function (global) {
     if (!global) {
         return;
@@ -37,7 +46,7 @@
 
     const outfitPresets = {
         predeterminado: {
-            model: "models/AvatarReWork.glb",
+            model: "models/Avatar.glb",
             palette: {
                 shirt: 0xf6f9ff,
                 pants: 0xc8b59b,
@@ -624,4 +633,4 @@
     AvatarViewer.dispose = dispose;
 
     global.AvatarViewer = AvatarViewer;
-})(window);
+})(globalScope);

@@ -47,101 +47,196 @@
     }
     else
     {
-        <div class="editor-grid">
-            <section class="editor-card">
-                <h2>Identidad corporativa</h2>
-                <p>Sube el logo que se aplicará a la camisa del avatar.</p>
-                <div class="preview-logo">
-                    @if (!string.IsNullOrEmpty(CurrentLogoUrl))
-                    {
-                        <img src="@CurrentLogoUrl" alt="Logo corporativo" />
-                    }
-                    else
-                    {
-                        <span>Logo</span>
-                    }
+        <div class="editor-shell">
+            <aside class="editor-sidebar">
+                <div class="sidebar-header">
+                    <h2>Modo personalización</h2>
+                    <p>Selecciona un módulo para ajustar la experiencia del avatar como si armaras un personaje de videojuego.</p>
                 </div>
-                <InputFile OnChange="OnLogoSelectedAsync" accept="image/png,image/jpeg" disabled="@isSaving" />
-                <small class="form-text">Formatos PNG o JPG. Tamaño máximo 2 MB.</small>
-            </section>
 
-            <section class="editor-card">
-                <h2>Vestimenta</h2>
-                <p>Elige la ropa predeterminada que llevará el avatar.</p>
-                <div class="option-pills">
-                    @foreach (var outfit in Outfits)
-                    {
-                        var active = outfit.Value.Equals(config.Vestimenta, StringComparison.OrdinalIgnoreCase);
-                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectOutfitAsync(outfit.Value)" disabled="@isSaving">@outfit.Label</button>
-                    }
-                </div>
-                <small class="form-text">Las prendas son modelos preparados por el equipo 3D y se aplican instantáneamente al avatar.</small>
-            </section>
+                <nav class="sidebar-actions">
+                    <button type="button" class="@GetSidebarButtonClass(PanelIdentity)" @onclick="() => SetActivePanel(PanelIdentity)" disabled="@isSaving">
+                        <span class="sidebar-icon" aria-hidden="true">🎨</span>
+                        <span class="sidebar-label">
+                            <strong>Identidad</strong>
+                            <small>Logo y escudo</small>
+                        </span>
+                    </button>
+                    <button type="button" class="@GetSidebarButtonClass(PanelOutfit)" @onclick="() => SetActivePanel(PanelOutfit)" disabled="@isSaving">
+                        <span class="sidebar-icon" aria-hidden="true">🧥</span>
+                        <span class="sidebar-label">
+                            <strong>Vestuario</strong>
+                            <small>Ropa y cabello</small>
+                        </span>
+                    </button>
+                    <button type="button" class="@GetSidebarButtonClass(PanelVoice)" @onclick="() => SetActivePanel(PanelVoice)" disabled="@isSaving">
+                        <span class="sidebar-icon" aria-hidden="true">🎤</span>
+                        <span class="sidebar-label">
+                            <strong>Voz</strong>
+                            <small>Idioma y locución</small>
+                        </span>
+                    </button>
+                    <button type="button" class="@GetSidebarButtonClass(PanelBackground)" @onclick="() => SetActivePanel(PanelBackground)" disabled="@isSaving">
+                        <span class="sidebar-icon" aria-hidden="true">🌆</span>
+                        <span class="sidebar-label">
+                            <strong>Escenografía</strong>
+                            <small>Fondos dinámicos</small>
+                        </span>
+                    </button>
+                </nav>
 
-            <section class="editor-card">
-                <h2>Color de cabello</h2>
-                <p>Selecciona el tono que mejor represente a tu marca.</p>
-                <div class="option-pills">
-                    @foreach (var hair in HairColors)
-                    {
-                        var active = hair.Value.Equals(config.ColorCabello, StringComparison.OrdinalIgnoreCase);
-                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectHairColorAsync(hair.Value)" disabled="@isSaving">@hair.Label</button>
-                    }
+                <div class="sidebar-summary">
+                    <h3>Resumen</h3>
+                    <dl>
+                        <div>
+                            <dt>Empresa</dt>
+                            <dd>@config.Empresa</dd>
+                        </div>
+                        <div>
+                            <dt>Sede</dt>
+                            <dd>@config.Sede</dd>
+                        </div>
+                        <div>
+                            <dt>Vestimenta</dt>
+                            <dd>@GetOutfitLabel(config.Vestimenta)</dd>
+                        </div>
+                        <div>
+                            <dt>Fondo</dt>
+                            <dd>@GetBackgroundLabel(config.Fondo)</dd>
+                        </div>
+                    </dl>
                 </div>
-                <small class="form-text">El tono predeterminado usa la paleta de la vestimenta seleccionada. Las demás opciones fijan un color específico.</small>
-            </section>
+            </aside>
 
-            <section class="editor-card">
-                <h2>Voz e idioma</h2>
-                <p>Selecciona el idioma neutro y la voz que usará el TTS.</p>
-                <div class="mb-3">
-                    <label class="form-label">Idioma</label>
-                    <select class="form-control" value="@config.Idioma" @onchange="OnLanguageChangedAsync" disabled="@isSaving">
-                        @foreach (var language in Languages)
-                        {
-                            <option value="@language.Value">@language.Label</option>
-                        }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Voz</label>
-                    <select class="form-control" value="@config.Voz" @onchange="OnVoiceChangedAsync" disabled="@isSaving || !AvailableVoices.Any()">
-                        @if (!AvailableVoices.Any())
-                        {
-                            <option value="">Sin voces disponibles</option>
-                        }
-                        else
-                        {
-                            @foreach (var voice in AvailableVoices)
-                            {
-                                <option value="@voice">@voice</option>
-                            }
-                        }
-                    </select>
-                </div>
-                <small class="form-text">Puedes cambiar el proveedor TTS más adelante. Las voces listadas están optimizadas para español, portugués e inglés neutro.</small>
-            </section>
+            <section class="preview-stage">
+                <header class="stage-header">
+                    <div>
+                        <h2>Vista previa</h2>
+                        <p>Observa al avatar en tiempo real mientras aplicas cada cambio.</p>
+                    </div>
+                    <div class="stage-tags">
+                        <span class="stage-tag">@GetLanguageLabel(config.Idioma)</span>
+                        <span class="stage-tag">@(string.IsNullOrWhiteSpace(config.Voz) ? "Sin voz" : config.Voz)</span>
+                    </div>
+                </header>
 
-            <section class="editor-card">
-                <h2>Fondo y vista previa</h2>
-                <p>Escoge un entorno que acompañe al avatar y revisa la vista previa.</p>
-                <div class="option-pills">
-                    @foreach (var background in Backgrounds)
-                    {
-                        var active = background.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase);
-                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectBackgroundAsync(background.Value)" disabled="@isSaving">@background.Label</button>
-                    }
-                </div>
-                <div class="@GetPreviewClass()">
+                <div class="stage-canvas @GetPreviewClass()">
                     <canvas class="avatar-viewer-canvas" @ref="avatarCanvasRef"></canvas>
-                    <div class="viewer-overlay">
-                        <div class="viewer-pill">@GetLanguageLabel(config.Idioma)</div>
-                        <div class="viewer-pill">@(string.IsNullOrWhiteSpace(config.Voz) ? "Sin voz" : config.Voz)</div>
+                    <div class="viewer-overlay stage-overlay">
+                        <div class="viewer-pill">Logo @(string.IsNullOrWhiteSpace(CurrentLogoUrl) ? "pendiente" : "aplicado")</div>
+                        <div class="viewer-pill">@GetOutfitLabel(config.Vestimenta)</div>
                     </div>
                 </div>
-                <div class="viewer-actions">
-                    <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">@(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")</button>
-                </div>
+
+                <footer class="stage-toolbar">
+                    <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">
+                        @(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")
+                    </button>
+                    <span class="stage-hint">Pulsa el botón para ver el ciclo de animación con los visemas.</span>
+                </footer>
+            </section>
+
+            <section class="control-stack">
+                @switch (activePanel)
+                {
+                    case PanelIdentity:
+                        <div class="control-card">
+                            <h3>Identidad corporativa</h3>
+                            <p>Sube el logo que llevará la camisa y revisa cómo se adapta a la prenda.</p>
+                            <div class="preview-logo large">
+                                @if (!string.IsNullOrEmpty(CurrentLogoUrl))
+                                {
+                                    <img src="@CurrentLogoUrl" alt="Logo corporativo" />
+                                }
+                                else
+                                {
+                                    <span>Logo</span>
+                                }
+                            </div>
+                            <InputFile OnChange="OnLogoSelectedAsync" accept="image/png,image/jpeg" disabled="@isSaving" />
+                            <small class="form-text">Formatos PNG o JPG. Tamaño máximo 2 MB.</small>
+                        </div>
+                        break;
+
+                    case PanelOutfit:
+                        <div class="control-card">
+                            <h3>Vestimenta y estilo</h3>
+                            <p>Escoge la prenda oficial y ajusta el tono del cabello para la experiencia presencial.</p>
+                            <div class="option-pills">
+                                @foreach (var outfit in Outfits)
+                                {
+                                    var active = outfit.Value.Equals(config.Vestimenta, StringComparison.OrdinalIgnoreCase);
+                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectOutfitAsync(outfit.Value)" disabled="@isSaving">@outfit.Label</button>
+                                }
+                            </div>
+
+                            <div class="section-divider"></div>
+
+                            <h4>Color de cabello</h4>
+                            <div class="option-pills">
+                                @foreach (var hair in HairColors)
+                                {
+                                    var active = hair.Value.Equals(config.ColorCabello, StringComparison.OrdinalIgnoreCase);
+                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectHairColorAsync(hair.Value)" disabled="@isSaving">@hair.Label</button>
+                                }
+                            </div>
+                            <small class="form-text">El tono predeterminado usa la paleta de la vestimenta. Las demás opciones fijan un color concreto.</small>
+                        </div>
+                        break;
+
+                    case PanelVoice:
+                        <div class="control-card">
+                            <h3>Idioma y locución</h3>
+                            <p>Define la voz neutra que anunciará los turnos. Puedes cambiarla cuando necesites campañas bilingües.</p>
+                            <div class="mb-3">
+                                <label class="form-label">Idioma</label>
+                                <select class="form-control" value="@config.Idioma" @onchange="OnLanguageChangedAsync" disabled="@isSaving">
+                                    @foreach (var language in Languages)
+                                    {
+                                        <option value="@language.Value">@language.Label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Voz</label>
+                                <select class="form-control" value="@config.Voz" @onchange="OnVoiceChangedAsync" disabled="@isSaving || !AvailableVoices.Any()">
+                                    @if (!AvailableVoices.Any())
+                                    {
+                                        <option value="">Sin voces disponibles</option>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var voice in AvailableVoices)
+                                        {
+                                            <option value="@voice">@voice</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="voice-hint">
+                                <p>Recuerda que puedes probar el habla presionando “Reproducir gesticulación”.</p>
+                                <span>Proveedor actual: @config.ProveedorTts?.ToUpperInvariant()</span>
+                            </div>
+                        </div>
+                        break;
+
+                    case PanelBackground:
+                        <div class="control-card">
+                            <h3>Escenografía</h3>
+                            <p>Selecciona el ambiente que acompañará a tu asistente virtual en las pantallas del punto de atención.</p>
+                            <div class="option-pills">
+                                @foreach (var background in Backgrounds)
+                                {
+                                    var active = background.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase);
+                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectBackgroundAsync(background.Value)" disabled="@isSaving">@background.Label</button>
+                                }
+                            </div>
+                            <small class="form-text">Puedes subir fondos personalizados desde el módulo avanzado o usar las escenas sugeridas por Sentry.</small>
+                        </div>
+                        break;
+                }
             </section>
         </div>
     }
@@ -163,6 +258,7 @@
     private ElementReference avatarCanvasRef;
     private bool hasRenderedOnce;
     private bool isPreviewPlaying;
+    private string activePanel = PanelIdentity;
 
     private static readonly IReadOnlyList<OutfitOption> Outfits = new List<OutfitOption>
     {
@@ -200,6 +296,11 @@
         new("en", "Inglés internacional")
     };
 
+    private const string PanelIdentity = "identidad";
+    private const string PanelOutfit = "vestimenta";
+    private const string PanelVoice = "voz";
+    private const string PanelBackground = "fondo";
+
     private IEnumerable<string> AvailableVoices
     {
         get
@@ -214,6 +315,13 @@
         }
     }
 
+    private string GetSidebarButtonClass(string panel) => panel == activePanel ? "sidebar-btn active" : "sidebar-btn";
+
+    private void SetActivePanel(string panel)
+    {
+        activePanel = panel;
+    }
+
     private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
     private string GetModelUrlForCurrentConfig() => GetModelUrlForOutfit(config?.Vestimenta);
 
@@ -222,6 +330,19 @@
         var option = FindOutfitOption(outfit);
         var path = option.ModelPath;
         return ApiClient.BuildAssetUrl(path) ?? path;
+    }
+
+    private string GetOutfitLabel(string? value) => FindOutfitOption(value).Label;
+
+    private string GetBackgroundLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Backgrounds[0].Label;
+        }
+
+        var match = Backgrounds.FirstOrDefault(b => b.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
+        return match?.Label ?? Backgrounds[0].Label;
     }
 
     private static OutfitOption FindOutfitOption(string? value)
@@ -295,6 +416,7 @@
             var result = await ApiClient.GetConfigAsync(selector.Empresa, selector.Sede);
             config = result;
             NormalizeConfig();
+            activePanel = PanelIdentity;
             successMessage = "Configuración cargada correctamente.";
             RequestViewerRefresh();
         }
@@ -303,6 +425,7 @@
             Logger.LogError(ex, "Error al cargar la configuración de avatar");
             errorMessage = "No fue posible obtener la configuración. Verifica la API y vuelve a intentarlo.";
             config = null;
+            activePanel = PanelIdentity;
         }
         finally
         {

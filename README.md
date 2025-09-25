@@ -94,7 +94,7 @@ visualizarlos en el panel de administración debes copiar los archivos `.glb`
 generados por el equipo 3D en la carpeta `wwwroot/models/` del proyecto
 principal:
 
-- `wwwroot/models/AvatarReWork.glb` (uniforme corporativo predeterminado)
+- `wwwroot/models/Avatar.glb` (uniforme corporativo predeterminado)
 - `wwwroot/models/traje.glb` (versión con traje ejecutivo)
 - `wwwroot/models/vestido.glb` (versión con vestido formal)
 

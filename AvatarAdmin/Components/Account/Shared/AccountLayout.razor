@@ -1,31 +1,8 @@
 ﻿@inherits LayoutComponentBase
 @layout AvatarAdmin.Components.Layout.MainLayout
-@inject NavigationManager NavigationManager
-
-@if (HttpContext is null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    @Body
-}
+@Body
 
 @code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
-
-    private bool _hasForcedRefresh;
-
-    protected override void OnParametersSet()
-    {
-        if (HttpContext is null && !_hasForcedRefresh)
-        {
-            // Cuando se renderiza de forma interactiva no hay HttpContext disponible.
-            // Realizamos una única recarga forzada para volver al modo prerenderizado
-            // (requerido por las páginas de identidad) y evitamos ciclos infinitos.
-            _hasForcedRefresh = true;
-            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
-        }
-    }
 }

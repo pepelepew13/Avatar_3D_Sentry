@@ -2,21 +2,23 @@
 
 @inject NavigationManager NavigationManager
 
-<ul class="menu-list">
-    <li>
+<nav class="menu-groups">
+    <section class="menu-group">
+        <p class="menu-title">Panel</p>
         <NavLink class="menu-link" href="" Match="NavLinkMatch.All">
             <span class="menu-icon menu-icon-home" aria-hidden="true"></span>
             <span>Panel principal</span>
         </NavLink>
-    </li>
+    </section>
 
     <AuthorizeView>
         <Authorized>
-            <li class="menu-user">
-                <span class="menu-icon menu-icon-user" aria-hidden="true"></span>
-                <span>@context.User.Identity?.Name</span>
-            </li>
-            <li>
+            <section class="menu-group">
+                <p class="menu-title">Tu sesión</p>
+                <div class="menu-user">
+                    <span class="menu-icon menu-icon-user" aria-hidden="true"></span>
+                    <span>@context.User.Identity?.Name</span>
+                </div>
                 <form action="Account/Logout" method="post" class="logout-form">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
@@ -25,24 +27,23 @@
                         <span>Salir</span>
                     </button>
                 </form>
-            </li>
+            </section>
         </Authorized>
         <NotAuthorized>
-            <li>
+            <section class="menu-group">
+                <p class="menu-title">Acceso</p>
                 <NavLink class="menu-link" href="Account/Login">
                     <span class="menu-icon menu-icon-login" aria-hidden="true"></span>
                     <span>Iniciar sesión</span>
                 </NavLink>
-            </li>
-            <li>
                 <NavLink class="menu-link" href="Account/Register">
                     <span class="menu-icon menu-icon-register" aria-hidden="true"></span>
                     <span>Crear cuenta</span>
                 </NavLink>
-            </li>
+            </section>
         </NotAuthorized>
     </AuthorizeView>
-</ul>
+</nav>
 
 @code {
     private string? currentUrl;
