@@ -5,6 +5,7 @@
 @inject ILogger<Home> Logger
 @inject IJSRuntime JS
 
+
 <PageTitle>Panel del avatar</PageTitle>
 
 <div class="editor-page">
@@ -128,6 +129,14 @@
                 </div>
                 <div class="viewer-actions">
                     <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">@(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")</button>
+                    <div class="stage-overlay"></div>
+                    <div class="preview-avatar">
+                        <AvatarViewer ModelPath="DefaultModelPath" LogoUrl="CurrentLogoUrl" Outfit="config?.Vestimenta" Background="config?.Fondo" />
+                    </div>
+                    <div class="preview-caption">
+                        <span>@GetLanguageLabel(config.Idioma)</span>
+                        <span>@(string.IsNullOrWhiteSpace(config.Voz) ? "Sin voz" : config.Voz)</span>
+                    </div>
                 </div>
             </section>
         </div>
@@ -137,7 +146,7 @@
 @code {
     private const long MaxLogoSize = 2 * 1024 * 1024;
     private const string DefaultProvider = "polly";
-
+    private const string DefaultModelPath = "/Resources/AvatarReWork.glb";
     private readonly SelectorModel selector = new();
     private AvatarConfigDto? config;
     private IReadOnlyDictionary<string, IReadOnlyList<string>> voiceCatalog = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
@@ -150,6 +159,7 @@
     private ElementReference avatarCanvasRef;
     private bool hasRenderedOnce;
     private bool isPreviewPlaying;
+
 
     private static readonly IReadOnlyList<OptionItem> Outfits = new List<OptionItem>
     {

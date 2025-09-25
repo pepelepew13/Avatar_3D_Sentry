@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
+using Amazon.Runtime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Avatar_3D_Sentry.Data;
@@ -45,7 +46,16 @@ public class AvatarController : ControllerBase
             ? (config?.Idioma ?? "es")
             : idioma;
 
-        var texto = _generator.Generate(idiomaSeleccionado, campos);
+        string texto;
+        try
+        {
+            texto = _generator.Generate(idiomaSeleccionado, campos);
+        }
+        catch (UnsupportedLanguageException)
+        {
+            return BadRequest($"No hay plantillas disponibles para el idioma {idiomaSeleccionado}.");
+        }
+
 
         var availableVoices = _tts.GetAvailableVoices();
         availableVoices.TryGetValue(idiomaSeleccionado, out var vocesIdioma);
@@ -59,6 +69,14 @@ public class AvatarController : ControllerBase
         try
         {
             tts = await _tts.SynthesizeAsync(texto, idiomaSeleccionado, voice);
+        }
+        catch (AmazonClientException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Configura las credenciales de AWS Polly antes de anunciar.");
+        }
+        catch (AmazonServiceException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Configura las credenciales de AWS Polly antes de anunciar.");
         }
         catch (InvalidOperationException ex)
         {
