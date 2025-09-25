@@ -41,6 +41,7 @@ button,
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
     color: #fff;
     box-shadow: 0 10px 26px rgba(192, 0, 0, 0.24);
+    border: solid 1px var(--surface-contrast);
 }
 
 button:hover,
@@ -48,7 +49,8 @@ button:hover,
 .btn-primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 16px 32px rgba(192, 0, 0, 0.28);
-    color: #fff;
+    color: #ffffff;
+    border: solid 1px var(--shadow-soft);
 }
 
 button:disabled,
@@ -129,21 +131,41 @@ select:focus,
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     align-items: end;
+    border-radius: 100px;
 }
 
-.selector-form .input-group {
+/* Nuevo wrapper sin conflictos con Bootstrap */
+.selector-form .field-group {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
 }
 
-.selector-form label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.92);
-    text-transform: uppercase;
+/* Inputs “normales” dentro de la tarjeta roja */
+.header-card .form-control{
+    display: block;
+    width: 100%;
+    background-color: #fff;
+    color: var(--text-primary);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 0.65rem 1rem;
+    box-shadow: none;
 }
+.header-card .form-control:focus{
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 0.2rem rgba(255,0,0,.18);
+}
+.header-card .form-control::placeholder{
+    color: rgba(43,43,43,.65);
+}
+
+/* (Opcional) alinear el botón a la derecha cuando quepa en la misma fila */
+.selector-form button[type="submit"]{
+    justify-self: end;
+    min-width: 210px;
+}
+
 
 .editor-shell {
     display: grid;
@@ -187,7 +209,7 @@ select:focus,
     align-items: center;
     padding: 0.85rem 1rem;
     border-radius: 18px;
-    background: rgba(255, 0, 0, 0.08);
+    background: rgba(255, 0, 0, 0.08);  
     color: var(--text-primary);
     font-weight: 600;
     cursor: pointer;
@@ -535,8 +557,26 @@ input[type="file"] {
 }
 
 .validation-message {
-    color: #c83c3c;
+    color: #e5ff00;
     font-size: 0.85rem;
+}
+
+.nav-card-link{
+    background-color: white !important;
+    border-radius: 50px !important;
+    flex: unset !important;
+    display: flex !important;
+    padding: 10px;
+    align-content: center !important;
+    justify-content: space-evenly !important;
+    align-items: center !important;
+    flex-wrap: nowrap;
+    flex-direction: row !important;
+}
+
+.nav-shell a{
+    color: #000000;
+    text-decoration: none;
 }
 
 @media (max-width: 1200px) {

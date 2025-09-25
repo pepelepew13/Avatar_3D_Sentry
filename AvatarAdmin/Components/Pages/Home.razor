@@ -14,17 +14,19 @@
 
         <EditForm class="selector-form" FormName="selector-config" Model="@selector" OnValidSubmit="LoadConfigAsync">
             <DataAnnotationsValidator />
-            <div class="input-group">
+            <div class="field-group">
                 <label for="empresaInput">Empresa</label>
                 <InputText id="empresaInput" class="form-control" @bind-Value="selector.Empresa" placeholder="Ej. sentry" />
                 <ValidationMessage For="@(() => selector.Empresa)" />
             </div>
-            <div class="input-group">
+            <div class="field-group">
                 <label for="sedeInput">Sede</label>
                 <InputText id="sedeInput" class="form-control" @bind-Value="selector.Sede" placeholder="Ej. pereira" />
                 <ValidationMessage For="@(() => selector.Sede)" />
             </div>
-            <button type="submit" class="btn btn-primary" disabled="@isLoading">@(isLoading ? "Cargando..." : "Cargar configuración")</button>
+            <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                @(isLoading ? "Cargando..." : "Cargar configuración")
+            </button>
         </EditForm>
     </section>
 
