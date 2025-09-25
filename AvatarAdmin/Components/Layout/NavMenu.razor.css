@@ -14,32 +14,32 @@
     padding: 0.75rem 1rem;
     border-radius: 14px;
     font-weight: 600;
-    color: #23424a;
-    background: rgba(15, 47, 58, 0.05);
+    color: var(--text-primary);
+    background: rgba(0, 40, 85, 0.05);
     text-decoration: none;
     transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .menu-link:hover,
 .menu-link.active {
-    background: rgba(28, 143, 109, 0.14);
-    color: #0f2f3a;
-    box-shadow: 0 12px 25px rgba(28, 143, 109, 0.18);
+    background: rgba(255, 0, 0, 0.14);
+    color: var(--brand-primary);
+    box-shadow: 0 12px 25px rgba(179, 0, 22, 0.18);
 }
 
 .menu-link.as-button {
     width: 100%;
     border: none;
-    background: rgba(255, 89, 89, 0.12);
-    color: #9a1f1f;
+    background: rgba(179, 0, 22, 0.12);
+    color: #7a0a14;
     justify-content: flex-start;
     text-align: left;
 }
 
 .menu-link.as-button:hover {
-    background: rgba(255, 89, 89, 0.22);
-    color: #721010;
-    box-shadow: 0 12px 24px rgba(255, 89, 89, 0.2);
+    background: rgba(179, 0, 22, 0.22);
+    color: #5c040c;
+    box-shadow: 0 12px 24px rgba(179, 0, 22, 0.2);
 }
 
 .logout-form {
@@ -52,8 +52,8 @@
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: rgba(15, 47, 58, 0.08);
-    color: #1c8f6d;
+    background: rgba(255, 0, 0, 0.12);
+    color: var(--brand-primary);
     font-size: 1rem;
 }
 
@@ -89,13 +89,13 @@
     padding: 0.6rem 1rem;
     border-radius: 14px;
     font-weight: 600;
-    color: rgba(15, 47, 58, 0.75);
-    background: rgba(28, 143, 109, 0.1);
+    color: rgba(0, 40, 85, 0.75);
+    background: rgba(0, 40, 85, 0.08);
 }
 
 .menu-user .menu-icon {
-    background: rgba(28, 143, 109, 0.18);
-    color: #0f2f3a;
+    background: rgba(255, 0, 0, 0.18);
+    color: var(--brand-primary);
 }
 
 @media (max-width: 1024px) {

@@ -59,26 +59,26 @@ public class PollyTtsService : ITtsService
             sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
         }
 
-        if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(secretKey))
-        {
-            throw new InvalidOperationException(
-                "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.");
-        }
-
-        if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey))
-        {
-            throw new InvalidOperationException(
-                "Las credenciales de AWS Polly están incompletas. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.");
-        }
-
         AWSCredentials credentials;
-        if (string.IsNullOrWhiteSpace(sessionToken))
+
+        if (!string.IsNullOrWhiteSpace(accessKey) && !string.IsNullOrWhiteSpace(secretKey))
         {
-            credentials = new BasicAWSCredentials(accessKey, secretKey);
+            credentials = string.IsNullOrWhiteSpace(sessionToken)
+                ? new BasicAWSCredentials(accessKey, secretKey)
+                : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
         }
         else
         {
-            credentials = new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+            try
+            {
+                credentials = FallbackCredentialsFactory.GetCredentials();
+            }
+            catch (AmazonClientException ex)
+            {
+                throw new InvalidOperationException(
+                    "Faltan credenciales de AWS. Configura AWS:AccessKeyId y AWS:SecretAccessKey en la configuración o define las variables de entorno AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY.",
+                    ex);
+            }
         }
 
         _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));

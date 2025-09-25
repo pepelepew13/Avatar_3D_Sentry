@@ -51,6 +51,35 @@ del control de versiones) con la sección `AWS`:
 
 En entornos productivos se recomienda usar perfiles compartidos de AWS o un
 servicio de gestión de secretos compatible.
+
+## Configurar AWS Polly
+
+Para habilitar la síntesis de voz real con Amazon Polly debes proporcionar
+credenciales válidas. **No** almacenes las llaves en el repositorio; usa variables
+de entorno o `dotnet user-secrets` durante el desarrollo.
+
+```bash
+export AWS_ACCESS_KEY_ID="<tu_access_key>"
+export AWS_SECRET_ACCESS_KEY="<tu_secret_key>"
+export AWS_REGION="us-east-1"  # opcional, por defecto us-east-1
+dotnet run
+```
+
+También puedes crear un archivo `appsettings.Development.json` local (excluido
+del control de versiones) con la sección `AWS`:
+
+```json
+{
+  "AWS": {
+    "Region": "us-east-1",
+    "AccessKeyId": "<tu_access_key>",
+    "SecretAccessKey": "<tu_secret_key>"
+  }
+}
+```
+
+En entornos productivos se recomienda usar perfiles compartidos de AWS o un
+servicio de gestión de secretos compatible.
 ## AvatarAdmin
 
 Para preparar la base de datos y ejecutar la aplicación de administración, puede

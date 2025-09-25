@@ -4,9 +4,9 @@ using Avatar_3D_Sentry.Middleware;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
@@ -74,15 +74,6 @@ builder.Services.AddSingleton<ITtsService>(sp =>
         return new NullTtsService();
     }
 });
-
-var connectionString = builder.Configuration.GetConnectionString("AvatarDatabase");
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException("No se encontró la cadena de conexión 'AvatarDatabase'.");
-}
-
-var configuredProvider = builder.Configuration["Database:Provider"];
-
 builder.Services.AddDbContext<AvatarContext>(opt =>
 {
     var provider = (configuredProvider ?? "Sqlite").Trim();

@@ -1,15 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&display=swap');
+
 :root {
-    --brand-primary: #1c8f6d;
-    --brand-secondary: #0f2f3a;
-    --brand-accent: #f5faf7;
-    --text-primary: #1b1d21;
-    --text-muted: #5c6c75;
-    --border-soft: #d9e2ec;
-    --shadow-soft: 0 20px 45px rgba(15, 47, 58, 0.12);
+    --brand-primary: #ff0000;
+    --brand-primary-dark: #b30016;
+    --brand-secondary: #666666;
+    --brand-highlight: #002855;
+    --brand-accent: #f5f6fa;
+    --text-primary: #1f1f1f;
+    --text-muted: #5b5b5b;
+    --border-soft: #e3e6eb;
+    --shadow-soft: 0 18px 40px rgba(0, 40, 85, 0.12);
 }
 
 html, body {
-    font-family: 'Poppins', 'Segoe UI', Tahoma, sans-serif;
+    font-family: 'Exo 2', 'Century Gothic', 'Segoe UI', Tahoma, sans-serif;
     background-color: var(--brand-accent);
     color: var(--text-primary);
     min-height: 100%;
@@ -20,7 +24,7 @@ a {
 }
 
 a:hover {
-    color: #157154;
+    color: var(--brand-primary-dark);
 }
 
 button,
@@ -31,16 +35,16 @@ button,
     font-weight: 600;
     border: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    background: linear-gradient(135deg, var(--brand-primary), #24a87f);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
     color: #fff;
-    box-shadow: 0 10px 25px rgba(28, 143, 109, 0.3);
+    box-shadow: 0 10px 26px rgba(179, 0, 22, 0.26);
 }
 
 button:hover,
 .btn:hover,
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 16px 30px rgba(28, 143, 109, 0.35);
+    box-shadow: 0 16px 32px rgba(179, 0, 22, 0.3);
     color: #fff;
 }
 
@@ -65,7 +69,7 @@ input:focus,
 select:focus,
 .form-control:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 0.2rem rgba(28, 143, 109, 0.2);
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.18);
 }
 
 .editor-page {
@@ -77,7 +81,7 @@ select:focus,
 
 .header-card {
     border-radius: 26px;
-    background: linear-gradient(135deg, var(--brand-primary), #105745);
+    background: linear-gradient(135deg, rgba(255, 0, 0, 0.95), rgba(179, 0, 22, 0.88));
     padding: clamp(1.75rem, 2vw + 1.5rem, 3.2rem);
     color: #f6fffb;
     box-shadow: var(--shadow-soft);
@@ -119,9 +123,9 @@ select:focus,
 }
 
 .selector-form label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.85);
     text-transform: uppercase;
 }
@@ -145,7 +149,7 @@ select:focus,
 }
 
 .editor-card h2 {
-    font-size: 1.2rem;
+    font-size: 1.18rem;
     font-weight: 700;
     margin-bottom: 0.25rem;
 }
@@ -166,7 +170,7 @@ select:focus,
     padding: 0.55rem 1.1rem;
     border-radius: 999px;
     border: 1px solid transparent;
-    background-color: #f0f5f3;
+    background-color: #f3f4f7;
     color: var(--text-muted);
     font-weight: 600;
     cursor: pointer;
@@ -174,10 +178,10 @@ select:focus,
 }
 
 .option-pill.active {
-    background: rgba(28, 143, 109, 0.12);
+    background: rgba(255, 0, 0, 0.12);
     color: var(--brand-primary);
-    border-color: rgba(28, 143, 109, 0.35);
-    box-shadow: 0 12px 24px rgba(28, 143, 109, 0.22);
+    border-color: rgba(255, 0, 0, 0.32);
+    box-shadow: 0 12px 28px rgba(179, 0, 22, 0.22);
 }
 
 .option-pill:hover {
@@ -213,8 +217,8 @@ select:focus,
 }
 
 .viewer-pill {
-    background: rgba(15, 47, 58, 0.55);
-    color: #f7fbfd;
+    background: rgba(0, 40, 85, 0.55);
+    color: #fefefe;
     padding: 0.45rem 0.9rem;
     border-radius: 999px;
     text-transform: uppercase;
@@ -238,12 +242,12 @@ select:focus,
     height: 86px;
     border-radius: 18px;
     overflow: hidden;
-    border: 2px solid rgba(255,255,255,0.6);
+    border: 2px solid rgba(255, 0, 0, 0.35);
     margin: 0.75rem auto 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.25);
     backdrop-filter: blur(4px);
 }
 
@@ -254,15 +258,15 @@ select:focus,
 }
 
 .preview-office {
-    background: linear-gradient(135deg, #013d4f, #086a63 55%, #45bba6);
+    background: linear-gradient(140deg, rgba(255, 0, 0, 0.88), rgba(179, 0, 22, 0.92) 55%, rgba(102, 102, 102, 0.95));
 }
 
 .preview-modern {
-    background: linear-gradient(135deg, #3d3265, #2f6690 50%, #54a6d6);
+    background: linear-gradient(140deg, rgba(0, 40, 85, 0.9), rgba(35, 62, 117, 0.92) 60%, rgba(102, 102, 102, 0.85));
 }
 
 .preview-nature {
-    background: linear-gradient(140deg, #345643, #2c7c62 55%, #9bd48f);
+    background: linear-gradient(140deg, rgba(255, 153, 0, 0.85), rgba(255, 87, 34, 0.8) 55%, rgba(255, 0, 0, 0.65));
 }
 
 .alert-panel {
@@ -276,9 +280,9 @@ select:focus,
 .success-panel {
     border-radius: 16px;
     padding: 0.85rem 1rem;
-    background: rgba(28, 143, 109, 0.12);
-    color: var(--brand-primary);
-    border: 1px solid rgba(28, 143, 109, 0.25);
+    background: rgba(0, 40, 85, 0.12);
+    color: var(--brand-highlight);
+    border: 1px solid rgba(0, 40, 85, 0.22);
 }
 
 small.form-text {
