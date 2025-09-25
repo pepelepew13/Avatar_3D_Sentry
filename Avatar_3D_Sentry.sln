@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36429.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avatar_3D_Sentry", "Avatar_3D_Sentry.csproj", "{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EE495EF9-1BA0-4F7D-945D-D664000732FD}
+	EndGlobalSection
+EndGlobal
