@@ -1,7 +1,553 @@
-﻿@page "/"
+@page "/"
+@using System.ComponentModel.DataAnnotations
+@implements IAsyncDisposable
+@inject AvatarApiClient ApiClient
+@inject ILogger<Home> Logger
+@inject IJSRuntime JS
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Panel del avatar</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="editor-page">
+    <section class="header-card">
+        <h1>Asistente 3D para turnos Sentry</h1>
+        <p>Personaliza el avatar que anunciará los turnos en sala: configura su vestimenta, idioma, voz, fondo y logo corporativo desde un mismo panel.</p>
 
-Welcome to your new app.
+        <EditForm class="selector-form" Model="@selector" OnValidSubmit="LoadConfigAsync">
+            <DataAnnotationsValidator />
+            <div class="input-group">
+                <label for="empresaInput">Empresa</label>
+                <InputText id="empresaInput" class="form-control" @bind-Value="selector.Empresa" placeholder="Ej. sentry" />
+                <ValidationMessage For="@(() => selector.Empresa)" />
+            </div>
+            <div class="input-group">
+                <label for="sedeInput">Sede</label>
+                <InputText id="sedeInput" class="form-control" @bind-Value="selector.Sede" placeholder="Ej. pereira" />
+                <ValidationMessage For="@(() => selector.Sede)" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@isLoading">@(isLoading ? "Cargando..." : "Cargar configuración")</button>
+        </EditForm>
+    </section>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert-panel">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="success-panel">@successMessage</div>
+    }
+
+    @if (config is null)
+    {
+        <section class="editor-card">
+            <h2>Comienza seleccionando una empresa</h2>
+            <p>Ingresa la empresa y la sede para cargar o crear una configuración. Podrás ajustar logo, idioma y apariencia inmediatamente.</p>
+        </section>
+    }
+    else
+    {
+        <div class="editor-grid">
+            <section class="editor-card">
+                <h2>Identidad corporativa</h2>
+                <p>Sube el logo que se aplicará a la camisa del avatar.</p>
+                <div class="preview-logo">
+                    @if (!string.IsNullOrEmpty(CurrentLogoUrl))
+                    {
+                        <img src="@CurrentLogoUrl" alt="Logo corporativo" />
+                    }
+                    else
+                    {
+                        <span>Logo</span>
+                    }
+                </div>
+                <InputFile OnChange="OnLogoSelectedAsync" accept="image/png,image/jpeg" disabled="@isSaving" />
+                <small class="form-text">Formatos PNG o JPG. Tamaño máximo 2 MB.</small>
+            </section>
+
+            <section class="editor-card">
+                <h2>Vestimenta</h2>
+                <p>Elige la ropa predeterminada que llevará el avatar.</p>
+                <div class="option-pills">
+                    @foreach (var outfit in Outfits)
+                    {
+                        var active = outfit.Value.Equals(config.Vestimenta, StringComparison.OrdinalIgnoreCase);
+                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectOutfitAsync(outfit.Value)" disabled="@isSaving">@outfit.Label</button>
+                    }
+                </div>
+                <small class="form-text">Las prendas son modelos preparados por el equipo 3D y se aplican instantáneamente al avatar.</small>
+            </section>
+
+            <section class="editor-card">
+                <h2>Voz e idioma</h2>
+                <p>Selecciona el idioma neutro y la voz que usará el TTS.</p>
+                <div class="mb-3">
+                    <label class="form-label">Idioma</label>
+                    <select class="form-control" value="@config.Idioma" @onchange="OnLanguageChangedAsync" disabled="@isSaving">
+                        @foreach (var language in Languages)
+                        {
+                            <option value="@language.Value">@language.Label</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Voz</label>
+                    <select class="form-control" value="@config.Voz" @onchange="OnVoiceChangedAsync" disabled="@isSaving || !AvailableVoices.Any()">
+                        @if (!AvailableVoices.Any())
+                        {
+                            <option value="">Sin voces disponibles</option>
+                        }
+                        else
+                        {
+                            @foreach (var voice in AvailableVoices)
+                            {
+                                <option value="@voice">@voice</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <small class="form-text">Puedes cambiar el proveedor TTS más adelante. Las voces listadas están optimizadas para español, portugués e inglés neutro.</small>
+            </section>
+
+            <section class="editor-card">
+                <h2>Fondo y vista previa</h2>
+                <p>Escoge un entorno que acompañe al avatar y revisa la vista previa.</p>
+                <div class="option-pills">
+                    @foreach (var background in Backgrounds)
+                    {
+                        var active = background.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase);
+                        <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectBackgroundAsync(background.Value)" disabled="@isSaving">@background.Label</button>
+                    }
+                </div>
+                <div class="@GetPreviewClass()">
+                    <canvas class="avatar-viewer-canvas" @ref="avatarCanvasRef"></canvas>
+                    <div class="viewer-overlay">
+                        <div class="viewer-pill">@GetLanguageLabel(config.Idioma)</div>
+                        <div class="viewer-pill">@(string.IsNullOrWhiteSpace(config.Voz) ? "Sin voz" : config.Voz)</div>
+                    </div>
+                </div>
+                <div class="viewer-actions">
+                    <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">@(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")</button>
+                </div>
+            </section>
+        </div>
+    }
+</div>
+
+@code {
+    private const long MaxLogoSize = 2 * 1024 * 1024;
+    private const string DefaultProvider = "polly";
+
+    private readonly SelectorModel selector = new();
+    private AvatarConfigDto? config;
+    private IReadOnlyDictionary<string, IReadOnlyList<string>> voiceCatalog = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool viewerInitialized;
+    private bool pendingViewerUpdate;
+    private ElementReference avatarCanvasRef;
+    private bool hasRenderedOnce;
+    private bool isPreviewPlaying;
+
+    private static readonly IReadOnlyList<OptionItem> Outfits = new List<OptionItem>
+    {
+        new("corporativo", "Corporativo clásico"),
+        new("ejecutivo", "Ejecutivo verde"),
+        new("casual", "Servicio al cliente")
+    };
+
+    private static readonly IReadOnlyList<OptionItem> Backgrounds = new List<OptionItem>
+    {
+        new("oficina", "Lobby corporativo", "preview-office"),
+        new("moderno", "Sala moderna", "preview-modern"),
+        new("naturaleza", "Exterior natural", "preview-nature")
+    };
+
+    private static readonly IReadOnlyList<LanguageOption> Languages = new List<LanguageOption>
+    {
+        new("es", "Español neutro"),
+        new("pt", "Portugués (Brasil)"),
+        new("en", "Inglés internacional")
+    };
+
+    private IEnumerable<string> AvailableVoices
+    {
+        get
+        {
+            if (config is null)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            var idioma = string.IsNullOrWhiteSpace(config.Idioma) ? Languages[0].Value : config.Idioma;
+            return voiceCatalog.TryGetValue(idioma, out var voices) ? voices : Enumerable.Empty<string>();
+        }
+    }
+
+    private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
+    private string ModelUrl => ApiClient.BuildAssetUrl("models/Avatar.glb") ?? "models/Avatar.glb";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVoicesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        hasRenderedOnce = true;
+
+        if (config is null)
+        {
+            return;
+        }
+
+        if (!viewerInitialized || pendingViewerUpdate)
+        {
+            pendingViewerUpdate = false;
+            await InitializeOrUpdateViewerAsync();
+        }
+    }
+
+    private async Task LoadVoicesAsync()
+    {
+        try
+        {
+            voiceCatalog = await ApiClient.GetVoicesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "No fue posible obtener el catálogo de voces.");
+            voiceCatalog = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private async Task LoadConfigAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            selector.Trim();
+            var result = await ApiClient.GetConfigAsync(selector.Empresa, selector.Sede);
+            config = result;
+            NormalizeConfig();
+            successMessage = "Configuración cargada correctamente.";
+            RequestViewerRefresh();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar la configuración de avatar");
+            errorMessage = "No fue posible obtener la configuración. Verifica la API y vuelve a intentarlo.";
+            config = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NormalizeConfig()
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(config.ProveedorTts))
+        {
+            config.ProveedorTts = DefaultProvider;
+        }
+
+        if (string.IsNullOrWhiteSpace(config.Idioma))
+        {
+            config.Idioma = Languages[0].Value;
+        }
+
+        if (!voiceCatalog.TryGetValue(config.Idioma, out var voices) || voices.Count == 0)
+        {
+            config.Voz = null;
+        }
+        else if (string.IsNullOrWhiteSpace(config.Voz) || !voices.Contains(config.Voz))
+        {
+            config.Voz = voices[0];
+        }
+
+        if (string.IsNullOrWhiteSpace(config.Vestimenta))
+        {
+            config.Vestimenta = Outfits[0].Value;
+        }
+
+        if (string.IsNullOrWhiteSpace(config.Fondo))
+        {
+            config.Fondo = Backgrounds[0].Value;
+        }
+    }
+
+    private async Task PersistConfigAsync(string successText)
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var update = new AvatarConfigUpdate
+            {
+                Vestimenta = config.Vestimenta,
+                Fondo = config.Fondo,
+                ProveedorTts = config.ProveedorTts ?? DefaultProvider,
+                Voz = config.Voz,
+                Idioma = config.Idioma
+            };
+
+            config = await ApiClient.UpdateConfigAsync(selector.Empresa, selector.Sede, update);
+            NormalizeConfig();
+            successMessage = successText;
+            RequestViewerRefresh();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al guardar la configuración");
+            errorMessage = "Ocurrió un problema al guardar los cambios. Por favor, intenta nuevamente.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task OnLogoSelectedAsync(InputFileChangeEventArgs args)
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        var file = args.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        if (file.Size > MaxLogoSize)
+        {
+            errorMessage = "El archivo supera el tamaño permitido (2 MB).";
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxLogoSize);
+            var path = await ApiClient.UploadLogoAsync(selector.Empresa, selector.Sede, stream, file.Name, file.ContentType ?? "application/octet-stream");
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                config.LogoPath = path;
+                successMessage = "Logo actualizado correctamente.";
+                RequestViewerRefresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al subir el logo");
+            errorMessage = "No fue posible subir el logo. Verifica el formato y vuelve a intentarlo.";
+        }
+    }
+
+    private async Task SelectOutfitAsync(string value)
+    {
+        if (config is null || string.Equals(config.Vestimenta, value, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.Vestimenta = value;
+        await PersistConfigAsync("Vestimenta actualizada.");
+    }
+
+    private async Task SelectBackgroundAsync(string value)
+    {
+        if (config is null || string.Equals(config.Fondo, value, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.Fondo = value;
+        await PersistConfigAsync("Fondo actualizado.");
+    }
+
+    private async Task OnLanguageChangedAsync(ChangeEventArgs args)
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        var selected = args.Value?.ToString() ?? Languages[0].Value;
+        if (string.Equals(config.Idioma, selected, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.Idioma = selected;
+        NormalizeConfig();
+        await PersistConfigAsync("Idioma actualizado.");
+    }
+
+    private async Task OnVoiceChangedAsync(ChangeEventArgs args)
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        var selected = args.Value?.ToString();
+        if (string.Equals(config.Voz, selected, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.Voz = string.IsNullOrWhiteSpace(selected) ? null : selected;
+        await PersistConfigAsync("Voz actualizada.");
+    }
+
+    private string GetPreviewClass()
+    {
+        if (config is null)
+        {
+            return $"preview-stage {Backgrounds[0].CssClass}";
+        }
+
+        var match = Backgrounds.FirstOrDefault(b => b.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase));
+        return $"preview-stage {match?.CssClass ?? Backgrounds[0].CssClass}";
+    }
+
+    private static string GetLanguageLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Languages[0].Label;
+        }
+
+        var match = Languages.FirstOrDefault(l => l.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
+        return match?.Label ?? Languages[0].Label;
+    }
+
+    private async Task InitializeOrUpdateViewerAsync()
+    {
+        if (config is null || !hasRenderedOnce)
+        {
+            return;
+        }
+
+        try
+        {
+            var options = new
+            {
+                modelUrl = ModelUrl,
+                logoUrl = CurrentLogoUrl,
+                outfit = config.Vestimenta,
+                background = config.Fondo,
+                hairColor = (string?)null
+            };
+
+            if (!viewerInitialized)
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.init", avatarCanvasRef, options);
+                viewerInitialized = true;
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", options);
+            }
+        }
+        catch (JSException jsEx)
+        {
+            Logger.LogError(jsEx, "No fue posible inicializar el visor 3D del avatar");
+            errorMessage ??= "El visor 3D no pudo inicializarse. Revisa la consola del navegador.";
+        }
+    }
+
+    private void RequestViewerRefresh()
+    {
+        if (config is null)
+        {
+            return;
+        }
+
+        pendingViewerUpdate = true;
+        if (hasRenderedOnce)
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task PlayPreviewAsync()
+    {
+        if (!viewerInitialized)
+        {
+            return;
+        }
+
+        if (isPreviewPlaying)
+        {
+            await JS.InvokeVoidAsync("AvatarViewer.stopTalking");
+            isPreviewPlaying = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await JS.InvokeVoidAsync("AvatarViewer.playTalking", 2600);
+        isPreviewPlaying = true;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(2600);
+            isPreviewPlaying = false;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (viewerInitialized)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.dispose");
+            }
+            catch (JSException)
+            {
+                // Ignorar errores de limpieza cuando la página ya se está cerrando.
+            }
+        }
+    }
+
+    private sealed class SelectorModel
+    {
+        [Required(ErrorMessage = "La empresa es obligatoria.")]
+        [MaxLength(64, ErrorMessage = "Máximo 64 caracteres.")]
+        public string Empresa { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La sede es obligatoria.")]
+        [MaxLength(64, ErrorMessage = "Máximo 64 caracteres.")]
+        public string Sede { get; set; } = string.Empty;
+
+        public void Trim()
+        {
+            Empresa = Empresa.Trim();
+            Sede = Sede.Trim();
+        }
+    }
+
+    private sealed record OptionItem(string Value, string Label, string? CssClass = null);
+
+    private sealed record LanguageOption(string Value, string Label);
+}

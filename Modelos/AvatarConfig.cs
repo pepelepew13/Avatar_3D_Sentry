@@ -35,5 +35,10 @@ public class AvatarConfig
     /// Voz empleada al generar el audio del avatar.
     /// </summary>
     public string? Voz { get; set; }
+
+    /// <summary>
+    /// Idioma preferido para la narración del avatar.
+    /// </summary>
+    public string? Idioma { get; set; }
 }
 
