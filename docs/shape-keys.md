@@ -31,3 +31,5 @@ blender --background --python scripts/generate_shape_keys.py
 ```
 
 El archivo generado se guardará en `wwwroot/models/avatar_shape_keys.glb`.
+
+> **Nota:** Los archivos `.glb` se excluyen del repositorio para evitar incrementar su tamaño. Tras generar el modelo, guárdalo en la ruta indicada de tu copia local antes de ejecutar el visor del avatar.
