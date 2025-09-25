@@ -108,6 +108,8 @@ public class AvatarEditorController : ControllerBase
         config.Fondo = request.Fondo;
         config.ProveedorTts = request.ProveedorTts;
         config.Voz = request.Voz;
+        config.Idioma = request.Idioma;
+        config.ColorCabello = request.ColorCabello;
 
         await _context.SaveChangesAsync();
 
@@ -136,6 +138,9 @@ public class AvatarEditorController : ControllerBase
         public string? Fondo { get; set; }
         public string? ProveedorTts { get; set; }
         public string? Voz { get; set; }
+        public string? Idioma { get; set; }
+
+        public string? ColorCabello { get; set; }
     }
 }
 
