@@ -115,9 +115,11 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AvatarContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     if (db.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
     {
         db.Database.Migrate();
+        EnsureColorCabelloColumn(db, logger);
     }
 }
 
@@ -152,5 +154,66 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+void EnsureColorCabelloColumn(AvatarContext context, ILogger logger)
+{
+    try
+    {
+        var connection = context.Database.GetDbConnection();
+        if (connection is not SqliteConnection sqliteConnection)
+        {
+            return;
+        }
+
+        var shouldClose = connection.State != System.Data.ConnectionState.Open;
+        if (shouldClose)
+        {
+            sqliteConnection.Open();
+        }
+
+        try
+        {
+            using var tableCommand = sqliteConnection.CreateCommand();
+            tableCommand.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='AvatarConfigs';";
+            var tableExists = tableCommand.ExecuteScalar() is string;
+            if (!tableExists)
+            {
+                return;
+            }
+
+            using var pragmaCommand = sqliteConnection.CreateCommand();
+            pragmaCommand.CommandText = "PRAGMA table_info('AvatarConfigs');";
+            using var reader = pragmaCommand.ExecuteReader();
+            var hasColumn = false;
+            while (reader.Read())
+            {
+                if (reader.FieldCount > 1 && string.Equals(reader.GetString(1), "ColorCabello", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasColumn = true;
+                    break;
+                }
+            }
+
+            if (!hasColumn)
+            {
+                using var alterCommand = sqliteConnection.CreateCommand();
+                alterCommand.CommandText = "ALTER TABLE \"AvatarConfigs\" ADD COLUMN \"ColorCabello\" TEXT NULL;";
+                alterCommand.ExecuteNonQuery();
+                logger.LogInformation("Se agregó la columna ColorCabello a la tabla AvatarConfigs.");
+            }
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                sqliteConnection.Close();
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "No fue posible asegurar la columna ColorCabello en AvatarConfigs.");
+    }
+}
 
 public partial class Program {}
