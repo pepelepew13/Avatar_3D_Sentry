@@ -4,6 +4,7 @@ using Avatar_3D_Sentry.Middleware;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
@@ -128,11 +129,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
-app.UseStaticFiles(new StaticFileOptions
+var resourcesPath = Path.Combine(app.Environment.ContentRootPath, "Resources");
+if (Directory.Exists(resourcesPath))
 {
-    FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "Resources")),
-    RequestPath = "/Resources"
-});
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(resourcesPath),
+        RequestPath = "/resources"
+    });
+}
 app.UseHttpsRedirection();
 if (requerirToken)
 {

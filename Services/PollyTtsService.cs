@@ -65,9 +65,15 @@ public class PollyTtsService : ITtsService
             sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
         }
 
-        var credentials = string.IsNullOrWhiteSpace(sessionToken)
-            ? new BasicAWSCredentials(accessKey, secretKey)
-            : new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        AWSCredentials credentials;
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            credentials = new BasicAWSCredentials(accessKey, secretKey);
+        }
+        else
+        {
+            credentials = new SessionAWSCredentials(accessKey, secretKey, sessionToken);
+        }
 
         _client = new AmazonPollyClient(credentials, RegionEndpoint.GetBySystemName(regionName));
     }
