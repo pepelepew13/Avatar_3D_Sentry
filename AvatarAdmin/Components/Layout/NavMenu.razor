@@ -2,42 +2,61 @@
 
 @inject NavigationManager NavigationManager
 
-<nav class="menu-groups">
-    <section class="menu-group">
-        <p class="menu-title">Panel</p>
-        <NavLink class="menu-link" href="" Match="NavLinkMatch.All">
-            <span class="menu-icon menu-icon-home" aria-hidden="true"></span>
+<nav class="nav-shell">
+    <header class="nav-brand">
+        <p class="nav-brand-title">Sentry · Panel de avatar 3D</p>
+        <p class="nav-brand-subtitle">Personalización corporativa</p>
+    </header>
+
+    <section class="nav-card">
+        <div class="nav-card-header">
+            <span class="nav-card-icon nav-card-icon-panel" aria-hidden="true"></span>
+            <div>
+                <p class="nav-card-title">Panel</p>
+                <p class="nav-card-description">Accede al editor principal</p>
+            </div>
+        </div>
+        <NavLink class="nav-card-link" href="" Match="NavLinkMatch.All">
+            <span class="nav-card-link-icon nav-card-link-icon-home" aria-hidden="true"></span>
             <span>Panel principal</span>
         </NavLink>
     </section>
 
     <AuthorizeView>
         <Authorized>
-            <section class="menu-group">
-                <p class="menu-title">Tu sesión</p>
-                <div class="menu-user">
-                    <span class="menu-icon menu-icon-user" aria-hidden="true"></span>
-                    <span>@context.User.Identity?.Name</span>
+            <section class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-card-icon nav-card-icon-session" aria-hidden="true"></span>
+                    <div>
+                        <p class="nav-card-title">Tu sesión</p>
+                        <p class="nav-card-description">@context.User.Identity?.Name</p>
+                    </div>
                 </div>
-                <form action="Account/Logout" method="post" class="logout-form">
+                <form action="Account/Logout" method="post" class="nav-card-form">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                    <button type="submit" class="menu-link as-button">
-                        <span class="menu-icon menu-icon-logout" aria-hidden="true"></span>
-                        <span>Salir</span>
+                    <button type="submit" class="nav-card-link as-button">
+                        <span class="nav-card-link-icon nav-card-link-icon-logout" aria-hidden="true"></span>
+                        <span>Cerrar sesión</span>
                     </button>
                 </form>
             </section>
         </Authorized>
         <NotAuthorized>
-            <section class="menu-group">
-                <p class="menu-title">Acceso</p>
-                <NavLink class="menu-link" href="Account/Login">
-                    <span class="menu-icon menu-icon-login" aria-hidden="true"></span>
+            <section class="nav-card">
+                <div class="nav-card-header">
+                    <span class="nav-card-icon nav-card-icon-access" aria-hidden="true"></span>
+                    <div>
+                        <p class="nav-card-title">Acceso</p>
+                        <p class="nav-card-description">Gestiona tu cuenta</p>
+                    </div>
+                </div>
+                <NavLink class="nav-card-link" href="Account/Login">
+                    <span class="nav-card-link-icon nav-card-link-icon-login" aria-hidden="true"></span>
                     <span>Iniciar sesión</span>
                 </NavLink>
-                <NavLink class="menu-link" href="Account/Register">
-                    <span class="menu-icon menu-icon-register" aria-hidden="true"></span>
+                <NavLink class="nav-card-link" href="Account/Register">
+                    <span class="nav-card-link-icon nav-card-link-icon-register" aria-hidden="true"></span>
                     <span>Crear cuenta</span>
                 </NavLink>
             </section>
