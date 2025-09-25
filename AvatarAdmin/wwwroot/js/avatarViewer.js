@@ -24,7 +24,9 @@
         ready: false,
         pendingAppearance: null,
         resizeHandler: null,
-        animationFrame: null
+        animationFrame: null,
+        currentModelUrl: null,
+        loadToken: 0
     };
 
     const backgroundPresets = {
@@ -33,28 +35,38 @@
         naturaleza: { background: 0xe9f7ef, ground: 0xd5ecda, rim: 0xc2dfca }
     };
 
-    const outfitPalettes = {
-        corporativo: {
-            shirt: 0xf6f9ff,
-            pants: 0xc8b59b,
-            shoes: 0x2f2f35,
-            accessories: 0x274c77,
-            hair: 0x452c25
+    const outfitPresets = {
+        predeterminado: {
+            model: "models/AvatarReWork.glb",
+            palette: {
+                shirt: 0xf6f9ff,
+                pants: 0xc8b59b,
+                shoes: 0x2f2f35,
+                accessories: 0x274c77,
+                hair: 0x452c25
+            },
+            applyColors: true
         },
-        ejecutivo: {
-            shirt: 0xe9f3ef,
-            pants: 0x1b3c59,
-            shoes: 0x141921,
-            accessories: 0x2a6f6f,
-            hair: 0x33221d
+        traje: {
+            model: "models/traje.glb",
+            palette: {
+                hair: 0x33221d
+            },
+            applyColors: false
         },
-        casual: {
-            shirt: 0xfdf2e9,
-            pants: 0x4b5a6b,
-            shoes: 0x3a2f2b,
-            accessories: 0xb85c38,
-            hair: 0x503129
+        vestido: {
+            model: "models/vestido.glb",
+            palette: {
+                hair: 0x503129
+            },
+            applyColors: false
         }
+    };
+
+    const outfitAliases = {
+        corporativo: "predeterminado",
+        ejecutivo: "traje",
+        casual: "vestido"
     };
 
     const logoMaterialNames = ["avaturn_look_0.002", "logo", "avatar_logo"];
@@ -64,11 +76,34 @@
     const accessoryHints = ["tie", "belt", "accessory"];
     const hairMaterialNames = ["avaturn_hair_1", "hair"];
 
+    function normalizeOutfitKey(key) {
+        if (!key) {
+            return "predeterminado";
+        }
+        const lowered = String(key).toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(outfitPresets, lowered)) {
+            return lowered;
+        }
+        if (Object.prototype.hasOwnProperty.call(outfitAliases, lowered)) {
+            return outfitAliases[lowered];
+        }
+        return "predeterminado";
+    }
+
+    function resolveModelUrl(outfitKey) {
+        const normalized = normalizeOutfitKey(outfitKey);
+        const preset = outfitPresets[normalized] || outfitPresets.predeterminado;
+        return preset.model;
+    }
+
     function init(canvas, options) {
         if (!canvas || typeof THREE === "undefined") {
             console.warn("AvatarViewer: no canvas or THREE not loaded");
             return;
         }
+
+        state.loadToken = 0;
+        state.currentModelUrl = null;
 
         if (state.renderer) {
             updateAppearance(options);
@@ -120,14 +155,30 @@
     function loadModel(options) {
         const loader = new THREE.GLTFLoader();
         loader.setCrossOrigin("anonymous");
-        const modelUrl = options && options.modelUrl ? options.modelUrl : "models/Avatar.glb";
 
-        loader.load(modelUrl,
+        const normalized = Object.assign({}, options || {});
+        normalized.outfit = normalizeOutfitKey(normalized.outfit);
+        normalized.modelUrl = normalized.modelUrl || resolveModelUrl(normalized.outfit);
+
+        const requestId = ++state.loadToken;
+        state.ready = false;
+        state.pendingAppearance = normalized;
+
+        disposeCurrentModel();
+
+        loader.load(normalized.modelUrl,
             (gltf) => {
+                if (requestId !== state.loadToken) {
+                    disposeGltfScene(gltf);
+                    return;
+                }
+
                 state.root = gltf.scene;
+                state.currentModelUrl = normalized.modelUrl;
                 state.scene.add(state.root);
                 state.mixer = new THREE.AnimationMixer(state.root);
 
+                state.materials.clear();
                 gltf.scene.traverse((child) => {
                     if (child.isMesh || child.isSkinnedMesh) {
                         if (child.morphTargetDictionary && !state.skinnedMesh) {
@@ -159,15 +210,89 @@
 
                 centerModel();
                 state.ready = true;
-                const appearance = state.pendingAppearance || options || {};
-                applyAppearance(appearance);
+                applyAppearance(state.pendingAppearance);
             },
             undefined,
             (err) => {
-                console.error("AvatarViewer: error al cargar el modelo", err);
-                state.ready = false;
+                if (requestId === state.loadToken) {
+                    console.error("AvatarViewer: error al cargar el modelo", err);
+                    state.ready = false;
+                    state.currentModelUrl = null;
+                }
             }
         );
+    }
+
+    function disposeCurrentModel() {
+        if (state.root && state.scene) {
+            state.scene.remove(state.root);
+        }
+
+        if (state.root) {
+            state.root.traverse((child) => {
+                if (child.isMesh || child.isSkinnedMesh) {
+                    if (child.geometry && typeof child.geometry.dispose === "function") {
+                        child.geometry.dispose();
+                    }
+
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    materials.forEach(disposeMaterial);
+                }
+            });
+        }
+
+        state.loadedTextures.forEach((tex) => {
+            if (tex && typeof tex.dispose === "function") {
+                tex.dispose();
+            }
+        });
+        state.loadedTextures.clear();
+
+        state.materials.clear();
+        state.mixer = null;
+        state.skinnedMesh = null;
+        state.morphDictionary = null;
+        state.eyeAction = null;
+        state.talkingAction = null;
+        state.root = null;
+        state.currentModelUrl = null;
+    }
+
+    function disposeMaterial(material) {
+        if (!material) {
+            return;
+        }
+
+        if (Array.isArray(material)) {
+            material.forEach(disposeMaterial);
+            return;
+        }
+
+        if (material.map && typeof material.map.dispose === "function") {
+            material.map.dispose();
+            material.map = null;
+        }
+
+        if (typeof material.dispose === "function") {
+            material.dispose();
+        }
+    }
+
+    function disposeGltfScene(gltf) {
+        if (!gltf || !gltf.scene) {
+            return;
+        }
+
+        gltf.scene.traverse((child) => {
+            if (child.isMesh || child.isSkinnedMesh) {
+                if (child.geometry && typeof child.geometry.dispose === "function") {
+                    child.geometry.dispose();
+                }
+
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(disposeMaterial);
+            }
+        });
     }
 
     function centerModel() {
@@ -187,9 +312,23 @@
     }
 
     function updateAppearance(options) {
-        state.pendingAppearance = options;
+        if (!options) {
+            return;
+        }
+
+        const normalized = Object.assign({}, options);
+        normalized.outfit = normalizeOutfitKey(normalized.outfit);
+        normalized.modelUrl = normalized.modelUrl || resolveModelUrl(normalized.outfit);
+
+        state.pendingAppearance = normalized;
+
+        if (!state.currentModelUrl || normalized.modelUrl !== state.currentModelUrl) {
+            loadModel(normalized);
+            return;
+        }
+
         if (state.ready) {
-            applyAppearance(options);
+            applyAppearance(normalized);
         }
     }
 
@@ -198,12 +337,23 @@
             return;
         }
 
-        state.pendingAppearance = options;
-        applyBackground(options.background);
-        applyOutfit(options.outfit);
-        applyLogo(options.logoUrl);
-        if (Object.prototype.hasOwnProperty.call(options, "hairColor") && options.hairColor !== null && typeof options.hairColor !== "undefined") {
-            applyHairColor(options.hairColor);
+        const normalized = Object.assign({}, options);
+        normalized.outfit = normalizeOutfitKey(normalized.outfit);
+
+        state.pendingAppearance = normalized;
+
+        applyBackground(normalized.background);
+        const fallbackHair = applyOutfit(normalized.outfit);
+        applyLogo(normalized.logoUrl);
+
+        const hasExplicitHair = Object.prototype.hasOwnProperty.call(normalized, "hairColor")
+            && normalized.hairColor !== null
+            && typeof normalized.hairColor !== "undefined";
+
+        if (hasExplicitHair) {
+            applyHairColor(normalized.hairColor);
+        } else if (typeof fallbackHair === "number") {
+            applyHairColor(fallbackHair);
         }
     }
 
@@ -218,27 +368,31 @@
     }
 
     function applyOutfit(key) {
-        const palette = outfitPalettes[key] || outfitPalettes.corporativo;
-        const shirtMat = findMaterial(shirtMaterialHints);
-        const pantsMat = findMaterial(pantsMaterialHints);
-        const shoeMat = findMaterial(shoeMaterialHints);
-        const accessoryMat = findMaterial(accessoryHints);
+        const normalized = normalizeOutfitKey(key);
+        const preset = outfitPresets[normalized] || outfitPresets.predeterminado;
+        const palette = preset.palette || {};
 
-        if (shirtMat && palette.shirt) {
-            setMaterialColor(shirtMat, palette.shirt);
+        if (preset.applyColors !== false) {
+            const shirtMat = findMaterial(shirtMaterialHints);
+            const pantsMat = findMaterial(pantsMaterialHints);
+            const shoeMat = findMaterial(shoeMaterialHints);
+            const accessoryMat = findMaterial(accessoryHints);
+
+            if (shirtMat && palette.shirt) {
+                setMaterialColor(shirtMat, palette.shirt);
+            }
+            if (pantsMat && palette.pants) {
+                setMaterialColor(pantsMat, palette.pants);
+            }
+            if (shoeMat && palette.shoes) {
+                setMaterialColor(shoeMat, palette.shoes);
+            }
+            if (accessoryMat && palette.accessories) {
+                setMaterialColor(accessoryMat, palette.accessories);
+            }
         }
-        if (pantsMat && palette.pants) {
-            setMaterialColor(pantsMat, palette.pants);
-        }
-        if (shoeMat && palette.shoes) {
-            setMaterialColor(shoeMat, palette.shoes);
-        }
-        if (accessoryMat && palette.accessories) {
-            setMaterialColor(accessoryMat, palette.accessories);
-        }
-        if (palette.hair) {
-            applyHairColor(palette.hair);
-        }
+
+        return typeof palette.hair === "number" ? palette.hair : null;
     }
 
     function applyHairColor(color) {
@@ -442,6 +596,8 @@
             global.removeEventListener("resize", state.resizeHandler);
         }
 
+        disposeCurrentModel();
+
         if (state.controls) {
             state.controls.dispose();
         }
@@ -450,22 +606,14 @@
             state.renderer.dispose();
         }
 
-        state.loadedTextures.forEach(tex => tex && tex.dispose());
-        state.loadedTextures.clear();
-
         state.canvas = null;
         state.renderer = null;
         state.scene = null;
         state.camera = null;
         state.controls = null;
         state.mixer = null;
-        state.eyeAction = null;
-        state.talkingAction = null;
-        state.root = null;
-        state.skinnedMesh = null;
-        state.morphDictionary = null;
-        state.materials.clear();
         state.ready = false;
+        state.pendingAppearance = null;
     }
 
     AvatarViewer.init = init;

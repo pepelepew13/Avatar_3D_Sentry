@@ -86,3 +86,17 @@ El logotipo que aparece en la cabecera del panel no se versiona para evitar
 subir binarios innecesarios. Copia manualmente el archivo proporcionado por el
 equipo de diseño en la ruta `AvatarAdmin/wwwroot/img/Logo_Sentry.png` antes de
 compilar. Si necesitas cambiarlo, reemplaza el archivo en esa misma ubicación.
+
+## Modelos 3D del avatar
+
+El repositorio solo contiene el código para cargar los modelos del avatar. Para
+visualizarlos en el panel de administración debes copiar los archivos `.glb`
+generados por el equipo 3D en la carpeta `wwwroot/models/` del proyecto
+principal:
+
+- `wwwroot/models/Avatar.glb` (uniforme corporativo predeterminado)
+- `wwwroot/models/traje.glb` (versión con traje ejecutivo)
+- `wwwroot/models/vestido.glb` (versión con vestido formal)
+
+Al cambiar las prendas desde el panel, el visor 3D recargará automáticamente el
+modelo correspondiente siempre que los archivos existan en esa ruta.

@@ -164,11 +164,18 @@
     private bool hasRenderedOnce;
     private bool isPreviewPlaying;
 
-    private static readonly IReadOnlyList<OptionItem> Outfits = new List<OptionItem>
+    private static readonly IReadOnlyList<OutfitOption> Outfits = new List<OutfitOption>
     {
-        new("corporativo", "Corporativo clásico"),
-        new("ejecutivo", "Ejecutivo verde"),
-        new("casual", "Servicio al cliente")
+        new("predeterminado", "Uniforme corporativo", "models/Avatar.glb"),
+        new("traje", "Traje ejecutivo", "models/traje.glb"),
+        new("vestido", "Vestido formal", "models/vestido.glb")
+    };
+
+    private static readonly IReadOnlyDictionary<string, string> LegacyOutfitMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["corporativo"] = "predeterminado",
+        ["ejecutivo"] = "traje",
+        ["casual"] = "vestido"
     };
 
     private static readonly IReadOnlyList<HairColorOption> HairColors = new List<HairColorOption>
@@ -208,9 +215,39 @@
     }
 
     private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
-    private string ModelUrl => ApiClient.BuildAssetUrl("models/AvatarReWork.glb")
-        ?? ApiClient.BuildAssetUrl("models/Avatar.glb")
-        ?? "models/AvatarReWork.glb";
+    private string GetModelUrlForCurrentConfig() => GetModelUrlForOutfit(config?.Vestimenta);
+
+    private string GetModelUrlForOutfit(string? outfit)
+    {
+        var option = FindOutfitOption(outfit);
+        var path = option.ModelPath;
+        return ApiClient.BuildAssetUrl(path) ?? path;
+    }
+
+    private static OutfitOption FindOutfitOption(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            var match = Outfits.FirstOrDefault(o => o.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                return match;
+            }
+
+            if (LegacyOutfitMap.TryGetValue(value, out var mapped))
+            {
+                var mappedOption = Outfits.FirstOrDefault(o => o.Value.Equals(mapped, StringComparison.OrdinalIgnoreCase));
+                if (mappedOption is not null)
+                {
+                    return mappedOption;
+                }
+            }
+        }
+
+        return Outfits[0];
+    }
+
+    private static string NormalizeOutfit(string? value) => FindOutfitOption(value).Value;
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,10 +336,7 @@
             config.Voz = voices[0];
         }
 
-        if (string.IsNullOrWhiteSpace(config.Vestimenta))
-        {
-            config.Vestimenta = Outfits[0].Value;
-        }
+        config.Vestimenta = NormalizeOutfit(config.Vestimenta);
 
         if (string.IsNullOrWhiteSpace(config.Fondo))
         {
@@ -393,12 +427,18 @@
 
     private async Task SelectOutfitAsync(string value)
     {
-        if (config is null || string.Equals(config.Vestimenta, value, StringComparison.OrdinalIgnoreCase))
+        if (config is null)
         {
             return;
         }
 
-        config.Vestimenta = value;
+        var normalized = NormalizeOutfit(value);
+        if (string.Equals(config.Vestimenta, normalized, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        config.Vestimenta = normalized;
         await PersistConfigAsync("Vestimenta actualizada.");
     }
 
@@ -492,7 +532,7 @@
         {
             var options = new
             {
-                modelUrl = ModelUrl,
+                modelUrl = GetModelUrlForCurrentConfig(),
                 logoUrl = CurrentLogoUrl,
                 outfit = config.Vestimenta,
                 background = config.Fondo,
@@ -597,6 +637,8 @@
             Sede = Sede.Trim();
         }
     }
+
+    private sealed record OutfitOption(string Value, string Label, string ModelPath);
 
     private sealed record OptionItem(string Value, string Label, string? CssClass = null);
 
