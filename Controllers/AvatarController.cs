@@ -4,6 +4,7 @@ using System.Linq;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
+using Amazon.Runtime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
