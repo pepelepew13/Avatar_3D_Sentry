@@ -14,5 +14,14 @@ public class AvatarContext : DbContext
     }
 
     public DbSet<AvatarConfig> AvatarConfigs => Set<AvatarConfig>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AvatarConfig>()
+            .HasIndex(config => new { config.Empresa, config.Sede })
+            .IsUnique();
+
+        base.OnModelCreating(modelBuilder);
+    }
 }
 
