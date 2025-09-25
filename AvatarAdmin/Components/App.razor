@@ -1,10 +1,13 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="AvatarAdmin.styles.css" />
@@ -13,7 +16,10 @@
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js" integrity="sha512-8gYwE5WTd3yU6rp7Y8Onj6VVwu3MMpW8BtCqRr1ziMOPqlmkavRKu0kOU/Y79NRlqZrb8KrQ6N8m5soN06fQKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/examples/js/loaders/GLTFLoader.min.js" integrity="sha512-oXjY06jRM9YoWvF4QWsQpMvA62OKn+oMnf3BduCNcSrRVe/4jDkIQEn+7rwqePaI2+nO4xCc+1F3s3rkgtcR7g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/examples/js/controls/OrbitControls.min.js" integrity="sha512-QQd1Dr69xoe9AkVS8r2UOS20zIg/+iAVN8sTafXz5AJsAnGim4wL07Df9ZCZNYp9ObwRME2aGSGbXbXC9Z/xzg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="js/avatarViewer.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>

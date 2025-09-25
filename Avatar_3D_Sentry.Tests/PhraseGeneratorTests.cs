@@ -45,4 +45,24 @@ public class PhraseGeneratorTests
             Assert.Contains(field, result);
         }
     }
+
+    [Fact]
+    public void Generate_ReplacesAllFields_Portuguese()
+    {
+        var generator = new PhraseGenerator();
+        var fields = new Dictionary<string, string>
+        {
+            ["empresa"] = "Empresa",
+            ["sede"] = "Filial",
+            ["modulo"] = "01",
+            ["turno"] = "Senha 32",
+            ["nombre"] = "Marina"
+        };
+
+        var result = generator.Generate("pt", fields);
+        foreach (var field in fields.Values)
+        {
+            Assert.Contains(field, result);
+        }
+    }
 }
