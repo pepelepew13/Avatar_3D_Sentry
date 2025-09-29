@@ -35,6 +35,14 @@ partial class AvatarContextModelSnapshot : ModelSnapshot
             b.Property<string>("LogoPath")
                 .HasColumnType("TEXT");
 
+            b.Property<string>("NormalizedEmpresa")
+                .IsRequired()
+                .HasColumnType("TEXT");
+
+            b.Property<string>("NormalizedSede")
+                .IsRequired()
+                .HasColumnType("TEXT");
+
             b.Property<string>("ProveedorTts")
                 .HasColumnType("TEXT");
 
@@ -50,7 +58,7 @@ partial class AvatarContextModelSnapshot : ModelSnapshot
 
             b.HasKey("Id");
 
-            b.HasIndex("Empresa", "Sede")
+            b.HasIndex("NormalizedEmpresa", "NormalizedSede")
                 .IsUnique();
 
             b.ToTable("AvatarConfigs");

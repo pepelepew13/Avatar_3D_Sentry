@@ -36,8 +36,11 @@ public class AvatarEditorController : ControllerBase
     [HttpGet("{empresa}/{sede}")]
     public async Task<ActionResult<AvatarConfig>> GetConfig(string empresa, string sede)
     {
+        var normalizedEmpresa = empresa.ToLowerInvariant();
+        var normalizedSede = sede.ToLowerInvariant();
+
         var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.Empresa == empresa && c.Sede == sede);
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
 
         return config is null ? NotFound() : Ok(config);
     }
@@ -49,6 +52,9 @@ public class AvatarEditorController : ControllerBase
     [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<ActionResult> UploadLogo(string empresa, string sede, IFormFile logo)
     {
+        var normalizedEmpresa = empresa.ToLowerInvariant();
+        var normalizedSede = sede.ToLowerInvariant();
+
         if (logo is null || logo.Length == 0)
         {
             return BadRequest("Archivo vacío.");
@@ -76,7 +82,7 @@ public class AvatarEditorController : ControllerBase
         }
 
         var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.Empresa == empresa && c.Sede == sede);
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
         if (config is null)
         {
             config = new AvatarConfig { Empresa = empresa, Sede = sede };
@@ -95,8 +101,11 @@ public class AvatarEditorController : ControllerBase
     [HttpPost("{empresa}/{sede}")]
     public async Task<ActionResult> UpdateConfig(string empresa, string sede, [FromBody] UpdateRequest request)
     {
+        var normalizedEmpresa = empresa.ToLowerInvariant();
+        var normalizedSede = sede.ToLowerInvariant();
+
         var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.Empresa == empresa && c.Sede == sede);
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
 
         if (config is null)
         {

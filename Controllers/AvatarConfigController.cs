@@ -19,8 +19,11 @@ public class AvatarConfigController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<AvatarConfig>> Get([FromQuery] string empresa, [FromQuery] string sede)
     {
+        var normalizedEmpresa = empresa.ToLowerInvariant();
+        var normalizedSede = sede.ToLowerInvariant();
+
         var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.Empresa == empresa && c.Sede == sede);
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
         if (config is null)
         {
             config = new AvatarConfig { Empresa = empresa, Sede = sede };
