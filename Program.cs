@@ -73,6 +73,23 @@ builder.Services.AddSingleton<ITtsService>(sp =>
         return new NullTtsService();
     }
 });
+
+var panelUrl = builder.Configuration.GetValue<string>("Dashboard:PanelUrl");
+if (string.IsNullOrWhiteSpace(panelUrl))
+{
+    panelUrl = "http://localhost:5168";
+}
+
+const string dashboardCorsPolicy = "DashboardCorsPolicy";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(dashboardCorsPolicy, policy =>
+    {
+        policy.WithOrigins(panelUrl)
+              .WithMethods("GET", "POST")
+              .AllowAnyHeader();
+    });
+});
 var connectionString = builder.Configuration.GetConnectionString("AvatarDb");
 
 if (!string.IsNullOrWhiteSpace(connectionString))
@@ -129,6 +146,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(dashboardCorsPolicy);
 
 app.UseStaticFiles();
 var resourcesPath = Path.Combine(app.Environment.ContentRootPath, "Resources");
