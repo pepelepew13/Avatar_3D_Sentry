@@ -100,3 +100,10 @@ principal:
 
 Al cambiar las prendas desde el panel, el visor 3D recargará automáticamente el
 modelo correspondiente siempre que los archivos existan en esa ruta.
+
+## Configuración del panel web
+
+La URL del panel autorizado para consumir la API se controla mediante la clave
+`Dashboard:PanelUrl` en `appsettings*.json`. Ajusta este valor para coincidir con
+la dirección desde la que se hospeda el panel (por defecto `http://localhost:5168`).
+
