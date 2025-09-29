@@ -18,7 +18,7 @@ public class AvatarContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AvatarConfig>()
-            .HasIndex(config => new { config.Empresa, config.Sede })
+            .HasIndex(config => new { config.NormalizedEmpresa, config.NormalizedSede })
             .IsUnique();
 
         base.OnModelCreating(modelBuilder);

@@ -1,3 +1,6 @@
+using System;
+using System.Text.Json.Serialization;
+
 namespace Avatar_3D_Sentry.Modelos;
 
 /// <summary>
@@ -5,11 +8,38 @@ namespace Avatar_3D_Sentry.Modelos;
 /// </summary>
 public class AvatarConfig
 {
+    private string _empresa = string.Empty;
+    private string _sede = string.Empty;
+
     public int Id { get; set; }
 
-    public required string Empresa { get; set; }
+    public required string Empresa
+    {
+        get => _empresa;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _empresa = value;
+            NormalizedEmpresa = value.ToLowerInvariant();
+        }
+    }
 
-    public required string Sede { get; set; }
+    [JsonIgnore]
+    public string NormalizedEmpresa { get; private set; } = string.Empty;
+
+    public required string Sede
+    {
+        get => _sede;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _sede = value;
+            NormalizedSede = value.ToLowerInvariant();
+        }
+    }
+
+    [JsonIgnore]
+    public string NormalizedSede { get; private set; } = string.Empty;
 
     /// <summary>
     /// Ruta del logo aplicado al pecho del modelo.

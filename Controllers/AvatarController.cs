@@ -39,8 +39,11 @@ public class AvatarController : ControllerBase
             ["nombre"] = solicitud.Nombre
         };
 
+        var normalizedEmpresa = solicitud.Empresa.ToLowerInvariant();
+        var normalizedSede = solicitud.Sede.ToLowerInvariant();
+
         var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.Empresa == solicitud.Empresa && c.Sede == solicitud.Sede);
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
 
         var idiomaSeleccionado = string.IsNullOrWhiteSpace(idioma)
             ? (config?.Idioma ?? "es")
