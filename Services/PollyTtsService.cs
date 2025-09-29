@@ -14,7 +14,7 @@ namespace Avatar_3D_Sentry.Services;
 public class PollyTtsService : ITtsService
 {
     private readonly AmazonPollyClient _client;
-    private static readonly Dictionary<string, List<string>> _availableVoices = new()
+    private static readonly Dictionary<string, List<string>> _availableVoices = new(StringComparer.OrdinalIgnoreCase)
     {
         ["es"] = new() { "Lucia", "Lupe", "Mia" },
         ["pt"] = new() { "Camila" },

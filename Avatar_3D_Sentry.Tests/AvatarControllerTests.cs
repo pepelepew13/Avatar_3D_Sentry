@@ -57,10 +57,36 @@ public class AvatarControllerTests
         Assert.Equal("No hay plantillas disponibles para el idioma fr.", badRequest.Value);
     }
 
-    private static AvatarController CreateController(AvatarContext context)
+    [Theory]
+    [InlineData("es")]
+    [InlineData("ES")]
+    [InlineData("Es")]
+    public async Task Anunciar_SpanishVariants_UseSameVoice(string idioma)
+    {
+        using var context = CreateContext();
+        var fakeTts = new FakeTtsService();
+        var controller = CreateController(context, fakeTts);
+        var solicitud = new SolicitudAnuncio
+        {
+            Empresa = "Empresa",
+            Sede = "Madrid",
+            Modulo = "M1",
+            Turno = "Mañana",
+            Nombre = "Luis"
+        };
+
+        var result = await controller.Anunciar(idioma, solicitud);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.IsType<AnnouncementResponse>(okResult.Value);
+        Assert.Equal("es", fakeTts.LastIdioma);
+        Assert.Equal("Lucia", fakeTts.LastVoz);
+    }
+
+    private static AvatarController CreateController(AvatarContext context, ITtsService? tts = null)
     {
         var generator = new PhraseGenerator();
-        var tts = new FakeTtsService();
+        tts ??= new FakeTtsService();
         return new AvatarController(generator, tts, context);
     }
 
@@ -81,10 +107,21 @@ public class AvatarControllerTests
             ["pt"] = new() { "Camila" }
         };
 
+        public string? LastIdioma { get; private set; }
+        public string? LastVoz { get; private set; }
+
         public IReadOnlyDictionary<string, List<string>> GetAvailableVoices() => Voices;
 
         public Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
         {
+            LastIdioma = idioma;
+            LastVoz = voz;
+
+            if (!Voices.TryGetValue(idioma, out var voces) || !voces.Contains(voz))
+            {
+                throw new ArgumentException($"Voz no soportada: {voz} para idioma {idioma}", nameof(voz));
+            }
+
             return Task.FromResult(new TtsResultado
             {
                 Audio = new byte[] { 1, 2, 3 },

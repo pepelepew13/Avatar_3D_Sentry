@@ -45,11 +45,12 @@ public class AvatarController : ControllerBase
         var idiomaSeleccionado = string.IsNullOrWhiteSpace(idioma)
             ? (config?.Idioma ?? "es")
             : idioma;
+        var idiomaNormalizado = idiomaSeleccionado.ToLowerInvariant();
 
         string texto;
         try
         {
-            texto = _generator.Generate(idiomaSeleccionado, campos);
+            texto = _generator.Generate(idiomaNormalizado, campos);
         }
         catch (ArgumentException ex)
         {
@@ -57,7 +58,7 @@ public class AvatarController : ControllerBase
         }
 
         var availableVoices = _tts.GetAvailableVoices();
-        availableVoices.TryGetValue(idiomaSeleccionado, out var vocesIdioma);
+        availableVoices.TryGetValue(idiomaNormalizado, out var vocesIdioma);
         var voice = config?.Voz ?? vocesIdioma?.FirstOrDefault();
         if (voice is null)
         {
@@ -67,7 +68,7 @@ public class AvatarController : ControllerBase
         TtsResultado tts;
         try
         {
-            tts = await _tts.SynthesizeAsync(texto, idiomaSeleccionado, voice);
+            tts = await _tts.SynthesizeAsync(texto, idiomaNormalizado, voice);
         }
         catch (Amazon.Runtime.AmazonServiceException ex)
         {
