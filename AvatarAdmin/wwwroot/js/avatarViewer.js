@@ -35,6 +35,7 @@ globalScope.THREE = THREE;
         currentModelUrl: null,
         loadToken: 0,
         initializing: false,
+        loadingUrl: null,
     };
 
     const backgroundPresets = {
@@ -179,6 +180,8 @@ globalScope.THREE = THREE;
 
         disposeCurrentModel();
 
+        state.loadingUrl = normalized.modelUrl;
+
         loader.load(normalized.modelUrl,
             (gltf) => {
                 if (requestId !== state.loadToken) {
@@ -186,6 +189,7 @@ globalScope.THREE = THREE;
                     return;
                 }
 
+                state.loadingUrl = null;
                 state.root = gltf.scene;
                 state.currentModelUrl = normalized.modelUrl;
                 state.scene.add(state.root);
@@ -228,6 +232,7 @@ globalScope.THREE = THREE;
             undefined,
             (err) => {
                 if (requestId === state.loadToken) {
+                    state.loadingUrl = null;
                     console.error("AvatarViewer: error al cargar el modelo", err);
                     state.ready = false;
                     state.currentModelUrl = null;
@@ -375,6 +380,10 @@ globalScope.THREE = THREE;
         normalized.modelUrl = normalized.modelUrl || resolveModelUrl(normalized.outfit);
 
         state.pendingAppearance = normalized;
+
+        if (state.loadingUrl && state.loadingUrl === normalized.modelUrl) {
+            return;
+        }
 
         if (!state.currentModelUrl || normalized.modelUrl !== state.currentModelUrl) {
             loadModel(normalized);
