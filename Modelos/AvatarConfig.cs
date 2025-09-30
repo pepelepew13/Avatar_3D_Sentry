@@ -20,7 +20,7 @@ public class AvatarConfig
         {
             ArgumentNullException.ThrowIfNull(value);
             _empresa = value;
-            NormalizedEmpresa = value.ToLowerInvariant();
+            UpdateNormalizedEmpresa();
         }
     }
 
@@ -34,12 +34,18 @@ public class AvatarConfig
         {
             ArgumentNullException.ThrowIfNull(value);
             _sede = value;
-            NormalizedSede = value.ToLowerInvariant();
+            UpdateNormalizedSede();
         }
     }
 
     [JsonIgnore]
     public string NormalizedSede { get; private set; } = string.Empty;
+
+    public void Normalize()
+    {
+        UpdateNormalizedEmpresa();
+        UpdateNormalizedSede();
+    }
 
     /// <summary>
     /// Ruta del logo aplicado al pecho del modelo.
@@ -75,5 +81,15 @@ public class AvatarConfig
     /// Color de cabello seleccionado para el avatar.
     /// </summary>
     public string? ColorCabello { get; set; }
+
+    private void UpdateNormalizedEmpresa()
+    {
+        NormalizedEmpresa = _empresa.ToLowerInvariant();
+    }
+
+    private void UpdateNormalizedSede()
+    {
+        NormalizedSede = _sede.ToLowerInvariant();
+    }
 }
 

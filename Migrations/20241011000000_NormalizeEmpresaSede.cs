@@ -1,7 +1,11 @@
+using Avatar_3D_Sentry.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Avatar_3D_Sentry.Migrations;
 
+[DbContext(typeof(AvatarContext))]
+[Migration("20241011000000_NormalizeEmpresaSede")]
 public partial class NormalizeEmpresaSede : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
