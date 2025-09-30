@@ -165,6 +165,7 @@
 
                                 <div class="stage-canvas @GetPreviewClass()">
                                     <canvas class="avatar-viewer-canvas" @ref="avatarCanvasRef"></canvas>
+                                    <audio @ref="previewAudioRef" hidden preload="auto"></audio>
                                     <div class="viewer-overlay stage-overlay">
                                         <div class="viewer-pill">Logo @(string.IsNullOrWhiteSpace(CurrentLogoUrl) ? "pendiente" : "aplicado")</div>
                                         <div class="viewer-pill">@GetOutfitLabel(config.Vestimenta)</div>
@@ -186,11 +187,20 @@
                                     </div>
 
                                     <div class="gamebar-right">
-                                        <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving)">
-                                            @(isPreviewPlaying ? "Detener gesticulación" : "Reproducir gesticulación")
+                                        <button class="btn btn-secondary" type="button" @onclick="PlayPreviewAsync" disabled="@(!viewerInitialized || isSaving || isPreviewLoading)">
+                                            @(isPreviewLoading
+                                                ? "Generando vista previa..."
+                                                : isPreviewPlaying
+                                                    ? "Detener vista previa"
+                                                    : "Reproducir vista previa")
                                         </button>
                                     </div>
                                 </footer>
+
+                                @if (!string.IsNullOrEmpty(previewErrorMessage))
+                                {
+                                    <p class="preview-feedback">@previewErrorMessage</p>
+                                }
                             </section>
 
                             <section class="control-stack">
@@ -344,6 +354,10 @@
     private ElementReference avatarCanvasRef;
     private bool hasRenderedOnce;
     private bool isPreviewPlaying;
+    private bool isPreviewLoading;
+    private string? previewErrorMessage;
+    private ElementReference previewAudioRef;
+    private System.Threading.CancellationTokenSource? previewCancellation;
     private bool showEditorModal;
     private string activePanel = PanelIdentity;
     private bool initializingViewer; // 👈 nuevo
@@ -807,27 +821,138 @@
 
     private async Task PlayPreviewAsync()
     {
-        if (!viewerInitialized)
+        if (!viewerInitialized || config is null)
+        {
+            return;
+        }
+
+        if (isPreviewLoading)
         {
             return;
         }
 
         if (isPreviewPlaying)
         {
-            await JS.InvokeVoidAsync("AvatarViewer.stopTalking");
-            isPreviewPlaying = false;
+            await StopPreviewIfPlayingAsync();
             await InvokeAsync(StateHasChanged);
             return;
         }
 
-        await JS.InvokeVoidAsync("AvatarViewer.playTalking", 2600);
-        isPreviewPlaying = true;
-        _ = Task.Run(async () =>
+        previewErrorMessage = null;
+
+        previewCancellation?.Cancel();
+        previewCancellation?.Dispose();
+        previewCancellation = new System.Threading.CancellationTokenSource();
+        var cancellationToken = previewCancellation.Token;
+
+        if (string.IsNullOrEmpty(previewAudioRef.Id))
         {
-            await Task.Delay(2600);
-            isPreviewPlaying = false;
+            previewErrorMessage = "El reproductor de audio no está disponible.";
             await InvokeAsync(StateHasChanged);
-        });
+            return;
+        }
+
+        isPreviewLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var idioma = string.IsNullOrWhiteSpace(config.Idioma) ? null : config.Idioma;
+            var preview = await ApiClient.RequestAnnouncementPreviewAsync(
+                config.Empresa,
+                config.Sede,
+                idioma,
+                cancellationToken);
+
+            if (preview is null || string.IsNullOrWhiteSpace(preview.AudioUrl))
+            {
+                previewErrorMessage = "La vista previa no devolvió un audio válido.";
+                return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            double duration;
+            try
+            {
+                duration = await JS.InvokeAsync<double>("AvatarViewer.prepareAudioClip", previewAudioRef, preview.AudioUrl);
+            }
+            catch (JSException jsEx)
+            {
+                Logger.LogError(jsEx, "No se pudo preparar el audio de vista previa.");
+                previewErrorMessage = "No se pudo preparar el audio de vista previa.";
+                return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (preview.Visemas.Count > 0)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("AvatarViewer.applyVisemes", preview.Visemas);
+                }
+                catch (JSException jsEx)
+                {
+                    Logger.LogError(jsEx, "No se pudieron aplicar los visemas de vista previa.");
+                    previewErrorMessage = "No se pudieron aplicar los visemas.";
+                    return;
+                }
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            try
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.playTalking", duration);
+            }
+            catch (JSException jsEx)
+            {
+                Logger.LogError(jsEx, "No se pudo iniciar la animación de habla.");
+                previewErrorMessage = "No se pudo iniciar la animación del avatar.";
+                return;
+            }
+
+            isPreviewLoading = false;
+            isPreviewPlaying = true;
+            await InvokeAsync(StateHasChanged);
+
+            try
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.playPreparedAudioClip", previewAudioRef);
+            }
+            catch (JSException jsEx) when (!cancellationToken.IsCancellationRequested)
+            {
+                Logger.LogError(jsEx, "Error durante la reproducción del audio de vista previa.");
+                previewErrorMessage = "Ocurrió un error al reproducir la vista previa.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // La operación fue cancelada explícitamente.
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            Logger.LogError(ex, "No fue posible obtener la vista previa de audio.");
+            previewErrorMessage = "No fue posible obtener la vista previa de audio.";
+        }
+        finally
+        {
+            await StopPreviewIfPlayingAsync();
+            isPreviewLoading = false;
+            previewCancellation?.Dispose();
+            previewCancellation = null;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -846,6 +971,8 @@
         showEditorModal = true;
         activePanel = PanelIdentity;
         isPreviewPlaying = false;
+        isPreviewLoading = false;
+        previewErrorMessage = null;
         pendingViewerUpdate = true;
         viewerInitialized = false;
     }
@@ -863,6 +990,7 @@
         showEditorModal = false;
         pendingViewerUpdate = false;
         viewerInitialized = false;
+        previewErrorMessage = null;
 
         if (accepted)
         {
@@ -893,9 +1021,25 @@
 
     private async Task StopPreviewIfPlayingAsync()
     {
-        if (!isPreviewPlaying)
+        previewCancellation?.Cancel();
+        previewCancellation?.Dispose();
+        previewCancellation = null;
+
+        if (!isPreviewPlaying && !isPreviewLoading)
         {
             return;
+        }
+
+        if (!string.IsNullOrEmpty(previewAudioRef.Id))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("AvatarViewer.stopAudioClip", previewAudioRef);
+            }
+            catch (JSException)
+            {
+                // Ignorar errores de sincronización cuando el visor se cierra.
+            }
         }
 
         try
@@ -908,6 +1052,7 @@
         }
 
         isPreviewPlaying = false;
+        isPreviewLoading = false;
     }
 
     private sealed class SelectorModel

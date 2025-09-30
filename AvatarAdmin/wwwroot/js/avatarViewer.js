@@ -530,6 +530,21 @@ globalScope.THREE = THREE;
         }
 
         const duration = typeof durationMs === "number" && durationMs > 0 ? durationMs : 2500;
+        const targetSeconds = duration / 1000;
+        const clip = typeof state.talkingAction.getClip === "function"
+            ? state.talkingAction.getClip()
+            : null;
+
+        if (clip && clip.duration > 0 && Number.isFinite(targetSeconds) && targetSeconds > 0) {
+            const loops = Math.max(Math.round(targetSeconds / clip.duration), 1);
+            const speed = (clip.duration * loops) / targetSeconds;
+            state.talkingAction.setLoop(THREE.LoopRepeat, loops);
+            state.talkingAction.timeScale = Number.isFinite(speed) && speed > 0 ? speed : 1;
+        } else {
+            state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
+            state.talkingAction.timeScale = 1;
+        }
+
         state.talkingAction.reset();
         state.talkingAction.enabled = true;
         state.talkingAction.play();
@@ -547,8 +562,16 @@ globalScope.THREE = THREE;
         if (!state.talkingAction) {
             return;
         }
+
+        if (state.talkingTimeout) {
+            clearTimeout(state.talkingTimeout);
+            state.talkingTimeout = null;
+        }
+
         state.talkingAction.stop();
         state.talkingAction.enabled = false;
+        state.talkingAction.timeScale = 1;
+        state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
     }
 
     function applyVisemes(visemes) {
@@ -616,6 +639,110 @@ globalScope.THREE = THREE;
         requestAnimationFrame(update);
     }
 
+    function prepareAudioClip(audioElement, source) {
+        if (!audioElement || !source) {
+            return Promise.resolve(0);
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            const onLoaded = () => {
+                cleanup();
+                const duration = Number.isFinite(audioElement.duration) && audioElement.duration > 0
+                    ? audioElement.duration * 1000
+                    : 0;
+                resolve(duration);
+            };
+
+            const onError = (err) => {
+                cleanup();
+                reject(err instanceof Error ? err : new Error("AvatarViewer: no se pudo cargar el audio de vista previa."));
+            };
+
+            const cleanup = () => {
+                audioElement.removeEventListener("loadedmetadata", onLoaded);
+                audioElement.removeEventListener("error", onError);
+            };
+
+            audioElement.addEventListener("loadedmetadata", onLoaded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+
+            try {
+                audioElement.src = source;
+                audioElement.load();
+                if (audioElement.readyState >= 1) {
+                    onLoaded();
+                }
+            } catch (err) {
+                onError(err);
+            }
+        });
+    }
+
+    function playPreparedAudioClip(audioElement) {
+        if (!audioElement) {
+            return Promise.resolve();
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            const playbackState = {
+                cleanup() {
+                    audioElement.removeEventListener("ended", onEnded);
+                    audioElement.removeEventListener("error", onError);
+                },
+                finish() {
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    resolve();
+                },
+                fail(err) {
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    reject(err instanceof Error ? err : new Error("AvatarViewer: error al reproducir el audio de vista previa."));
+                }
+            };
+
+            const onEnded = () => playbackState.finish();
+            const onError = (err) => playbackState.fail(err);
+
+            audioElement.__avatarPreviewPlayback = playbackState;
+
+            audioElement.addEventListener("ended", onEnded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+
+            const playPromise = audioElement.play();
+            if (playPromise && typeof playPromise.then === "function") {
+                playPromise.catch((err) => playbackState.fail(err));
+            }
+        });
+    }
+
+    function stopAudioClip(audioElement) {
+        if (!audioElement) {
+            return;
+        }
+
+        const playbackState = audioElement.__avatarPreviewPlayback;
+        if (playbackState) {
+            delete audioElement.__avatarPreviewPlayback;
+            if (typeof playbackState.finish === "function") {
+                playbackState.finish();
+            } else if (typeof playbackState.cleanup === "function") {
+                playbackState.cleanup();
+            }
+        }
+
+        audioElement.pause();
+        try {
+            audioElement.currentTime = 0;
+        } catch (err) {
+            // Ignorar errores al reiniciar la posición del audio.
+        }
+    }
+
     function resizeRenderer() {
         if (!state.renderer || !state.canvas || !state.camera) {
             return;
@@ -676,6 +803,9 @@ globalScope.THREE = THREE;
     AvatarViewer.playTalking = playTalking;
     AvatarViewer.stopTalking = stopTalking;
     AvatarViewer.applyVisemes = applyVisemes;
+    AvatarViewer.prepareAudioClip = prepareAudioClip;
+    AvatarViewer.playPreparedAudioClip = playPreparedAudioClip;
+    AvatarViewer.stopAudioClip = stopAudioClip;
     AvatarViewer.turntable = turntable;
     AvatarViewer.frame = frame;
     AvatarViewer.screenshot = screenshot;
