@@ -149,9 +149,10 @@ globalScope.THREE = THREE;
         state.controls.zoomSpeed = 0.9;
         state.controls.enableDamping = true;
         state.controls.dampingFactor = 0.08;
-        state.controls.enablePan = false;
-        state.controls.minPolarAngle = Math.PI / 3;
-        state.controls.maxPolarAngle = Math.PI / 2.1;
+        state.controls.enablePan = true;
+        state.controls.panSpeed = 0.4;
+        state.controls.minPolarAngle = Math.PI / 4;
+        state.controls.maxPolarAngle = Math.PI / 1.9;
         state.controls.target.set(0, 1.5, 0);
 
         state.mixer = new THREE.AnimationMixer(null);
@@ -360,13 +361,29 @@ globalScope.THREE = THREE;
         }
 
         const box = new THREE.Box3().setFromObject(state.root);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        if (box.isEmpty()) {
+            return;
+        }
 
-        state.controls.target.copy(new THREE.Vector3(center.x, center.y + size.y * 0.1, center.z));
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const center = sphere.center.clone();
+        const radius = sphere.radius || 1;
+        const marginFactor = 1.4;
+        const distance = radius * marginFactor;
 
-        const distance = Math.max(size.y, size.z) * 0.9;
-        state.camera.position.set(center.x + distance * 0.4, center.y + distance * 0.6, center.z + distance);
+        const target = center.clone();
+        target.y += radius * 0.15;
+        state.controls.target.copy(target);
+
+        const offsetDirection = new THREE.Vector3(0.4, 0.6, 1).normalize();
+        const cameraPosition = center.clone().add(offsetDirection.multiplyScalar(distance));
+        state.camera.position.copy(cameraPosition);
+
+        if (state.controls) {
+            state.controls.minDistance = radius * 0.7;
+            state.controls.maxDistance = radius * 2.8;
+        }
+
         state.camera.updateProjectionMatrix();
     }
 
