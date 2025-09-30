@@ -146,7 +146,7 @@ globalScope.THREE = THREE;
 
         state.controls = new OrbitControls(state.camera, canvas);
         state.controls.enableZoom = true;
-        state.controls.zoomSpeed = 0.9;
+        state.controls.zoomSpeed = 1;
         state.controls.enableDamping = true;
         state.controls.dampingFactor = 0.08;
         state.controls.enablePan = true;
