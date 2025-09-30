@@ -346,6 +346,8 @@
     private bool isPreviewPlaying;
     private bool showEditorModal;
     private string activePanel = PanelIdentity;
+    private bool initializingViewer; // 👈 nuevo
+    
 
     private static readonly IReadOnlyList<OutfitOption> Outfits = new List<OutfitOption>
     {
@@ -737,6 +739,8 @@
         var match = Languages.FirstOrDefault(l => l.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
         return match?.Label ?? Languages[0].Label;
     }
+    
+    
 
     private async Task InitializeOrUpdateViewerAsync()
     {
@@ -744,6 +748,9 @@
         {
             return;
         }
+
+        if (initializingViewer) // 👈 evita doble init solapado
+            return;
 
         try
         {

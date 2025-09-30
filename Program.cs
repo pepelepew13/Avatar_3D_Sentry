@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,16 +150,57 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(dashboardCorsPolicy);
 
+// MIME para GLB/GLTF
+var contentTypeProvider = new FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".glb"]  = "model/gltf-binary";
+contentTypeProvider.Mappings[".gltf"] = "model/gltf+json";
+
+var modelsPhysicalPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "models");
+if (Directory.Exists(modelsPhysicalPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(modelsPhysicalPath),
+        RequestPath = "/models",
+        ContentTypeProvider = contentTypeProvider,
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers["Access-Control-Allow-Origin"] = "http://localhost:5168";
+            ctx.Context.Response.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+            ctx.Context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+            ctx.Context.Response.Headers["Vary"] = "Origin"; // opcional pero buena práctica
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=604800";
+        }
+    });
+}
+
+app.Use(async (ctx, next) =>
+{
+    if (ctx.Request.Path.StartsWithSegments("/models"))
+    {
+        ctx.Response.Headers["Access-Control-Allow-Origin"] = "http://localhost:5168";
+        ctx.Response.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+        ctx.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Range";
+        ctx.Response.Headers["Access-Control-Expose-Headers"] = "Accept-Ranges, Content-Range";
+        ctx.Response.Headers["Vary"] = "Origin";
+    }
+    await next();
+});
+
 app.UseStaticFiles();
+
+// si también sirves /resources, déjalo tal cual
 var resourcesPath = Path.Combine(app.Environment.ContentRootPath, "Resources");
 if (Directory.Exists(resourcesPath))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(resourcesPath),
-        RequestPath = "/resources"
+        RequestPath = "/resources",
+        ContentTypeProvider = contentTypeProvider
     });
 }
+
 app.UseHttpsRedirection();
 if (requerirToken)
 {

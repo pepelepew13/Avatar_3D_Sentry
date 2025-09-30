@@ -1,0 +1,15 @@
+{
+  "version": "3.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "three@0.161.0",
+      "destination": "wwwroot/lib/three",
+      "files": [
+        "build/three.module.min.js",
+        "examples/jsm/loaders/GLTFLoader.js",
+        "examples/jsm/controls/OrbitControls.js"
+      ]
+    }
+  ]
+}

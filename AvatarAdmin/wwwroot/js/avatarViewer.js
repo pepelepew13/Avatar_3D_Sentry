@@ -1,11 +1,9 @@
-import * as THREE from '../lib/three/three.module.min.js';
-import { GLTFLoader } from '../lib/three/GLTFLoader.js';
-import { OrbitControls } from '../lib/three/OrbitControls.js';
+import * as THREE from 'three';
+import { GLTFLoader }   from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const globalScope = typeof window !== "undefined" ? window : globalThis;
 globalScope.THREE = THREE;
-globalScope.THREE.GLTFLoader = GLTFLoader;
-globalScope.THREE.OrbitControls = OrbitControls;
 
 (function (global) {
     if (!global) {
@@ -35,7 +33,8 @@ globalScope.THREE.OrbitControls = OrbitControls;
         resizeHandler: null,
         animationFrame: null,
         currentModelUrl: null,
-        loadToken: 0
+        loadToken: 0,
+        initializing: false,
     };
 
     const backgroundPresets = {
@@ -115,13 +114,14 @@ globalScope.THREE.OrbitControls = OrbitControls;
         state.currentModelUrl = null;
 
         if (state.renderer) {
+            state.initializing = false;
             updateAppearance(options);
             return;
         }
 
         state.canvas = canvas;
         state.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-        state.renderer.outputEncoding = THREE.sRGBEncoding;
+        state.renderer.outputColorSpace = THREE.SRGBColorSpace;
         state.renderer.setPixelRatio(global.devicePixelRatio || 1);
 
         state.scene = new THREE.Scene();
@@ -143,7 +143,7 @@ globalScope.THREE.OrbitControls = OrbitControls;
         state.ground.position.y = 0;
         state.scene.add(state.ground);
 
-        state.controls = new THREE.OrbitControls(state.camera, canvas);
+        state.controls = new OrbitControls(state.camera, canvas);
         state.controls.enableZoom = true;
         state.controls.zoomSpeed = 0.9;
         state.controls.enableDamping = true;
@@ -162,10 +162,11 @@ globalScope.THREE.OrbitControls = OrbitControls;
         state.pendingAppearance = options || {};
         loadModel(state.pendingAppearance);
         renderLoop();
+        state.initializing = false;  
     }
 
     function loadModel(options) {
-        const loader = new THREE.GLTFLoader();
+        const loader = new GLTFLoader();
         loader.setCrossOrigin("anonymous");
 
         const normalized = Object.assign({}, options || {});
@@ -479,7 +480,7 @@ globalScope.THREE.OrbitControls = OrbitControls;
         loader.setCrossOrigin("anonymous");
         loader.load(url,
             (texture) => {
-                texture.encoding = THREE.sRGBEncoding;
+                texture.colorSpace = THREE.SRGBColorSpace;
                 texture.flipY = false;
                 material.map = texture;
                 material.needsUpdate = true;
