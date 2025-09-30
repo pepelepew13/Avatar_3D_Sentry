@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
 using System.IO;
@@ -36,11 +35,7 @@ public class AvatarEditorController : ControllerBase
     [HttpGet("{empresa}/{sede}")]
     public async Task<ActionResult<AvatarConfig>> GetConfig(string empresa, string sede)
     {
-        var normalizedEmpresa = empresa.ToLowerInvariant();
-        var normalizedSede = sede.ToLowerInvariant();
-
-        var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
+        var config = await _context.FindByEmpresaYSedeAsync(empresa, sede, HttpContext.RequestAborted);
 
         return config is null ? NotFound() : Ok(config);
     }
@@ -52,9 +47,6 @@ public class AvatarEditorController : ControllerBase
     [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<ActionResult> UploadLogo(string empresa, string sede, IFormFile logo)
     {
-        var normalizedEmpresa = empresa.ToLowerInvariant();
-        var normalizedSede = sede.ToLowerInvariant();
-
         if (logo is null || logo.Length == 0)
         {
             return BadRequest("Archivo vacío.");
@@ -81,8 +73,7 @@ public class AvatarEditorController : ControllerBase
             await logo.CopyToAsync(stream);
         }
 
-        var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
+        var config = await _context.FindByEmpresaYSedeAsync(empresa, sede, HttpContext.RequestAborted);
         if (config is null)
         {
             config = new AvatarConfig { Empresa = empresa, Sede = sede };
@@ -90,7 +81,7 @@ public class AvatarEditorController : ControllerBase
         }
 
         config.LogoPath = $"/logos/{fileName}";
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         return Ok(new { config.LogoPath });
     }
@@ -101,11 +92,7 @@ public class AvatarEditorController : ControllerBase
     [HttpPost("{empresa}/{sede}")]
     public async Task<ActionResult> UpdateConfig(string empresa, string sede, [FromBody] UpdateRequest request)
     {
-        var normalizedEmpresa = empresa.ToLowerInvariant();
-        var normalizedSede = sede.ToLowerInvariant();
-
-        var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
+        var config = await _context.FindByEmpresaYSedeAsync(empresa, sede, HttpContext.RequestAborted);
 
         if (config is null)
         {
@@ -120,7 +107,7 @@ public class AvatarEditorController : ControllerBase
         config.Idioma = request.Idioma;
         config.ColorCabello = request.ColorCabello;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(HttpContext.RequestAborted);
 
         return Ok(config);
     }

@@ -7,7 +7,6 @@ using Avatar_3D_Sentry.Services;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -39,11 +38,7 @@ public class AvatarController : ControllerBase
             ["nombre"] = solicitud.Nombre
         };
 
-        var normalizedEmpresa = solicitud.Empresa.ToLowerInvariant();
-        var normalizedSede = solicitud.Sede.ToLowerInvariant();
-
-        var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
+        var config = await _context.FindByEmpresaYSedeAsync(solicitud.Empresa, solicitud.Sede, HttpContext.RequestAborted);
 
         var idiomaSeleccionado = string.IsNullOrWhiteSpace(idioma)
             ? (config?.Idioma ?? "es")
