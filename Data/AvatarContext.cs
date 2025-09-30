@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,6 +20,19 @@ public class AvatarContext : DbContext
     }
 
     public DbSet<AvatarConfig> AvatarConfigs => Set<AvatarConfig>();
+
+    public Task<AvatarConfig?> FindByEmpresaYSedeAsync(string empresa, string sede, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(empresa);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sede);
+
+        var normalizedEmpresa = empresa.ToLowerInvariant();
+        var normalizedSede = sede.ToLowerInvariant();
+
+        return AvatarConfigs
+            .AsQueryable()
+            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede, cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

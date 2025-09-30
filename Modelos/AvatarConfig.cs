@@ -84,12 +84,12 @@ public class AvatarConfig
 
     private void UpdateNormalizedEmpresa()
     {
-        NormalizedEmpresa = _empresa.ToLowerInvariant();
+        NormalizedEmpresa = _empresa.Trim().ToLowerInvariant();
     }
 
     private void UpdateNormalizedSede()
     {
-        NormalizedSede = _sede.ToLowerInvariant();
+        NormalizedSede = _sede.Trim().ToLowerInvariant();
     }
 }
 

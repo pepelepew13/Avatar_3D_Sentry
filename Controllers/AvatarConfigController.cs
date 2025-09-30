@@ -1,7 +1,6 @@
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -19,16 +18,12 @@ public class AvatarConfigController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<AvatarConfig>> Get([FromQuery] string empresa, [FromQuery] string sede)
     {
-        var normalizedEmpresa = empresa.ToLowerInvariant();
-        var normalizedSede = sede.ToLowerInvariant();
-
-        var config = await _context.AvatarConfigs
-            .FirstOrDefaultAsync(c => c.NormalizedEmpresa == normalizedEmpresa && c.NormalizedSede == normalizedSede);
+        var config = await _context.FindByEmpresaYSedeAsync(empresa, sede, HttpContext.RequestAborted);
         if (config is null)
         {
             config = new AvatarConfig { Empresa = empresa, Sede = sede };
             _context.AvatarConfigs.Add(config);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(HttpContext.RequestAborted);
         }
         return Ok(config);
     }
