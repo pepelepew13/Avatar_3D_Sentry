@@ -10,15 +10,32 @@ public partial class EnsureColorCabello : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<string>(
-            name: "ColorCabello",
-            table: "AvatarConfigs",
-            type: "TEXT",
-            nullable: true);
+
+        if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            migrationBuilder.Sql(
+                "ALTER TABLE \"AvatarConfigs\" ADD COLUMN IF NOT EXISTS \"ColorCabello\" TEXT NULL;");
+        }
+        else
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "ColorCabello",
+                table: "AvatarConfigs",
+                type: "TEXT",
+                nullable: true);
+        }
+
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+
+        if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            return;
+        }
+
+
         migrationBuilder.DropColumn(
             name: "ColorCabello",
             table: "AvatarConfigs");
