@@ -15,12 +15,6 @@ public partial class EnsureColorCabello : Migration
             table: "AvatarConfigs");
 
         migrationBuilder.AddColumn<string>(
-            name: "ColorCabello",
-            table: "AvatarConfigs",
-            type: "TEXT",
-            nullable: true);
-
-        migrationBuilder.AddColumn<string>(
             name: "NormalizedEmpresa",
             table: "AvatarConfigs",
             type: "TEXT",
@@ -60,10 +54,6 @@ public partial class EnsureColorCabello : Migration
 
         migrationBuilder.DropColumn(
             name: "NormalizedEmpresa",
-            table: "AvatarConfigs");
-
-        migrationBuilder.DropColumn(
-            name: "ColorCabello",
             table: "AvatarConfigs");
 
         migrationBuilder.CreateIndex(
