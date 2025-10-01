@@ -108,6 +108,31 @@ public class AvatarApiClient
         return new Uri(_httpClient.BaseAddress, path.TrimStart('/')).ToString();
     }
 
+    public async Task<AnnouncementPreviewResponse> RequestAnnouncementPreviewAsync(
+        string empresa,
+        string sede,
+        string? idioma,
+        CancellationToken cancellationToken = default)
+    {
+        var requestUri = string.IsNullOrWhiteSpace(idioma)
+            ? "Avatar/anunciar"
+            : $"Avatar/anunciar?idioma={Uri.EscapeDataString(idioma)}";
+
+        var payload = new AnnouncementPreviewRequest
+        {
+            Empresa = empresa,
+            Sede = sede,
+            Modulo = "Módulo demo",
+            Turno = "A001",
+            Nombre = "Cliente demo"
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync(requestUri, payload, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        var preview = await response.Content.ReadFromJsonAsync<AnnouncementPreviewResponse>(cancellationToken: cancellationToken);
+        return preview ?? throw new InvalidOperationException("La API no devolvió una vista previa válida.");
+    }
+
     private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)
