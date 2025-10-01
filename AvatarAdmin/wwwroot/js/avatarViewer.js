@@ -25,6 +25,7 @@ globalScope.THREE = THREE;
         root: null,
         skinnedMesh: null,
         morphDictionary: null,
+        morphLookup: null,
         materials: new Map(),
         loadedTextures: new Map(),
         ground: null,
@@ -35,6 +36,11 @@ globalScope.THREE = THREE;
         currentModelUrl: null,
         loadToken: 0,
         initializing: false,
+        visemeSequence: [],
+        visemeIndices: new Set(),
+        visemeAnimationId: null,
+        visemeAudio: null,
+        pendingVisemes: null,
     };
 
     const backgroundPresets = {
@@ -197,6 +203,7 @@ globalScope.THREE = THREE;
                         if (child.morphTargetDictionary && !state.skinnedMesh) {
                             state.skinnedMesh = child;
                             state.morphDictionary = child.morphTargetDictionary;
+                            state.morphLookup = null;
                         }
 
                         const materials = Array.isArray(child.material) ? child.material : [child.material];
@@ -224,6 +231,11 @@ globalScope.THREE = THREE;
                 centerModel();
                 state.ready = true;
                 applyAppearance(state.pendingAppearance);
+                if (state.pendingVisemes) {
+                    const queued = state.pendingVisemes;
+                    state.pendingVisemes = null;
+                    applyVisemes(queued);
+                }
             },
             undefined,
             (err) => {
@@ -306,6 +318,11 @@ globalScope.THREE = THREE;
         state.mixer = null;
         state.skinnedMesh = null;
         state.morphDictionary = null;
+        state.morphLookup = null;
+        stopVisemePlayback();
+        state.visemeSequence = [];
+        state.visemeIndices = new Set();
+        state.pendingVisemes = null;
         state.eyeAction = null;
         state.talkingAction = null;
         state.root = null;
@@ -530,6 +547,21 @@ globalScope.THREE = THREE;
         }
 
         const duration = typeof durationMs === "number" && durationMs > 0 ? durationMs : 2500;
+        const targetSeconds = duration / 1000;
+        const clip = typeof state.talkingAction.getClip === "function"
+            ? state.talkingAction.getClip()
+            : null;
+
+        if (clip && clip.duration > 0 && Number.isFinite(targetSeconds) && targetSeconds > 0) {
+            const loops = Math.max(Math.round(targetSeconds / clip.duration), 1);
+            const speed = (clip.duration * loops) / targetSeconds;
+            state.talkingAction.setLoop(THREE.LoopRepeat, loops);
+            state.talkingAction.timeScale = Number.isFinite(speed) && speed > 0 ? speed : 1;
+        } else {
+            state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
+            state.talkingAction.timeScale = 1;
+        }
+
         state.talkingAction.reset();
         state.talkingAction.enabled = true;
         state.talkingAction.play();
@@ -547,73 +579,489 @@ globalScope.THREE = THREE;
         if (!state.talkingAction) {
             return;
         }
+
+        if (state.talkingTimeout) {
+            clearTimeout(state.talkingTimeout);
+            state.talkingTimeout = null;
+        }
+
         state.talkingAction.stop();
         state.talkingAction.enabled = false;
+        state.talkingAction.timeScale = 1;
+        state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
     }
 
-    function applyVisemes(visemes) {
-        if (!Array.isArray(visemes) || !state.skinnedMesh || !state.morphDictionary) {
-            return;
+    const visemeCanonicalMap = {
+        sil: "sil",
+        silence: "sil",
+        rest: "sil",
+        idle: "sil",
+        pp: "pp",
+        p: "pp",
+        b: "pp",
+        m: "pp",
+        ff: "ff",
+        f: "ff",
+        v: "ff",
+        th: "th",
+        dh: "th",
+        dd: "dd",
+        t: "dd",
+        d: "dd",
+        kk: "kk",
+        k: "kk",
+        g: "kk",
+        ch: "ch",
+        jh: "ch",
+        j: "ch",
+        ss: "ss",
+        s: "ss",
+        z: "ss",
+        sh: "ss",
+        zh: "ss",
+        nn: "nn",
+        n: "nn",
+        l: "nn",
+        rr: "rr",
+        r: "rr",
+        er: "rr",
+        aa: "aa",
+        a: "aa",
+        ah: "aa",
+        aw: "aa",
+        ae: "aa",
+        e: "e",
+        eh: "e",
+        ey: "e",
+        i: "i",
+        iy: "i",
+        ee: "i",
+        o: "o",
+        oh: "o",
+        ow: "o",
+        u: "u",
+        oo: "u",
+        uw: "u",
+        w: "u"
+    };
+
+    function normalizeVisemeKey(value) {
+        if (typeof value !== "string") {
+            return null;
         }
 
-        const morphInfluences = state.skinnedMesh.morphTargetInfluences;
-        if (!morphInfluences) {
-            return;
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return null;
         }
 
-        const sequence = visemes
-            .map(frame => ({
-                time: typeof frame.tiempo === "number" ? frame.tiempo : 0,
-                key: frame.shapeKey || frame.viseme
-            }))
-            .filter(frame => typeof frame.key === "string")
-            .sort((a, b) => a.time - b.time);
+        const lowered = trimmed.toLowerCase();
+        return visemeCanonicalMap[lowered] || lowered;
+    }
 
-        let startTime = null;
-
-        function resetMorphs() {
-            for (let i = 0; i < morphInfluences.length; i += 1) {
-                morphInfluences[i] = 0;
-            }
+    function ensureMorphLookup() {
+        if (!state.morphDictionary) {
+            return null;
         }
 
-        resetMorphs();
+        if (state.morphLookup) {
+            return state.morphLookup;
+        }
 
-        function update() {
-            if (!sequence.length) {
-                resetMorphs();
+        const lookup = {};
+        Object.entries(state.morphDictionary).forEach(([name, index]) => {
+            if (typeof index !== "number" || typeof name !== "string") {
                 return;
             }
 
-            if (startTime === null) {
-                startTime = performance.now();
-            }
-            const elapsed = (performance.now() - startTime) / 1000;
-
-            resetMorphs();
-            let activeFound = false;
-            for (const frame of sequence) {
-                const index = state.morphDictionary[frame.key];
-                if (typeof index !== "number") {
-                    continue;
-                }
-
-                const distance = Math.abs(frame.time - elapsed);
-                const strength = Math.max(1 - distance * 4, 0);
-                if (strength > 0) {
-                    morphInfluences[index] = Math.max(morphInfluences[index], strength);
-                    activeFound = true;
-                }
+            const trimmed = name.trim();
+            if (!trimmed) {
+                return;
             }
 
-            if (activeFound) {
-                requestAnimationFrame(update);
-            } else {
-                resetMorphs();
+            const lowered = trimmed.toLowerCase();
+            const sanitized = lowered.replace(/[^a-z0-9]+/g, "");
+
+            lookup[trimmed] = index;
+            lookup[lowered] = index;
+            if (sanitized) {
+                lookup[sanitized] = index;
+            }
+
+            if (lowered.startsWith("viseme_")) {
+                const bare = lowered.slice(7);
+                if (bare) {
+                    lookup[bare] = index;
+                    const bareSanitized = bare.replace(/[^a-z0-9]+/g, "");
+                    if (bareSanitized) {
+                        lookup[bareSanitized] = index;
+                    }
+                }
+            }
+        });
+
+        state.morphLookup = lookup;
+        return lookup;
+    }
+
+    function lookupMorphIndex(key) {
+        const lookup = ensureMorphLookup();
+        if (!lookup || typeof key !== "string") {
+            return null;
+        }
+
+        const trimmed = key.trim();
+        if (!trimmed) {
+            return null;
+        }
+
+        const lowered = trimmed.toLowerCase();
+        const sanitized = lowered.replace(/[^a-z0-9]+/g, "");
+
+        const candidates = [trimmed, lowered, sanitized];
+        if (lowered && !lowered.startsWith("viseme_")) {
+            candidates.push(`viseme_${lowered}`);
+            candidates.push(`viseme-${lowered}`);
+            candidates.push(`viseme${lowered}`);
+        }
+
+        if (trimmed.startsWith("viseme") && sanitized && !sanitized.startsWith("viseme")) {
+            candidates.push(sanitized);
+        }
+
+        for (const candidate of candidates) {
+            if (!candidate) {
+                continue;
+            }
+            if (Object.prototype.hasOwnProperty.call(lookup, candidate)) {
+                return lookup[candidate];
             }
         }
 
-        requestAnimationFrame(update);
+        return null;
+    }
+
+    function resolveVisemeIndex(frame) {
+        if (!frame) {
+            return null;
+        }
+
+        if (typeof frame.shapeKey === "string") {
+            const indexFromShapeKey = lookupMorphIndex(frame.shapeKey);
+            if (typeof indexFromShapeKey === "number") {
+                return indexFromShapeKey;
+            }
+        }
+
+        const normalized = normalizeVisemeKey(frame.viseme);
+        if (!normalized) {
+            return null;
+        }
+
+        const candidates = [frame.viseme, normalized];
+        if (!normalized.startsWith("viseme_")) {
+            candidates.push(`viseme_${normalized}`);
+            candidates.push(`viseme-${normalized}`);
+            candidates.push(`viseme${normalized}`);
+        }
+
+        if (normalized.length === 1) {
+            candidates.push(`viseme_${normalized}${normalized}`);
+        }
+
+        for (const candidate of candidates) {
+            const index = lookupMorphIndex(candidate);
+            if (typeof index === "number") {
+                return index;
+            }
+        }
+
+        return null;
+    }
+
+    function normalizeVisemeSequence(visemes) {
+        const frames = [];
+        const rawTimes = [];
+
+        for (const frame of visemes) {
+            const index = resolveVisemeIndex(frame);
+            if (typeof index !== "number") {
+                continue;
+            }
+
+            let timeValue = 0;
+            if (typeof frame.tiempo === "number" && Number.isFinite(frame.tiempo)) {
+                timeValue = frame.tiempo;
+            } else if (typeof frame.time === "number" && Number.isFinite(frame.time)) {
+                timeValue = frame.time;
+            } else if (typeof frame.timestamp === "number" && Number.isFinite(frame.timestamp)) {
+                timeValue = frame.timestamp;
+            }
+
+            rawTimes.push(timeValue);
+            frames.push({ index, rawTime: timeValue });
+        }
+
+        if (!frames.length) {
+            return [];
+        }
+
+        const useMilliseconds = rawTimes.some((t) => t > 20);
+
+        return frames
+            .map((frame) => ({
+                index: frame.index,
+                time: useMilliseconds ? frame.rawTime / 1000 : frame.rawTime
+            }))
+            .sort((a, b) => a.time - b.time);
+    }
+
+    function resetVisemeMorphs() {
+        if (!state.skinnedMesh || !state.skinnedMesh.morphTargetInfluences) {
+            return;
+        }
+
+        if (!(state.visemeIndices instanceof Set) || state.visemeIndices.size === 0) {
+            return;
+        }
+
+        const influences = state.skinnedMesh.morphTargetInfluences;
+        state.visemeIndices.forEach((index) => {
+            if (typeof index === "number" && index >= 0 && index < influences.length) {
+                influences[index] = 0;
+            }
+        });
+    }
+
+    function stopVisemePlayback() {
+        if (state.visemeAnimationId) {
+            cancelAnimationFrame(state.visemeAnimationId);
+            state.visemeAnimationId = null;
+        }
+        state.visemeAudio = null;
+        resetVisemeMorphs();
+    }
+
+    function startVisemePlayback(audioElement) {
+        if (!audioElement || !Array.isArray(state.visemeSequence) || state.visemeSequence.length === 0) {
+            resetVisemeMorphs();
+            return;
+        }
+
+        if (!state.skinnedMesh || !state.skinnedMesh.morphTargetInfluences) {
+            return;
+        }
+
+        stopVisemePlayback();
+        state.visemeAudio = audioElement;
+
+        const influences = state.skinnedMesh.morphTargetInfluences;
+        const windowSize = 0.14;
+
+        function step() {
+            if (!state.visemeAudio) {
+                state.visemeAnimationId = null;
+                resetVisemeMorphs();
+                return;
+            }
+
+            if (audioElement.ended) {
+                state.visemeAnimationId = null;
+                state.visemeAudio = null;
+                resetVisemeMorphs();
+                return;
+            }
+
+            const current = audioElement.currentTime;
+            resetVisemeMorphs();
+
+            for (let i = 0; i < state.visemeSequence.length; i += 1) {
+                const frame = state.visemeSequence[i];
+                if (!frame || typeof frame.index !== "number") {
+                    continue;
+                }
+
+                const distance = Math.abs(current - frame.time);
+                if (distance > windowSize) {
+                    continue;
+                }
+
+                const strength = Math.max(1 - (distance / windowSize), 0);
+                const index = frame.index;
+                if (index >= 0 && index < influences.length) {
+                    influences[index] = Math.max(influences[index], strength);
+                }
+            }
+
+            state.visemeAnimationId = requestAnimationFrame(step);
+        }
+
+        state.visemeAnimationId = requestAnimationFrame(step);
+    }
+
+    function applyVisemes(visemes) {
+        const payload = Array.isArray(visemes) ? visemes : [];
+
+        if (!state.skinnedMesh || !state.morphDictionary) {
+            if (payload.length === 0) {
+                stopVisemePlayback();
+                state.visemeSequence = [];
+                state.visemeIndices = new Set();
+                state.pendingVisemes = null;
+            } else {
+                state.pendingVisemes = payload.slice();
+            }
+            return;
+        }
+
+        if (payload.length === 0) {
+            stopVisemePlayback();
+            state.visemeSequence = [];
+            state.visemeIndices = new Set();
+            state.pendingVisemes = null;
+            return;
+        }
+
+        stopVisemePlayback();
+        const sequence = normalizeVisemeSequence(payload);
+        state.visemeSequence = sequence;
+        state.visemeIndices = new Set(sequence.map((frame) => frame.index));
+        state.pendingVisemes = null;
+    }
+
+    function prepareAudioClip(audioElement, source) {
+        if (!audioElement || !source) {
+            return Promise.resolve(0);
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            const onLoaded = () => {
+                cleanup();
+                const duration = Number.isFinite(audioElement.duration) && audioElement.duration > 0
+                    ? audioElement.duration * 1000
+                    : 0;
+                resolve(duration);
+            };
+
+            const onError = (err) => {
+                cleanup();
+                reject(err instanceof Error ? err : new Error("AvatarViewer: no se pudo cargar el audio de vista previa."));
+            };
+
+            const cleanup = () => {
+                audioElement.removeEventListener("loadedmetadata", onLoaded);
+                audioElement.removeEventListener("error", onError);
+            };
+
+            audioElement.addEventListener("loadedmetadata", onLoaded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+
+            try {
+                audioElement.src = source;
+                audioElement.load();
+                if (audioElement.readyState >= 1) {
+                    onLoaded();
+                }
+            } catch (err) {
+                onError(err);
+            }
+        });
+    }
+
+    function playPreparedAudioClip(audioElement) {
+        if (!audioElement) {
+            return Promise.resolve();
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            let started = false;
+            const playbackState = {
+                done: false,
+                cleanup() {
+                    audioElement.removeEventListener("ended", onEnded);
+                    audioElement.removeEventListener("error", onError);
+                    audioElement.removeEventListener("play", onStarted);
+                    audioElement.removeEventListener("playing", onStarted);
+                },
+                finish() {
+                    if (playbackState.done) {
+                        return;
+                    }
+                    playbackState.done = true;
+                    stopVisemePlayback();
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    resolve();
+                },
+                fail(err) {
+                    if (playbackState.done) {
+                        return;
+                    }
+                    playbackState.done = true;
+                    stopVisemePlayback();
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    reject(err instanceof Error ? err : new Error("AvatarViewer: error al reproducir el audio de vista previa."));
+                }
+            };
+
+            const onEnded = () => playbackState.finish();
+            const onError = (err) => playbackState.fail(err);
+            const onStarted = () => {
+                if (started || playbackState.done) {
+                    return;
+                }
+                started = true;
+                startVisemePlayback(audioElement);
+            };
+
+            audioElement.__avatarPreviewPlayback = playbackState;
+
+            audioElement.addEventListener("ended", onEnded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+            audioElement.addEventListener("play", onStarted);
+            audioElement.addEventListener("playing", onStarted);
+
+            try {
+                const playPromise = audioElement.play();
+                if (playPromise && typeof playPromise.then === "function") {
+                    playPromise.then(onStarted).catch((err) => playbackState.fail(err));
+                } else {
+                    onStarted();
+                }
+            } catch (err) {
+                playbackState.fail(err);
+            }
+        });
+    }
+
+    function stopAudioClip(audioElement) {
+        if (!audioElement) {
+            return;
+        }
+
+        stopVisemePlayback();
+
+        const playbackState = audioElement.__avatarPreviewPlayback;
+        if (playbackState) {
+            delete audioElement.__avatarPreviewPlayback;
+            if (typeof playbackState.finish === "function") {
+                playbackState.finish();
+            } else if (typeof playbackState.cleanup === "function") {
+                playbackState.cleanup();
+            }
+        }
+
+        audioElement.pause();
+        try {
+            audioElement.currentTime = 0;
+        } catch (err) {
+            // Ignorar errores al reiniciar la posición del audio.
+        }
     }
 
     function resizeRenderer() {
@@ -676,6 +1124,9 @@ globalScope.THREE = THREE;
     AvatarViewer.playTalking = playTalking;
     AvatarViewer.stopTalking = stopTalking;
     AvatarViewer.applyVisemes = applyVisemes;
+    AvatarViewer.prepareAudioClip = prepareAudioClip;
+    AvatarViewer.playPreparedAudioClip = playPreparedAudioClip;
+    AvatarViewer.stopAudioClip = stopAudioClip;
     AvatarViewer.turntable = turntable;
     AvatarViewer.frame = frame;
     AvatarViewer.screenshot = screenshot;
