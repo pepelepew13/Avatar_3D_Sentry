@@ -847,6 +847,7 @@
         var cancellationToken = previewCancellation.Token;
 
         if (string.IsNullOrEmpty(previewAudioRef.Id))
+
         {
             previewErrorMessage = "El reproductor de audio no está disponible.";
             await InvokeAsync(StateHasChanged);
@@ -952,7 +953,7 @@
             previewCancellation?.Dispose();
             previewCancellation = null;
             await InvokeAsync(StateHasChanged);
-        }
+
         }
     }
 

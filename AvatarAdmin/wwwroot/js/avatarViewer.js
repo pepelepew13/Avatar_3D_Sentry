@@ -42,6 +42,7 @@ globalScope.THREE = THREE;
         visemeAudio: null,
         pendingVisemes: null,
         loadingUrl: null,
+
     };
 
     const backgroundPresets = {
@@ -616,8 +617,6 @@ globalScope.THREE = THREE;
         state.talkingAction.enabled = false;
         state.talkingAction.timeScale = 1;
         state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
-        state.talkingAction.timeScale = 1;
-        state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
     }
 
     const visemeCanonicalMap = {
@@ -812,18 +811,19 @@ globalScope.THREE = THREE;
         const frames = [];
         const rawTimes = [];
 
-        for (const frame of visemes) {
+        for (let i = 0; i < visemes.length; i += 1) {
+            const frame = visemes[i];
             const index = resolveVisemeIndex(frame);
             if (typeof index !== "number") {
                 continue;
             }
 
             let timeValue = 0;
-            if (typeof frame.tiempo === "number" && Number.isFinite(frame.tiempo)) {
+            if (frame && typeof frame.tiempo === "number" && Number.isFinite(frame.tiempo)) {
                 timeValue = frame.tiempo;
-            } else if (typeof frame.time === "number" && Number.isFinite(frame.time)) {
+            } else if (frame && typeof frame.time === "number" && Number.isFinite(frame.time)) {
                 timeValue = frame.time;
-            } else if (typeof frame.timestamp === "number" && Number.isFinite(frame.timestamp)) {
+            } else if (frame && typeof frame.timestamp === "number" && Number.isFinite(frame.timestamp)) {
                 timeValue = frame.timestamp;
             }
 
@@ -835,14 +835,26 @@ globalScope.THREE = THREE;
             return [];
         }
 
-        const useMilliseconds = rawTimes.some((t) => t > 20);
+        let useMilliseconds = false;
+        for (let i = 0; i < rawTimes.length; i += 1) {
+            if (rawTimes[i] > 20) {
+                useMilliseconds = true;
+                break;
+            }
+        }
 
-        return frames
-            .map((frame) => ({
-                index: frame.index,
-                time: useMilliseconds ? frame.rawTime / 1000 : frame.rawTime
-            }))
-            .sort((a, b) => a.time - b.time);
+        const normalized = [];
+        for (let i = 0; i < frames.length; i += 1) {
+            const frame = frames[i];
+            const time = useMilliseconds ? frame.rawTime / 1000 : frame.rawTime;
+            normalized.push({ index: frame.index, time });
+        }
+
+        normalized.sort(function (a, b) {
+            return a.time - b.time;
+        });
+
+        return normalized;
     }
 
     function resetVisemeMorphs() {
@@ -880,12 +892,13 @@ globalScope.THREE = THREE;
         if (!state.skinnedMesh || !state.skinnedMesh.morphTargetInfluences) {
             return;
         }
-
+      
         stopVisemePlayback();
         state.visemeAudio = audioElement;
 
         const influences = state.skinnedMesh.morphTargetInfluences;
         const windowSize = 0.14;
+    }
 
         function step() {
             if (!state.visemeAudio) {
@@ -938,11 +951,178 @@ globalScope.THREE = THREE;
                 state.visemeIndices = new Set();
                 state.pendingVisemes = null;
             } else {
-                resetMorphs();
+                state.pendingVisemes = payload.slice();
+            }
+            return;
+        }
+
+        if (payload.length === 0) {
+            stopVisemePlayback();
+            state.visemeSequence = [];
+            state.visemeIndices = new Set();
+            state.pendingVisemes = null;
+            resetVisemeMorphs();
+            return;
+        }
+
+        stopVisemePlayback();
+        const sequence = normalizeVisemeSequence(payload);
+
+        if (!sequence.length) {
+            state.visemeSequence = [];
+            state.visemeIndices = new Set();
+            state.pendingVisemes = null;
+            resetVisemeMorphs();
+            return;
+        }
+
+        state.visemeSequence = sequence;
+
+        const indices = new Set();
+        for (let i = 0; i < sequence.length; i += 1) {
+            const frame = sequence[i];
+            if (frame && typeof frame.index === "number") {
+                indices.add(frame.index);
             }
         }
 
-        requestAnimationFrame(update);
+        state.visemeIndices = indices;
+        state.pendingVisemes = null;
+    }
+
+    function prepareAudioClip(audioElement, source) {
+        if (!audioElement || !source) {
+            return Promise.resolve(0);
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            const onLoaded = () => {
+                cleanup();
+                const duration = Number.isFinite(audioElement.duration) && audioElement.duration > 0
+                    ? audioElement.duration * 1000
+                    : 0;
+                resolve(duration);
+            };
+
+            const onError = (err) => {
+                cleanup();
+                reject(err instanceof Error ? err : new Error("AvatarViewer: no se pudo cargar el audio de vista previa."));
+            };
+
+            const cleanup = () => {
+                audioElement.removeEventListener("loadedmetadata", onLoaded);
+                audioElement.removeEventListener("error", onError);
+            };
+
+            audioElement.addEventListener("loadedmetadata", onLoaded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+
+            try {
+                audioElement.src = source;
+                audioElement.load();
+                if (audioElement.readyState >= 1) {
+                    onLoaded();
+                }
+            } catch (err) {
+                onError(err);
+            }
+        });
+    }
+
+    function playPreparedAudioClip(audioElement) {
+        if (!audioElement) {
+            return Promise.resolve();
+        }
+
+        stopAudioClip(audioElement);
+
+        return new Promise((resolve, reject) => {
+            let started = false;
+            const playbackState = {
+                done: false,
+                cleanup() {
+                    audioElement.removeEventListener("ended", onEnded);
+                    audioElement.removeEventListener("error", onError);
+                    audioElement.removeEventListener("play", onStarted);
+                    audioElement.removeEventListener("playing", onStarted);
+                },
+                finish() {
+                    if (playbackState.done) {
+                        return;
+                    }
+                    playbackState.done = true;
+                    stopVisemePlayback();
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    resolve();
+                },
+                fail(err) {
+                    if (playbackState.done) {
+                        return;
+                    }
+                    playbackState.done = true;
+                    stopVisemePlayback();
+                    playbackState.cleanup();
+                    delete audioElement.__avatarPreviewPlayback;
+                    reject(err instanceof Error ? err : new Error("AvatarViewer: error al reproducir el audio de vista previa."));
+                }
+            };
+
+            const onEnded = () => playbackState.finish();
+            const onError = (err) => playbackState.fail(err);
+            const onStarted = () => {
+                if (started || playbackState.done) {
+                    return;
+                }
+                started = true;
+                startVisemePlayback(audioElement);
+            };
+
+            audioElement.__avatarPreviewPlayback = playbackState;
+
+            audioElement.addEventListener("ended", onEnded, { once: true });
+            audioElement.addEventListener("error", onError, { once: true });
+            audioElement.addEventListener("play", onStarted);
+            audioElement.addEventListener("playing", onStarted);
+
+            try {
+                const playPromise = audioElement.play();
+                if (playPromise && typeof playPromise.then === "function") {
+                    playPromise.then(onStarted).catch((err) => playbackState.fail(err));
+                } else {
+                    onStarted();
+                }
+            } catch (err) {
+                playbackState.fail(err);
+            }
+        });
+    }
+
+    function stopAudioClip(audioElement) {
+        if (!audioElement) {
+            return;
+        }
+
+        stopVisemePlayback();
+
+        const playbackState = audioElement.__avatarPreviewPlayback;
+        if (playbackState) {
+            delete audioElement.__avatarPreviewPlayback;
+            if (typeof playbackState.finish === "function") {
+                playbackState.finish();
+            } else if (typeof playbackState.cleanup === "function") {
+                playbackState.cleanup();
+            }
+        }
+
+        audioElement.pause();
+        try {
+            audioElement.currentTime = 0;
+        } catch (err) {
+            // Ignorar errores al reiniciar la posición del audio.
+        }
     }
 
     function prepareAudioClip(audioElement, source) {
