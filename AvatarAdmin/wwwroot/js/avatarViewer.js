@@ -111,14 +111,15 @@ globalScope.THREE = THREE;
             return;
         }
 
-        state.loadToken = 0;
-        state.currentModelUrl = null;
-
         if (state.renderer) {
             state.initializing = false;
             updateAppearance(options);
             return;
         }
+
+        state.loadToken = 0;
+        state.currentModelUrl = null;
+        state.loadingUrl = null;
 
         state.canvas = canvas;
         state.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
