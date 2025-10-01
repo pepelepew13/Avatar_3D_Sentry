@@ -150,7 +150,7 @@ globalScope.THREE = THREE;
         state.controls.enableDamping = true;
         state.controls.dampingFactor = 0.08;
         state.controls.enablePan = true;
-        state.controls.panSpeed = 0.4;
+        state.controls.panSpeed = 0.8;
         state.controls.minPolarAngle = Math.PI / 4;
         state.controls.maxPolarAngle = Math.PI / 1.9;
         state.controls.target.set(0, 1.5, 0);
@@ -380,8 +380,8 @@ globalScope.THREE = THREE;
         state.camera.position.copy(cameraPosition);
 
         if (state.controls) {
-            state.controls.minDistance = radius * 0.7;
-            state.controls.maxDistance = radius * 2.8;
+            state.controls.minDistance = radius * 2.5;
+            state.controls.maxDistance = radius * 10;
         }
 
         state.camera.updateProjectionMatrix();
