@@ -41,6 +41,7 @@ globalScope.THREE = THREE;
         visemeAnimationId: null,
         visemeAudio: null,
         pendingVisemes: null,
+        loadingUrl: null,
     };
 
     const backgroundPresets = {
@@ -116,14 +117,15 @@ globalScope.THREE = THREE;
             return;
         }
 
-        state.loadToken = 0;
-        state.currentModelUrl = null;
-
         if (state.renderer) {
             state.initializing = false;
             updateAppearance(options);
             return;
         }
+
+        state.loadToken = 0;
+        state.currentModelUrl = null;
+        state.loadingUrl = null;
 
         state.canvas = canvas;
         state.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -151,12 +153,13 @@ globalScope.THREE = THREE;
 
         state.controls = new OrbitControls(state.camera, canvas);
         state.controls.enableZoom = true;
-        state.controls.zoomSpeed = 0.9;
+        state.controls.zoomSpeed = 1;
         state.controls.enableDamping = true;
         state.controls.dampingFactor = 0.08;
-        state.controls.enablePan = false;
-        state.controls.minPolarAngle = Math.PI / 3;
-        state.controls.maxPolarAngle = Math.PI / 2.1;
+        state.controls.enablePan = true;
+        state.controls.panSpeed = 0.8;
+        state.controls.minPolarAngle = Math.PI / 4;
+        state.controls.maxPolarAngle = Math.PI / 1.9;
         state.controls.target.set(0, 1.5, 0);
 
         state.mixer = new THREE.AnimationMixer(null);
@@ -185,6 +188,8 @@ globalScope.THREE = THREE;
 
         disposeCurrentModel();
 
+        state.loadingUrl = normalized.modelUrl;
+
         loader.load(normalized.modelUrl,
             (gltf) => {
                 if (requestId !== state.loadToken) {
@@ -192,6 +197,7 @@ globalScope.THREE = THREE;
                     return;
                 }
 
+                state.loadingUrl = null;
                 state.root = gltf.scene;
                 state.currentModelUrl = normalized.modelUrl;
                 state.scene.add(state.root);
@@ -240,6 +246,7 @@ globalScope.THREE = THREE;
             undefined,
             (err) => {
                 if (requestId === state.loadToken) {
+                    state.loadingUrl = null;
                     console.error("AvatarViewer: error al cargar el modelo", err);
                     state.ready = false;
                     state.currentModelUrl = null;
@@ -372,13 +379,29 @@ globalScope.THREE = THREE;
         }
 
         const box = new THREE.Box3().setFromObject(state.root);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        if (box.isEmpty()) {
+            return;
+        }
 
-        state.controls.target.copy(new THREE.Vector3(center.x, center.y + size.y * 0.1, center.z));
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const center = sphere.center.clone();
+        const radius = sphere.radius || 1;
+        const marginFactor = 1.4;
+        const distance = radius * marginFactor;
 
-        const distance = Math.max(size.y, size.z) * 0.9;
-        state.camera.position.set(center.x + distance * 0.4, center.y + distance * 0.6, center.z + distance);
+        const target = center.clone();
+        target.y += radius * 0.15;
+        state.controls.target.copy(target);
+
+        const offsetDirection = new THREE.Vector3(0.4, 0.6, 1).normalize();
+        const cameraPosition = center.clone().add(offsetDirection.multiplyScalar(distance));
+        state.camera.position.copy(cameraPosition);
+
+        if (state.controls) {
+            state.controls.minDistance = radius * 2.5;
+            state.controls.maxDistance = radius * 10;
+        }
+
         state.camera.updateProjectionMatrix();
     }
 
@@ -392,6 +415,10 @@ globalScope.THREE = THREE;
         normalized.modelUrl = normalized.modelUrl || resolveModelUrl(normalized.outfit);
 
         state.pendingAppearance = normalized;
+
+        if (state.loadingUrl && state.loadingUrl === normalized.modelUrl) {
+            return;
+        }
 
         if (!state.currentModelUrl || normalized.modelUrl !== state.currentModelUrl) {
             loadModel(normalized);
@@ -587,6 +614,8 @@ globalScope.THREE = THREE;
 
         state.talkingAction.stop();
         state.talkingAction.enabled = false;
+        state.talkingAction.timeScale = 1;
+        state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
         state.talkingAction.timeScale = 1;
         state.talkingAction.setLoop(THREE.LoopRepeat, Infinity);
     }
@@ -909,24 +938,11 @@ globalScope.THREE = THREE;
                 state.visemeIndices = new Set();
                 state.pendingVisemes = null;
             } else {
-                state.pendingVisemes = payload.slice();
+                resetMorphs();
             }
-            return;
         }
 
-        if (payload.length === 0) {
-            stopVisemePlayback();
-            state.visemeSequence = [];
-            state.visemeIndices = new Set();
-            state.pendingVisemes = null;
-            return;
-        }
-
-        stopVisemePlayback();
-        const sequence = normalizeVisemeSequence(payload);
-        state.visemeSequence = sequence;
-        state.visemeIndices = new Set(sequence.map((frame) => frame.index));
-        state.pendingVisemes = null;
+        requestAnimationFrame(update);
     }
 
     function prepareAudioClip(audioElement, source) {
@@ -978,31 +994,17 @@ globalScope.THREE = THREE;
         stopAudioClip(audioElement);
 
         return new Promise((resolve, reject) => {
-            let started = false;
             const playbackState = {
-                done: false,
                 cleanup() {
                     audioElement.removeEventListener("ended", onEnded);
                     audioElement.removeEventListener("error", onError);
-                    audioElement.removeEventListener("play", onStarted);
-                    audioElement.removeEventListener("playing", onStarted);
                 },
                 finish() {
-                    if (playbackState.done) {
-                        return;
-                    }
-                    playbackState.done = true;
-                    stopVisemePlayback();
                     playbackState.cleanup();
                     delete audioElement.__avatarPreviewPlayback;
                     resolve();
                 },
                 fail(err) {
-                    if (playbackState.done) {
-                        return;
-                    }
-                    playbackState.done = true;
-                    stopVisemePlayback();
                     playbackState.cleanup();
                     delete audioElement.__avatarPreviewPlayback;
                     reject(err instanceof Error ? err : new Error("AvatarViewer: error al reproducir el audio de vista previa."));
@@ -1011,30 +1013,15 @@ globalScope.THREE = THREE;
 
             const onEnded = () => playbackState.finish();
             const onError = (err) => playbackState.fail(err);
-            const onStarted = () => {
-                if (started || playbackState.done) {
-                    return;
-                }
-                started = true;
-                startVisemePlayback(audioElement);
-            };
 
             audioElement.__avatarPreviewPlayback = playbackState;
 
             audioElement.addEventListener("ended", onEnded, { once: true });
             audioElement.addEventListener("error", onError, { once: true });
-            audioElement.addEventListener("play", onStarted);
-            audioElement.addEventListener("playing", onStarted);
 
-            try {
-                const playPromise = audioElement.play();
-                if (playPromise && typeof playPromise.then === "function") {
-                    playPromise.then(onStarted).catch((err) => playbackState.fail(err));
-                } else {
-                    onStarted();
-                }
-            } catch (err) {
-                playbackState.fail(err);
+            const playPromise = audioElement.play();
+            if (playPromise && typeof playPromise.then === "function") {
+                playPromise.catch((err) => playbackState.fail(err));
             }
         });
     }
@@ -1043,8 +1030,6 @@ globalScope.THREE = THREE;
         if (!audioElement) {
             return;
         }
-
-        stopVisemePlayback();
 
         const playbackState = audioElement.__avatarPreviewPlayback;
         if (playbackState) {
