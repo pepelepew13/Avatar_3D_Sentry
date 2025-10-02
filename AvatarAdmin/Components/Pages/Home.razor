@@ -342,6 +342,9 @@
 @code {
     private const long MaxLogoSize = 2 * 1024 * 1024;
     private const string DefaultProvider = "polly";
+    private const string PreviewModule = "Módulo demo";
+    private const string PreviewTicket = "A001";
+    private const string PreviewCustomer = "Cliente demo";
 
     private readonly SelectorModel selector = new();
     private AvatarConfigDto? config;
@@ -842,7 +845,7 @@
 
         if (isPreviewPlaying)
         {
-            await StopPreviewIfPlayingAsync();
+            await StopPreviewIfPlayingAsync(force: true);
             await InvokeAsync(StateHasChanged);
             return;
         }
@@ -855,7 +858,6 @@
         var cancellationToken = previewCancellation.Token;
 
         if (string.IsNullOrEmpty(previewAudioRef.Id))
-
         {
             previewErrorMessage = "El reproductor de audio no está disponible.";
             await InvokeAsync(StateHasChanged);
@@ -868,13 +870,18 @@
         try
         {
             var idioma = string.IsNullOrWhiteSpace(config.Idioma) ? null : config.Idioma;
-            var preview = await ApiClient.RequestAnnouncementPreviewAsync(
-                config.Empresa,
-                config.Sede,
-                idioma,
-                cancellationToken);
+            var request = new AnnouncementRequest
+            {
+                Empresa = config.Empresa,
+                Sede = config.Sede,
+                Modulo = PreviewModule,
+                Turno = PreviewTicket,
+                Nombre = PreviewCustomer
+            };
 
-            if (preview is null || string.IsNullOrWhiteSpace(preview.AudioUrl))
+            var announcement = await ApiClient.AnunciarAsync(request, idioma, cancellationToken);
+
+            if (announcement is null || string.IsNullOrWhiteSpace(announcement.AudioUrl))
             {
                 previewErrorMessage = "La vista previa no devolvió un audio válido.";
                 return;
@@ -888,7 +895,7 @@
             double duration;
             try
             {
-                duration = await JS.InvokeAsync<double>("AvatarViewer.prepareAudioClip", previewAudioRef, preview.AudioUrl);
+                duration = await JS.InvokeAsync<double>("AvatarViewer.prepareAudioClip", previewAudioRef, announcement.AudioUrl);
             }
             catch (JSException jsEx)
             {
@@ -897,12 +904,19 @@
                 return;
             }
 
+            if (duration <= 0)
+            {
+                Logger.LogWarning("La API devolvió un audio sin duración válida para la vista previa.");
+                previewErrorMessage = "No se pudo determinar la duración del audio de vista previa.";
+                return;
+            }
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
-            var visemes = preview.Visemas ?? new List<VisemeFrame>();
+            var visemes = announcement.Visemas ?? new List<VisemeFrame>();
 
             try
             {
@@ -931,6 +945,11 @@
                 return;
             }
 
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             isPreviewLoading = false;
             isPreviewPlaying = true;
             await InvokeAsync(StateHasChanged);
@@ -956,8 +975,7 @@
         }
         finally
         {
-            await StopPreviewIfPlayingAsync();
-            isPreviewLoading = false;
+            await StopPreviewIfPlayingAsync(force: true);
             previewCancellation?.Dispose();
             previewCancellation = null;
             await InvokeAsync(StateHasChanged);
@@ -1029,13 +1047,13 @@
         viewerInitialized = false;
     }
 
-    private async Task StopPreviewIfPlayingAsync()
+    private async Task StopPreviewIfPlayingAsync(bool force = false)
     {
         previewCancellation?.Cancel();
         previewCancellation?.Dispose();
         previewCancellation = null;
 
-        if (!isPreviewPlaying && !isPreviewLoading)
+        if (!force && !isPreviewPlaying && !isPreviewLoading)
         {
             return;
         }
