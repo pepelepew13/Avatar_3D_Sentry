@@ -919,6 +919,7 @@ globalScope.THREE = THREE;
             return 0;
         }
 
+
         function step() {
             if (!state.visemeAudio) {
                 state.visemeAnimationId = null;
