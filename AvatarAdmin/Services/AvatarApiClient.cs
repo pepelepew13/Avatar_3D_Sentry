@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http.Headers;
@@ -108,17 +109,13 @@ public class AvatarApiClient
         return new Uri(_httpClient.BaseAddress, path.TrimStart('/')).ToString();
     }
 
-    public async Task<AnnouncementPreviewResponse> RequestAnnouncementPreviewAsync(
+    public Task<AnnouncementResponse> RequestAnnouncementPreviewAsync(
         string empresa,
         string sede,
         string? idioma,
         CancellationToken cancellationToken = default)
     {
-        var requestUri = string.IsNullOrWhiteSpace(idioma)
-            ? "Avatar/anunciar"
-            : $"Avatar/anunciar?idioma={Uri.EscapeDataString(idioma)}";
-
-        var payload = new AnnouncementPreviewRequest
+        var payload = new AnnouncementRequest
         {
             Empresa = empresa,
             Sede = sede,
@@ -127,10 +124,56 @@ public class AvatarApiClient
             Nombre = "Cliente demo"
         };
 
+        return AnunciarAsync(payload, idioma, cancellationToken);
+    }
+
+    public Task<AnnouncementResponse> AnunciarAsync(
+        AnnouncementRequest request,
+        string? idioma,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        return SendAnnouncementAsync(request, idioma, cancellationToken);
+    }
+
+    public Task<AnnouncementResponse> AnunciarAsync(
+        string empresa,
+        string sede,
+        string modulo,
+        string turno,
+        string nombre,
+        string? idioma,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = new AnnouncementRequest
+        {
+            Empresa = empresa,
+            Sede = sede,
+            Modulo = modulo,
+            Turno = turno,
+            Nombre = nombre
+        };
+
+        return SendAnnouncementAsync(payload, idioma, cancellationToken);
+    }
+
+    private async Task<AnnouncementResponse> SendAnnouncementAsync(
+        AnnouncementRequest payload,
+        string? idioma,
+        CancellationToken cancellationToken)
+    {
+        var requestUri = string.IsNullOrWhiteSpace(idioma)
+            ? "Avatar/anunciar"
+            : $"Avatar/anunciar?idioma={Uri.EscapeDataString(idioma)}";
+
         using var response = await _httpClient.PostAsJsonAsync(requestUri, payload, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
-        var preview = await response.Content.ReadFromJsonAsync<AnnouncementPreviewResponse>(cancellationToken: cancellationToken);
-        return preview ?? throw new InvalidOperationException("La API no devolvió una vista previa válida.");
+        var announcement = await response.Content.ReadFromJsonAsync<AnnouncementResponse>(cancellationToken: cancellationToken);
+        return announcement ?? throw new InvalidOperationException("La API no devolvió un anuncio válido.");
     }
 
     private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)

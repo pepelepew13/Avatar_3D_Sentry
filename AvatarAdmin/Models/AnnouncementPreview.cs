@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AvatarAdmin.Models;
 
-public sealed class AnnouncementPreviewRequest
+public sealed class AnnouncementRequest
 {
     [JsonPropertyName("empresa")]
     public string Empresa { get; set; } = string.Empty;
@@ -21,8 +21,14 @@ public sealed class AnnouncementPreviewRequest
     public string Nombre { get; set; } = string.Empty;
 }
 
-public sealed class AnnouncementPreviewResponse
+public class AnnouncementResponse
 {
+    [JsonPropertyName("empresa")]
+    public string Empresa { get; set; } = string.Empty;
+
+    [JsonPropertyName("sede")]
+    public string Sede { get; set; } = string.Empty;
+
     [JsonPropertyName("texto")]
     public string Texto { get; set; } = string.Empty;
 
