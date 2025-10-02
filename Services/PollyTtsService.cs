@@ -21,21 +21,46 @@ public class PollyTtsService : ITtsService
         ["en"] = new() { "Joanna", "Matthew" }
     };
 
-    private static readonly Dictionary<string, string> _visemeToShape = new()
+    internal static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> _visemeToShapes
+        = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["p"] = new[] { "P", "B", "M" },
+            ["t"] = new[] { "L", "A" },
+            ["S"] = new[] { "I", "E" },
+            ["T"] = new[] { "L", "E" },
+            ["k"] = new[] { "O", "U" },
+            ["f"] = new[] { "F" },
+            ["u"] = new[] { "U" },
+            ["i"] = new[] { "I" },
+            ["a"] = new[] { "A" },
+            ["r"] = new[] { "A", "O" },
+            ["e"] = new[] { "E" },
+            ["o"] = new[] { "O" }
+        };
+
+    internal static IReadOnlyList<Visema> MapVisemeToShapes(string viseme, int time)
     {
-        ["p"] = "viseme_PP",
-        ["t"] = "viseme_T",
-        ["S"] = "viseme_SS",
-        ["T"] = "viseme_TH",
-        ["k"] = "viseme_KK",
-        ["f"] = "viseme_FF",
-        ["u"] = "viseme_U",
-        ["i"] = "viseme_I",
-        ["a"] = "viseme_AA",
-        ["r"] = "viseme_RR",
-        ["e"] = "viseme_E",
-        ["o"] = "viseme_O"
-    };
+        if (string.IsNullOrWhiteSpace(viseme))
+        {
+            return Array.Empty<Visema>();
+        }
+
+        if (!_visemeToShapes.TryGetValue(viseme, out var shapes) || shapes.Count == 0)
+        {
+            return Array.Empty<Visema>();
+        }
+
+        var list = new List<Visema>(shapes.Count);
+        foreach (var shape in shapes)
+        {
+            if (!string.IsNullOrWhiteSpace(shape))
+            {
+                list.Add(new Visema { ShapeKey = shape, Tiempo = time });
+            }
+        }
+
+        return list;
+    }
 
     public PollyTtsService(IConfiguration configuration)
     {
@@ -119,9 +144,10 @@ public class PollyTtsService : ITtsService
             {
                 var viseme = valueEl.GetString() ?? string.Empty;
                 var time = timeEl.GetInt32();
-                if (_visemeToShape.TryGetValue(viseme, out var shape))
+                var mapped = MapVisemeToShapes(viseme, time);
+                if (mapped.Count > 0)
                 {
-                    visemas.Add(new Visema { ShapeKey = shape, Tiempo = time });
+                    visemas.AddRange(mapped);
                 }
             }
         }
