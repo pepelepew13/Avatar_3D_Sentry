@@ -922,7 +922,8 @@ globalScope.THREE = THREE;
                     continue;
                 }
 
-                const distance = Math.abs(current - frame.time);
+                const frameTimeSeconds = typeof frame.time === "number" ? frame.time / 1000 : 0;
+                const distance = Math.abs(current - frameTimeSeconds);
                 if (distance > windowSize) {
                     continue;
                 }
