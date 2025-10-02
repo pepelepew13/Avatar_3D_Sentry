@@ -429,11 +429,19 @@
     private string? CurrentLogoUrl => config is null ? null : ApiClient.BuildAssetUrl(config.LogoPath);
     private string GetModelUrlForCurrentConfig() => GetModelUrlForOutfit(config?.Vestimenta);
 
+    private static readonly string StaticVersion =
+    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(); // cambia en cada arranque
+
     private string GetModelUrlForOutfit(string? outfit)
     {
-        var option = FindOutfitOption(outfit);
-        var path = option.ModelPath;
-        return ApiClient.BuildAssetUrl(path) ?? path;
+        var option  = FindOutfitOption(outfit);
+        var path    = option.ModelPath;
+
+        // url base: si tu ApiClient no reescribe, usa el path tal cual
+        var baseUrl = ApiClient.BuildAssetUrl(path) ?? path;
+
+        // añade la versión para romper caché del navegador
+        return $"{baseUrl}?v={StaticVersion}";
     }
 
     private string GetOutfitLabel(string? value) => FindOutfitOption(value).Label;

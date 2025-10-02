@@ -898,7 +898,6 @@ globalScope.THREE = THREE;
 
         const influences = state.skinnedMesh.morphTargetInfluences;
         const windowSize = 0.14;
-    }
 
         function step() {
             if (!state.visemeAudio) {

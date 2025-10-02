@@ -168,8 +168,20 @@ if (Directory.Exists(modelsPhysicalPath))
             ctx.Context.Response.Headers["Access-Control-Allow-Origin"] = "http://localhost:5168";
             ctx.Context.Response.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
             ctx.Context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-            ctx.Context.Response.Headers["Vary"] = "Origin"; // opcional pero buena práctica
-            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=604800";
+            ctx.Context.Response.Headers["Vary"] = "Origin";
+
+            if (app.Environment.IsDevelopment())
+            {
+                // 👇 evita cache en desarrollo
+                ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                ctx.Context.Response.Headers["Pragma"]        = "no-cache";
+                ctx.Context.Response.Headers["Expires"]       = "0";
+            }
+            else
+            {
+                // 👇 en producción, usa caché fuerte + versionado (ver punto 3)
+                ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+            }
         }
     });
 }
