@@ -898,7 +898,26 @@ globalScope.THREE = THREE;
 
         const influences = state.skinnedMesh.morphTargetInfluences;
         const windowSize = 0.14;
-    }
+
+        function toSeconds(frame) {
+            if (!frame) {
+                return 0;
+            }
+
+            if (typeof frame.time === "number" && Number.isFinite(frame.time)) {
+                return frame.time > 20 ? frame.time / 1000 : frame.time;
+            }
+
+            if (typeof frame.tiempo === "number" && Number.isFinite(frame.tiempo)) {
+                return frame.tiempo / 1000;
+            }
+
+            if (typeof frame.timestamp === "number" && Number.isFinite(frame.timestamp)) {
+                return frame.timestamp > 20 ? frame.timestamp / 1000 : frame.timestamp;
+            }
+
+            return 0;
+        }
 
         function step() {
             if (!state.visemeAudio) {
@@ -923,7 +942,7 @@ globalScope.THREE = THREE;
                     continue;
                 }
 
-                const frameTimeSeconds = typeof frame.time === "number" ? frame.time / 1000 : 0;
+                const frameTimeSeconds = toSeconds(frame);
                 const distance = Math.abs(current - frameTimeSeconds);
                 if (distance > windowSize) {
                     continue;
