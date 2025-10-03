@@ -190,12 +190,20 @@ app.Use(async (ctx, next) =>
 {
     if (ctx.Request.Path.StartsWithSegments("/models"))
     {
-        ctx.Response.Headers["Access-Control-Allow-Origin"] = "http://localhost:5168";
-        ctx.Response.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
-        ctx.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Range";
-        ctx.Response.Headers["Access-Control-Expose-Headers"] = "Accept-Ranges, Content-Range";
+        var origin = "http://localhost:5168";
+        ctx.Response.Headers["Access-Control-Allow-Origin"] = origin;
         ctx.Response.Headers["Vary"] = "Origin";
+
+        if (HttpMethods.IsOptions(ctx.Request.Method))
+        {
+            ctx.Response.Headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+            ctx.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Range";
+            ctx.Response.Headers["Access-Control-Expose-Headers"] = "Accept-Ranges, Content-Range";
+            ctx.Response.StatusCode = StatusCodes.Status204NoContent;
+            return;
+        }
     }
+
     await next();
 });
 

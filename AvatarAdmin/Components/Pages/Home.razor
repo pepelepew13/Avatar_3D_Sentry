@@ -313,17 +313,36 @@
                                     case PanelBackground:
                                         <div class="control-card">
                                             <h3>Escenografía</h3>
-                                            <p>Selecciona el ambiente que acompañará a tu asistente virtual en las pantallas del punto de atención.</p>
+                                            <p>Selecciona el ambiente o sube una imagen de fondo.</p>
+
                                             <div class="option-pills">
-                                                @foreach (var background in Backgrounds)
-                                                {
-                                                    var active = background.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase);
-                                                    <button type="button" class="option-pill @(active ? "active" : string.Empty)" @onclick="() => SelectBackgroundAsync(background.Value)" disabled="@isSaving">@background.Label</button>
-                                                }
+                                            @foreach (var background in Backgrounds)
+                                            {
+                                                var active = background.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase);
+                                                <button type="button" class="option-pill @(active ? "active" : string.Empty)"
+                                                        @onclick="() => SelectBackgroundAsync(background.Value)"
+                                                        disabled="@isSaving">@background.Label</button>
+                                            }
                                             </div>
-                                            <small class="form-text">Puedes subir fondos personalizados desde el módulo avanzado o usar las escenas sugeridas por Sentry.</small>
+
+                                            <div class="section-divider"></div>
+
+                                            <h4 class="section-title">Fondo personalizado</h4>
+                                            <InputFile OnChange="OnBackgroundSelectedAsync"
+                                                    accept="image/png,image/jpeg,image/webp" disabled="@isSaving" />
+                                            <small class="form-text">
+                                            PNG/JPG/WEBP. Si la imagen es panorámica 2:1 se usa como ambiente;
+                                            si es foto normal se coloca como fondo fijo.
+                                            </small>
+                                            @if (!string.IsNullOrWhiteSpace(config.Fondo) && config.Fondo.StartsWith("/"))
+                                            {
+                                            <div class="preview-logo large">
+                                                <img src="@ApiClient.BuildAssetUrl(config.Fondo)" alt="Fondo actual" />
+                                            </div>
+                                            }
                                         </div>
                                         break;
+
                                 }
                             </section>
                         </div>
@@ -451,13 +470,10 @@
 
     private string GetBackgroundLabel(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return Backgrounds[0].Label;
-        }
-
+        if (string.IsNullOrWhiteSpace(value)) return Backgrounds[0].Label;
         var match = Backgrounds.FirstOrDefault(b => b.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
-        return match?.Label ?? Backgrounds[0].Label;
+        if (match is not null) return match.Label;
+        return "Personalizado";
     }
 
     private static OutfitOption FindOutfitOption(string? value)
@@ -746,12 +762,11 @@
 
     private string GetPreviewClass()
     {
-        if (config is null)
-        {
-            return $"preview-stage {Backgrounds[0].CssClass}";
-        }
-
-        var match = Backgrounds.FirstOrDefault(b => b.Value.Equals(config.Fondo, StringComparison.OrdinalIgnoreCase));
+        if (config is null) return $"preview-stage {Backgrounds[0].CssClass}";
+        var val = config.Fondo ?? "";
+        var isUrl = val.StartsWith("http", StringComparison.OrdinalIgnoreCase) || val.StartsWith("/");
+        if (isUrl) return "preview-stage"; // sin clase adicional
+        var match = Backgrounds.FirstOrDefault(b => b.Value.Equals(val, StringComparison.OrdinalIgnoreCase));
         return $"preview-stage {match?.CssClass ?? Backgrounds[0].CssClass}";
     }
 
@@ -766,27 +781,45 @@
         return match?.Label ?? Languages[0].Label;
     }
     
-    
+    private async Task SafeInvokeVoidAsync(string identifier, params object[] args)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(identifier, args);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuito desconectado: ignorar.
+        }
+        catch (ObjectDisposedException)
+        {
+            // El componente/JSRuntime ya se está liberando: ignorar.
+        }
+        catch (JSException)
+        {
+            // Otros errores JS: opcional registrar, pero no re-lanzar en dispose.
+        }
+    }
 
     private async Task InitializeOrUpdateViewerAsync()
     {
         if (config is null || !hasRenderedOnce || !showEditorModal)
-        {
             return;
-        }
 
-        if (initializingViewer) // 👈 evita doble init solapado
-            return;
+        if (initializingViewer) return;   // corta reentradas
+        initializingViewer = true;        // cerrojo
 
         try
         {
             var options = new
             {
-                modelUrl = GetModelUrlForCurrentConfig(),
-                logoUrl = CurrentLogoUrl,
-                outfit = config.Vestimenta,
-                background = config.Fondo,
-                hairColor = GetHairColorHex(config.ColorCabello)
+                modelUrl   = GetModelUrlForCurrentConfig(),
+                logoUrl    = CurrentLogoUrl,
+                outfit     = config.Vestimenta,
+                background = string.IsNullOrWhiteSpace(config.Fondo)
+                    ? config.Fondo
+                    : ApiClient.BuildAssetUrl(config.Fondo),
+                hairColor  = GetHairColorHex(config.ColorCabello)
             };
 
             if (!viewerInitialized)
@@ -803,6 +836,48 @@
         {
             Logger.LogError(jsEx, "No fue posible inicializar el visor 3D del avatar");
             errorMessage ??= "El visor 3D no pudo inicializarse. Revisa la consola del navegador.";
+        }
+        finally
+        {
+            initializingViewer = false;    // libera cerrojo
+        }
+    }
+
+    private const long MaxBgSize = 5 * 1024 * 1024; // 5 MB
+
+    private async Task OnBackgroundSelectedAsync(InputFileChangeEventArgs args)
+    {
+        if (config is null) return;
+
+        var file = args.File;
+        if (file is null) return;
+
+        if (file.Size > MaxBgSize)
+        {
+            errorMessage = "El fondo supera el tamaño permitido (5 MB).";
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxBgSize);
+            // Implementa este endpoint en tu API (similar a UploadLogoAsync)
+            var path = await ApiClient.UploadBackgroundAsync(
+                selector.Empresa, selector.Sede, stream,
+                file.Name, file.ContentType ?? "application/octet-stream");
+
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                // Guarda ruta relativa o absoluta.
+                config.Fondo = path;          // 👈 ahora es URL/Path
+                successMessage = "Fondo personalizado actualizado.";
+                RequestViewerRefresh();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al subir el fondo");
+            errorMessage = "No fue posible subir el fondo. Verifica el formato e inténtalo de nuevo.";
         }
     }
 
@@ -1030,20 +1105,8 @@
 
     private async Task DisposeViewerAsync()
     {
-        if (!viewerInitialized)
-        {
-            return;
-        }
-
-        try
-        {
-            await JS.InvokeVoidAsync("AvatarViewer.dispose");
-        }
-        catch (JSException)
-        {
-            // Ignorar errores de limpieza cuando el visor ya no existe.
-        }
-
+        if (!viewerInitialized) return;
+        await SafeInvokeVoidAsync("AvatarViewer.dispose");
         viewerInitialized = false;
     }
 
@@ -1053,31 +1116,12 @@
         previewCancellation?.Dispose();
         previewCancellation = null;
 
-        if (!force && !isPreviewPlaying && !isPreviewLoading)
-        {
-            return;
-        }
+        if (!force && !isPreviewPlaying && !isPreviewLoading) return;
 
         if (!string.IsNullOrEmpty(previewAudioRef.Id))
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("AvatarViewer.stopAudioClip", previewAudioRef);
-            }
-            catch (JSException)
-            {
-                // Ignorar errores de sincronización cuando el visor se cierra.
-            }
-        }
+            await SafeInvokeVoidAsync("AvatarViewer.stopAudioClip", previewAudioRef);
 
-        try
-        {
-            await JS.InvokeVoidAsync("AvatarViewer.stopTalking");
-        }
-        catch (JSException)
-        {
-            // Ignorar errores de sincronización cuando el visor se cierra.
-        }
+        await SafeInvokeVoidAsync("AvatarViewer.stopTalking");
 
         isPreviewPlaying = false;
         isPreviewLoading = false;

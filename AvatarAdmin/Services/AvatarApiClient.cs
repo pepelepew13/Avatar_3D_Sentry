@@ -187,4 +187,42 @@ public class AvatarApiClient
         _logger.LogWarning("La API devolvió un error {StatusCode}: {Body}", (int)response.StatusCode, body);
         throw new InvalidOperationException($"La API devolvió un estado {(int)response.StatusCode}. Detalle: {body}");
     }
+
+    public async Task<string?> UploadBackgroundAsync(
+        string empresa,
+        string sede,
+        Stream stream,
+        string fileName,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        // Ajusta esta ruta si en tu API usaste otra (p. ej. ".../fondo").
+        var requestUri = $"AvatarEditor/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/background";
+
+        using var form = new MultipartFormDataContent();
+
+        // Campo del formulario: usa "background" (si tu API espera "fondo", cambia el primer parámetro)
+        var content = new StreamContent(stream);
+        content.Headers.ContentType = new MediaTypeHeaderValue(
+            string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+        form.Add(content, "background", fileName);
+
+        using var response = await _httpClient.PostAsync(requestUri, form, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var doc = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
+
+        // Acepta varias claves posibles desde el backend
+        if (doc.RootElement.TryGetProperty("backgroundPath", out var v1))
+            return v1.GetString();
+        if (doc.RootElement.TryGetProperty("fondoPath", out var v2))
+            return v2.GetString();
+        if (doc.RootElement.TryGetProperty("path", out var v3))
+            return v3.GetString();
+        if (doc.RootElement.TryGetProperty("url", out var v4))
+            return v4.GetString();
+
+        return null;
+    }
 }
