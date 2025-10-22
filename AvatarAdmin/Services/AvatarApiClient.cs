@@ -1,228 +1,258 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using AvatarAdmin.Models;
-using Microsoft.Extensions.Options;
 
 namespace AvatarAdmin.Services;
 
-public class AvatarApiClient
+public sealed class AvatarApiClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<AvatarApiClient> _logger;
-    private readonly ApiOptions _options;
+    private readonly HttpClient _http;
+    private readonly AuthState _auth;
+    private readonly JsonSerializerOptions _json;
 
-    public AvatarApiClient(HttpClient httpClient, IOptions<ApiOptions> options, ILogger<AvatarApiClient> logger)
+    public AvatarApiClient(HttpClient http, AuthState auth)
     {
-        _httpClient = httpClient;
-        _logger = logger;
-        _options = options.Value;
+        _http = http;
+        _auth = auth;
 
-        if (_httpClient.BaseAddress is null && !string.IsNullOrWhiteSpace(_options.BaseUrl))
+        _json = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            _httpClient.BaseAddress = new Uri(_options.BaseUrl);
+            PropertyNameCaseInsensitive = true
+        };
+    }
+
+    // ========= Helpers =========
+
+    private void AttachBearerIfAny()
+    {
+        if (!string.IsNullOrWhiteSpace(_auth.Token))
+        {
+            _http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _auth.Token);
+        }
+        else
+        {
+            _http.DefaultRequestHeaders.Authorization = null;
         }
     }
 
-    public Uri? BaseAddress => _httpClient.BaseAddress;
-
-    public async Task<AvatarConfigDto> GetConfigAsync(string empresa, string sede, CancellationToken cancellationToken = default)
+    private static async Task EnsureSuccessAsync(HttpResponseMessage resp, CancellationToken ct)
     {
-        var requestUri = $"api/avatar/config?empresa={Uri.EscapeDataString(empresa)}&sede={Uri.EscapeDataString(sede)}";
-        using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        var config = await response.Content.ReadFromJsonAsync<AvatarConfigDto>(cancellationToken: cancellationToken);
-        return config ?? throw new InvalidOperationException("La respuesta no contiene una configuración válida.");
+        if (resp.IsSuccessStatusCode) return;
+
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        var msg = $"La API devolvió un estado {(int)resp.StatusCode}. Detalle: {body}";
+        throw new InvalidOperationException(msg);
     }
 
-    public async Task<AvatarConfigDto> UpdateConfigAsync(string empresa, string sede, AvatarConfigUpdate update, CancellationToken cancellationToken = default)
+    // === JWT helpers ===
+    private static DateTime? TryGetJwtExpiryUtc(string jwt)
     {
-        var requestUri = $"AvatarEditor/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}";
-        using var response = await _httpClient.PostAsJsonAsync(requestUri, update, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        var config = await response.Content.ReadFromJsonAsync<AvatarConfigDto>(cancellationToken: cancellationToken);
-        return config ?? throw new InvalidOperationException("No fue posible leer la configuración actualizada.");
-    }
-
-    public async Task<string?> UploadLogoAsync(string empresa, string sede, Stream stream, string fileName, string contentType, CancellationToken cancellationToken = default)
-    {
-        var requestUri = $"AvatarEditor/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/logo";
-        using var form = new MultipartFormDataContent();
-        var content = new StreamContent(stream);
-        content.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
-        form.Add(content, "logo", fileName);
-
-        using var response = await _httpClient.PostAsync(requestUri, form, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var doc = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
-        if (doc.RootElement.TryGetProperty("logoPath", out var value))
+        try
         {
-            return value.GetString();
-        }
+            var parts = jwt.Split('.');
+            if (parts.Length < 2) return null;
 
-        return null;
-    }
-
-    public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetVoicesAsync(CancellationToken cancellationToken = default)
-    {
-        using var response = await _httpClient.GetAsync("AvatarEditor/voces", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, Dictionary<string, List<string>>>>(cancellationToken: cancellationToken);
-        if (payload is null || payload.Count == 0)
-        {
-            return new Dictionary<string, IReadOnlyList<string>>();
-        }
-
-        var voices = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var provider in payload.Values)
-        {
-            foreach (var kvp in provider)
+            string payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
+            using var doc = JsonDocument.Parse(payloadJson);
+            if (doc.RootElement.TryGetProperty("exp", out var expProp) && expProp.TryGetInt64(out var exp))
             {
-                voices[kvp.Key] = kvp.Value;
+                return DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
             }
+            return null;
         }
-
-        return voices;
-    }
-
-    public string? BuildAssetUrl(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
+        catch
         {
             return null;
         }
+    }
 
-        if (Uri.TryCreate(path, UriKind.Absolute, out var absolute))
+    private static byte[] Base64UrlDecode(string base64Url)
+    {
+        string s = base64Url.Replace('-', '+').Replace('_', '/');
+        switch (s.Length % 4)
         {
-            return absolute.ToString();
+            case 2: s += "=="; break;
+            case 3: s += "="; break;
+        }
+        return Convert.FromBase64String(s);
+    }
+
+    // ========= Auth =========
+
+    public async Task<LoginResponse> LoginAsync(LoginRequest req, CancellationToken ct = default)
+    {
+        _http.DefaultRequestHeaders.Authorization = null;
+
+        var resp = await _http.PostAsJsonAsync("/api/auth/login", req, _json, ct);
+        await EnsureSuccessAsync(resp, ct);
+
+        var payload = await resp.Content.ReadFromJsonAsync<LoginResponse>(_json, ct)
+                      ?? throw new InvalidOperationException("Respuesta login vacía.");
+
+        var token = (payload.Token ?? string.Empty).Trim();
+
+        DateTime? expires = payload.ExpiresAtUtc;
+
+        if (expires is null || expires <= DateTime.UtcNow.AddMinutes(1))
+        {
+            var fromJwt = !string.IsNullOrWhiteSpace(token) ? TryGetJwtExpiryUtc(token) : null;
+            if (fromJwt is not null) expires = fromJwt;
+            if (expires is null || expires <= DateTime.UtcNow.AddMinutes(1))
+                expires = DateTime.UtcNow.AddHours(8);
         }
 
-        if (_httpClient.BaseAddress is null)
-        {
-            return path;
-        }
+        _auth.SetSession(
+            token: token,
+            expiresAtUtc: expires.Value,
+            email: req.Email,
+            role: payload.Role,
+            empresa: payload.Empresa,
+            sede: payload.Sede
+        );
 
-        return new Uri(_httpClient.BaseAddress, path.TrimStart('/')).ToString();
+        return payload;
     }
 
-    public Task<AnnouncementResponse> RequestAnnouncementPreviewAsync(
-        string empresa,
-        string sede,
-        string? idioma,
-        CancellationToken cancellationToken = default)
+    public async Task CreateUserAsync(CreateUserRequest req, CancellationToken ct = default)
     {
-        var payload = new AnnouncementRequest
-        {
-            Empresa = empresa,
-            Sede = sede,
-            Modulo = "Módulo demo",
-            Turno = "A001",
-            Nombre = "Cliente demo"
-        };
-
-        return AnunciarAsync(payload, idioma, cancellationToken);
+        AttachBearerIfAny();
+        var resp = await _http.PostAsJsonAsync("/api/auth/users", req, _json, ct);
+        await EnsureSuccessAsync(resp, ct);
     }
 
-    public Task<AnnouncementResponse> AnunciarAsync(
-        AnnouncementRequest request,
-        string? idioma,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
+    // ========= Avatar Config =========
 
-        return SendAnnouncementAsync(request, idioma, cancellationToken);
+    public async Task<AvatarConfigDto> GetConfigAsync(string empresa, string sede, CancellationToken ct = default)
+    {
+        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/config";
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    public Task<AnnouncementResponse> AnunciarAsync(
-        string empresa,
-        string sede,
-        string modulo,
-        string turno,
-        string nombre,
-        string? idioma,
-        CancellationToken cancellationToken = default)
+    public async Task<AvatarConfigDto> UpdateConfigAsync(string empresa, string sede, AvatarConfigUpdate update, CancellationToken ct = default)
     {
-        var payload = new AnnouncementRequest
-        {
-            Empresa = empresa,
-            Sede = sede,
-            Modulo = modulo,
-            Turno = turno,
-            Nombre = nombre
-        };
-
-        return SendAnnouncementAsync(payload, idioma, cancellationToken);
+        AttachBearerIfAny();
+        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}";
+        var resp = await _http.PutAsJsonAsync(url, update, _json, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    private async Task<AnnouncementResponse> SendAnnouncementAsync(
-        AnnouncementRequest payload,
-        string? idioma,
-        CancellationToken cancellationToken)
+    public async Task<AvatarConfigDto> UploadLogoAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
     {
-        var requestUri = string.IsNullOrWhiteSpace(idioma)
-            ? "Avatar/anunciar"
-            : $"Avatar/anunciar?idioma={Uri.EscapeDataString(idioma)}";
+        AttachBearerIfAny();
+        using var content = new MultipartFormDataContent();
+        var fileContent = new StreamContent(file);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+        content.Add(fileContent, "file", fileName);
 
-        using var response = await _httpClient.PostAsJsonAsync(requestUri, payload, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        var announcement = await response.Content.ReadFromJsonAsync<AnnouncementResponse>(cancellationToken: cancellationToken);
-        return announcement ?? throw new InvalidOperationException("La API no devolvió un anuncio válido.");
+        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/logo";
+        var resp = await _http.PostAsync(url, content, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    public async Task<AvatarConfigDto> UploadBackgroundAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
     {
-        if (response.IsSuccessStatusCode)
-        {
-            return;
-        }
+        AttachBearerIfAny();
+        using var content = new MultipartFormDataContent();
+        var fileContent = new StreamContent(file);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+        content.Add(fileContent, "file", fileName);
 
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
-        _logger.LogWarning("La API devolvió un error {StatusCode}: {Body}", (int)response.StatusCode, body);
-        throw new InvalidOperationException($"La API devolvió un estado {(int)response.StatusCode}. Detalle: {body}");
+        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/background";
+        var resp = await _http.PostAsync(url, content, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    public async Task<string?> UploadBackgroundAsync(
-        string empresa,
-        string sede,
-        Stream stream,
-        string fileName,
-        string contentType,
-        CancellationToken cancellationToken = default)
+    public async Task<Dictionary<string, List<string>>> GetVoicesAsync(CancellationToken ct = default)
     {
-        // Ajusta esta ruta si en tu API usaste otra (p. ej. ".../fondo").
-        var requestUri = $"AvatarEditor/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/background";
+        var resp = await _http.GetAsync("/api/tts/voices", ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<Dictionary<string, List<string>>>(_json, ct))!;
+    }
 
-        using var form = new MultipartFormDataContent();
+    public sealed class ModelsResponse
+    {
+        public string BaseUrl { get; set; } = string.Empty;
+        public List<string> Files { get; set; } = new();
+    }
 
-        // Campo del formulario: usa "background" (si tu API espera "fondo", cambia el primer parámetro)
-        var content = new StreamContent(stream);
-        content.Headers.ContentType = new MediaTypeHeaderValue(
-            string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
-        form.Add(content, "background", fileName);
+    public async Task<ModelsResponse> GetModelsAsync(CancellationToken ct = default)
+    {
+        var resp = await _http.GetAsync("/api/models", ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<ModelsResponse>(_json, ct))!;
+    }
 
-        using var response = await _httpClient.PostAsync(requestUri, form, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+    public async Task<AnnouncementResponse> AnnounceAsync(AnnouncementRequest req, string idioma, string voz, CancellationToken ct = default)
+    {
+        var url = $"/api/Avatar/announce?idioma={Uri.EscapeDataString(idioma)}&voz={Uri.EscapeDataString(voz)}";
+        var resp = await _http.PostAsJsonAsync(url, req, _json, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AnnouncementResponse>(_json, ct))!;
+    }
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var doc = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
+    public string BaseUrl => _http.BaseAddress?.ToString() ?? "/";
 
-        // Acepta varias claves posibles desde el backend
-        if (doc.RootElement.TryGetProperty("backgroundPath", out var v1))
-            return v1.GetString();
-        if (doc.RootElement.TryGetProperty("fondoPath", out var v2))
-            return v2.GetString();
-        if (doc.RootElement.TryGetProperty("path", out var v3))
-            return v3.GetString();
-        if (doc.RootElement.TryGetProperty("url", out var v4))
-            return v4.GetString();
+    // ========= NUEVO: Gestión de usuarios (lista/edita/borra) =========
 
-        return null;
+    public sealed class UserItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
+        public string? Empresa { get; set; }
+        public string? Sede { get; set; }
+    }
+
+    public sealed class UserListResponse
+    {
+        public int Total { get; set; }
+        public List<UserItem> Items { get; set; } = new();
+    }
+
+    public sealed class UpdateUserRequest
+    {
+        public string Role { get; set; } = "User";
+        public string? Empresa { get; set; }
+        public string? Sede { get; set; }
+        public string? NewPassword { get; set; }
+    }
+
+    /// <summary>GET /api/auth/users?skip=0&take=10&q=...&role=User|Admin</summary>
+    public async Task<UserListResponse> ListUsersAsync(int skip = 0, int take = 10, string? q = null, string? role = null, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var qs = new List<string> { $"skip={skip}", $"take={take}" };
+        if (!string.IsNullOrWhiteSpace(q)) qs.Add("q=" + Uri.EscapeDataString(q));
+        if (!string.IsNullOrWhiteSpace(role)) qs.Add("role=" + Uri.EscapeDataString(role));
+        var url = "/api/auth/users" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<UserListResponse>(_json, ct))!;
+    }
+
+    /// <summary>PUT /api/auth/users/{id}</summary>
+    public async Task UpdateUserAsync(string id, UpdateUserRequest req, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var url = "/api/auth/users/" + Uri.EscapeDataString(id);
+        var resp = await _http.PutAsJsonAsync(url, req, _json, ct);
+        await EnsureSuccessAsync(resp, ct);
+    }
+
+    /// <summary>DELETE /api/auth/users/{id}</summary>
+    public async Task DeleteUserAsync(string id, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var url = "/api/auth/users/" + Uri.EscapeDataString(id);
+        var resp = await _http.DeleteAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
     }
 }

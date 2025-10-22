@@ -1,99 +1,113 @@
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 
-<div class="viewer-wrapper">
-    <canvas @ref="canvas"></canvas>
+<div class="viewer-wrapper vg-stage">
+  <canvas @ref="canvas" class="avatar-viewer-canvas"></canvas>
+
+  @if (ShowHud)
+  {
+    <div class="viewer-overlay">
+      <div class="viewer-left">
+        <span class="viewer-pill">Vista 3D</span>
+        <span class="hint">
+          <span class="kbd">Arrastra</span> rota ·
+          <span class="kbd">Rueda</span> zoom ·
+          <span class="kbd">Shift+Arrastra</span> pan
+        </span>
+      </div>
+
+      <div class="viewer-tools">
+        <div class="preset">
+          <button class="icon-btn" title="Cuerpo entero" @onclick='() => Call("setCameraPreset","full")'>🧍</button>
+          <button class="icon-btn" title="Plano medio"  @onclick='() => Call("setCameraPreset","waist")'>🧍‍♂️</button>
+          <button class="icon-btn" title="Pecho"        @onclick='() => Call("setCameraPreset","chest")'>👔</button>
+          <button class="icon-btn" title="Cabeza"       @onclick='() => Call("setCameraPreset","head")'>🙂</button>
+          <span class="sep"></span>
+        </div>
+
+        <button class="icon-btn" title="Reset cámara" @onclick='() => Call("resetCamera")'>↺</button>
+        <button class="icon-btn" title="Auto-rotar"   @onclick="ToggleRotate">@((autoRotate ? "⏸" : "⟳"))</button>
+        <button class="icon-btn" title="Luz on/off"   @onclick='() => Call("toggleLight")'>💡</button>
+        <button class="icon-btn" title="Suelo on/off" @onclick='() => Call("toggleGround")'>⎚</button>
+        <button class="icon-btn" title="Captura PNG"  @onclick="Screenshot">📸</button>
+      </div>
+    </div>
+  }
 </div>
 
 @code {
-    private ElementReference canvas;
-    private IJSObjectReference? module;
-    private IJSObjectReference? viewerInstance;
-    private bool initialized;
+  private ElementReference canvas;
+  private IJSObjectReference? module;
+  private IJSObjectReference? viewerInstance;
+  private bool initialized;
+  private bool autoRotate;
 
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
+  [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    [Parameter]
-    public string ModelPath { get; set; } = "/Resources/AvatarReWork.glb";
+  [Parameter] public string ModelPath { get; set; } = "/models/Avatar.glb";
+  [Parameter] public string? LogoUrl { get; set; }
+  [Parameter] public string? Outfit { get; set; }
+  [Parameter] public string? Background { get; set; }
+  [Parameter] public bool ShowHud { get; set; } = true;
 
-    [Parameter]
-    public string? LogoUrl { get; set; }
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (!firstRender) return;
+    module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/AvatarViewer.razor.js");
+    viewerInstance = await module.InvokeAsync<IJSObjectReference>("createViewer", canvas, new {
+      modelUrl = ModelPath, logoUrl = LogoUrl, outfit = Outfit, background = Background
+    });
+    initialized = true;
+    await SyncStateAsync();
+  }
 
-    [Parameter]
-    public string? Outfit { get; set; }
+  protected override async Task OnParametersSetAsync()
+  {
+    if (!initialized) return;
+    await SyncStateAsync();
+  }
 
-    [Parameter]
-    public string? Background { get; set; }
+  private async Task SyncStateAsync()
+  {
+    if (viewerInstance is null) return;
+    await viewerInstance.InvokeVoidAsync("setLogo", LogoUrl);
+    await viewerInstance.InvokeVoidAsync("setOutfit", Outfit);
+    await viewerInstance.InvokeVoidAsync("setBackground", Background);
+  }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
+  private async Task Call(string fn, object? arg = null)
+  {
+    if (viewerInstance is null) return;
+    if (arg is null) await viewerInstance.InvokeVoidAsync(fn);
+    else             await viewerInstance.InvokeVoidAsync(fn, arg);
+  }
 
-        if (!firstRender)
-        {
-            return;
-        }
+  private async Task ToggleRotate()
+  {
+    autoRotate = !autoRotate;
+    if (viewerInstance is not null)
+      await viewerInstance.InvokeVoidAsync("setAutoRotate", autoRotate);
+  }
 
-        module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Shared/AvatarViewer.razor.js");
-        viewerInstance = await module.InvokeAsync<IJSObjectReference>("createViewer", canvas, new
-        {
-            modelUrl = ModelPath,
-            logoUrl = LogoUrl,
-            outfit = Outfit,
-            background = Background
-        });
-        initialized = true;
-        await SyncStateAsync();
-    }
+  private async Task Screenshot()
+  {
+    if (viewerInstance is null || module is null) return;
+    var dataUrl = await viewerInstance.InvokeAsync<string>("screenshot", 1);
+    await module.InvokeVoidAsync("downloadDataUrl", $"avatar_{DateTime.Now:yyyyMMdd_HHmmss}.png", dataUrl);
+  }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
+  // llamado por el Editor
+  public async Task SpeakAsync(string audioUrl, IEnumerable<object>? visemas)
+  {
+    if (viewerInstance is null) return;
+    await viewerInstance.InvokeVoidAsync("speak", audioUrl, visemas);
+  }
 
-        if (!initialized)
-        {
-            return;
-        }
-
-        await SyncStateAsync();
-    }
-
-    private async Task SyncStateAsync()
-    {
-        if (viewerInstance is null)
-        {
-            return;
-        }
-
-        await viewerInstance.InvokeVoidAsync("setLogo", LogoUrl);
-        await viewerInstance.InvokeVoidAsync("setOutfit", Outfit);
-        await viewerInstance.InvokeVoidAsync("setBackground", Background);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (viewerInstance is not null)
-        {
-            try
-            {
-                await viewerInstance.InvokeVoidAsync("dispose");
-                await viewerInstance.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
-
-        if (module is not null)
-        {
-            try
-            {
-                await module.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
-    }
+  public async ValueTask DisposeAsync()
+  {
+    try{
+      if (viewerInstance is not null){ await viewerInstance.InvokeVoidAsync("dispose"); await viewerInstance.DisposeAsync(); }
+      if (module is not null) await module.DisposeAsync();
+    }catch (JSDisconnectedException){ }
+  }
 }

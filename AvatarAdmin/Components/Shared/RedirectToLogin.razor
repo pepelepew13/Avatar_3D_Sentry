@@ -1,0 +1,22 @@
+@inject NavigationManager Nav
+
+@code {
+    protected override void OnInitialized()
+    {
+        var currentAbs = Nav.Uri;
+
+        // Si YA estamos en /auth, no encadenar más returnUrl
+        if (currentAbs.Contains("/auth", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Hacer el returnUrl RELATIVO al sitio (evita recarga completa y bucles)
+        var rel = Nav.ToBaseRelativePath(currentAbs);     // e.g. "editor?x=1"
+        if (string.IsNullOrWhiteSpace(rel)) rel = "";     // home
+
+        var relWithSlash = "/" + rel;                     // e.g. "/editor?x=1"
+        var target = $"/auth?returnUrl={Uri.EscapeDataString(relWithSlash)}";
+
+        // NO forceLoad: mantenemos el circuito y el AuthState en memoria
+        Nav.NavigateTo(target, replace: true);
+    }
+}

@@ -1,13 +1,170 @@
 ﻿@page "/auth"
+@layout AvatarAdmin.Components.Layout.AuthLayout
 
-@using Microsoft.AspNetCore.Authorization
+@using AvatarAdmin.Services
+@using AvatarAdmin.Models
+@using Microsoft.AspNetCore.Components
+@inject AvatarApiClient Api
+@inject AuthState Session
+@inject NavigationManager Nav
+@inject ILogger<Auth> Log
 
-@attribute [Authorize]
+<section class="auth-shell">
+  <div class="auth-card">
+    <!-- Lado marca / copy (se oculta en móviles) -->
+    <aside class="auth-side">
+      <img class="auth-logo" src="/img/Logo_Sentry.png" alt="Sentry" />
+      <h1>Sentry · Avatar 3D</h1>
+      <p class="auth-sub">Acceso al panel de personalización</p>
 
-<PageTitle>Auth</PageTitle>
+      <ul class="auth-bullets">
+        <li>Configura vestimenta, voz y escena</li>
+        <li>Sube tu logo corporativo</li>
+        <li>Previsualiza con TTS y visemas</li>
+      </ul>
+    </aside>
 
-<h1>You are authenticated</h1>
+    <!-- Formulario -->
+    <section class="auth-form">
+      <!-- Header MÓVIL (solo logo) -->
+      <div class="auth-mobile-header">
+        <img class="auth-logo auth-logo--mobile" src="/img/Logo_Sentry.png" alt="Sentry" />
+      </div>
 
-<AuthorizeView>
-    Hello @context.User.Identity?.Name!
-</AuthorizeView>
+      <header class="auth-header">
+        <h3>Iniciar sesión</h3>
+        <p class="muted">Usa tu correo corporativo y contraseña</p>
+      </header>
+
+      @if (!string.IsNullOrWhiteSpace(_error))
+      {
+        <div class="alert alert-danger">@(_error)</div>
+      }
+
+      <EditForm class="auth-form-inner" Model="_model" OnValidSubmit="OnLoginAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="val-summary" />
+
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <InputText class="form-control" @bind-Value="_model.Email" inputmode="email" />
+          <ValidationMessage For="() => _model.Email" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Password</label>
+          <div class="input-with-toggle">
+            <InputText class="form-control" type="@(_showPwd ? "text" : "password")" @bind-Value="_model.Password" />
+            <button type="button"
+                    class="pwd-toggle"
+                    @onclick="TogglePwd"
+                    title="@(_showPwd ? "Ocultar" : "Mostrar") contraseña"
+                    aria-label="@(_showPwd ? "Ocultar contraseña" : "Mostrar contraseña")"
+                    aria-pressed="@_showPwd">
+              @((MarkupString)(_showPwd ? EyeOffSvg : EyeSvg))
+            </button>
+          </div>
+          <ValidationMessage For="() => _model.Password" />
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <small class="muted">¿Olvidaste tu contraseña? Contacta al administrador.</small>
+        </div>
+
+        <button class="btn btn-primary w-100" disabled="@_loading">
+          @if (_loading)
+          {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          }
+          @(_loading ? "Entrando..." : "Entrar")
+        </button>
+      </EditForm>
+
+      <footer class="auth-footer">
+        <small class="muted">© @DateTime.UtcNow.Year Sentry. Todos los derechos reservados.</small>
+      </footer>
+    </section>
+  </div>
+</section>
+
+@code {
+    // <-- lee ?returnUrl=... desde la querystring (puede venir absoluta)
+    [Parameter, SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private LoginVM _model = new();
+    private bool _loading;
+    private string? _error;
+    private bool _showPwd;
+
+    private void TogglePwd() => _showPwd = !_showPwd;
+
+    // SVGs del toggle (centrados y nítidos)
+    private const string EyeSvg = @"
+<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
+  <path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
+  <circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/>
+</svg>";
+
+    private const string EyeOffSvg = @"
+<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
+  <path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
+  <path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
+</svg>";
+
+    private async Task OnLoginAsync()
+    {
+        _error = null;
+        _loading = true;
+        try
+        {
+            await Api.LoginAsync(new LoginRequest
+            {
+                Email = _model.Email,
+                Password = _model.Password
+            });
+
+            // Normaliza returnUrl a relativo y NO forzar recarga:
+            var target = NormalizeReturnUrl(ReturnUrl) ?? "/editor";
+            Nav.NavigateTo(target, replace: true);
+        }
+        catch (Exception ex)
+        {
+            Log.LogError(ex, "Error de login");
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string? NormalizeReturnUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
+        // Si es absoluta y del mismo origen -> quedarnos con Path+Query
+        if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
+        {
+            var baseUri = new Uri(Nav.BaseUri);
+            if (abs.Scheme == baseUri.Scheme && abs.Host == baseUri.Host && abs.Port == baseUri.Port)
+                return string.IsNullOrEmpty(abs.PathAndQuery) ? "/" : abs.PathAndQuery;
+
+            // Si es otro origen, por seguridad ignórala
+            return "/editor";
+        }
+
+        // Aseguramos que empiece por "/"
+        return url.StartsWith("/") ? url : "/" + url;
+    }
+
+    public sealed class LoginVM
+    {
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(6)]
+        public string Password { get; set; } = "";
+    }
+}

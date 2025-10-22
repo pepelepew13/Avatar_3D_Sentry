@@ -1,0 +1,86 @@
+using System.ComponentModel.DataAnnotations;
+using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Services;
+using Avatar_3D_Sentry.Services.Storage;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Avatar_3D_Sentry.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class TtsController : ControllerBase
+    {
+        private readonly PhraseGenerator _phrases;
+        private readonly ITtsService _tts;
+        private readonly IAssetStorage _storage;
+        private readonly ILogger<TtsController> _logger;
+
+        public TtsController(PhraseGenerator phrases, ITtsService tts, IAssetStorage storage, ILogger<TtsController> logger)
+        {
+            _phrases = phrases;
+            _tts = tts;
+            _storage = storage;
+            _logger = logger;
+        }
+
+        // DTOs de E/S
+        public class AnuncioRequest
+        {
+            [Required] public string company { get; set; } = default!;
+            [Required] public string site { get; set; } = default!;
+            [Required] public string module { get; set; } = default!;
+            [Required] public string ticket { get; set; } = default!;
+            public string? name { get; set; }
+            public string language { get; set; } = "es";
+            public string? voice { get; set; }
+        }
+
+        public record VisemeOut(string shapeKey, int tiempo);
+
+        public record TtsResponse(string audioUrl, int durationMs, List<VisemeOut> visemes);
+
+        // POST /api/tts/announce
+        [HttpPost("announce")]
+        [AllowAnonymous] // cámbialo a [Authorize] si tu integración lo requiere
+        public async Task<ActionResult<TtsResponse>> Announce([FromBody] AnuncioRequest req, CancellationToken ct)
+        {
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+            // 1) Texto de anuncio (localizable)
+            var text = _phrases.Build(module: req.module, ticket: req.ticket, name: req.name, language: req.language);
+
+            // 2) TTS Azure → bytes + visemas (shapeKey/tiempo)
+            var result = await _tts.GenerarAudioConVisemasAsync(text, req.language, req.voice ?? string.Empty, ct);
+
+            // 3) Subida al storage dual
+            //    audio/{company}/{site}/yyyyMMdd/uuid.mp3
+            var fileName = $"{DateTime.UtcNow:yyyyMMdd}/{Guid.NewGuid():N}.mp3";
+            var blobPath = $"audio/{req.company.ToLowerInvariant()}/{req.site.ToLowerInvariant()}/{fileName}";
+
+            await using var ms = new MemoryStream(result.AudioBytes);
+            var url = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", ct);
+
+            // 4) Salida compatible con el visor: { shapeKey, tiempo }
+            var vis = result.Visemes.Select(v => new VisemeOut(v.ShapeKey, v.Tiempo)).ToList();
+
+            return Ok(new TtsResponse(url, result.DurationMs, vis));
+        }
+
+        // (Opcional) GET /api/tts/voices
+        // Devuelve un catálogo simple para el editor (ajústalo si ya lo tienes)
+        [HttpGet("voices")]
+        [AllowAnonymous]
+        public ActionResult<Dictionary<string, List<string>>> GetVoices()
+        {
+            // En un futuro puedes consultar Azure Voices. Por ahora devuelve por defecto:
+            var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["es"] = new() { "es-CO-SalomeNeural" },
+                ["en"] = new() { "en-US-GuyNeural" },
+                ["pt"] = new() { "pt-BR-AntonioNeural" }
+            };
+            return Ok(map);
+        }
+    }
+}

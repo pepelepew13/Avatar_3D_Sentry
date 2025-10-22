@@ -1,0 +1,771 @@
+@page "/users"
+@implements IDisposable
+@using System.ComponentModel.DataAnnotations
+@using System.Linq
+@using AvatarAdmin.Services
+@using AvatarAdmin.Models
+@using Microsoft.AspNetCore.Components.Web
+@inject AvatarApiClient Api
+@inject AuthState Auth
+@inject ILogger<Users> Log
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<AdminGuard>
+  <!-- HERO -->
+  <section class="users-hero">
+    <div class="hero-left">
+      <div class="hero-ic" aria-hidden="true">👥</div>
+      <div class="hero-copy">
+        <h1>Usuarios del sistema</h1>
+        <p>Como administrador puedes crear nuevas cuentas y gestionar las existentes.</p>
+        <div class="hero-tags">
+          <span class="tag">@Auth.Email</span>
+          <span class="tag">Rol: @Auth.Role</span>
+          <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-stats" aria-label="Estadísticas rápidas">
+      <div class="stat">
+        <div class="stat-num">@totalUsers</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">@AdminsCount</div>
+        <div class="stat-label">Admins</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">@NormalUsersCount</div>
+        <div class="stat-label">Usuarios</div>
+      </div>
+    </div>
+  </section>
+
+  @if (!string.IsNullOrWhiteSpace(_message))
+  {
+    <div class="alert alert-success" role="status">
+      <span class="alert-icon">✔</span>
+      <div>@_message</div>
+    </div>
+  }
+  @if (!string.IsNullOrWhiteSpace(_error))
+  {
+    <div class="alert alert-danger" role="alert">
+      <span class="alert-icon">⚠</span>
+      <div>@_error</div>
+    </div>
+  }
+
+  <!-- GRID CREAR + PREVIEW -->
+  <section class="users-grid">
+    <!-- CARD: Crear usuario -->
+    <div class="card form-card">
+      <header class="card-head center">
+        <div class="ic" aria-hidden="true">➕</div>
+        <div>
+          <h3>Crear usuario</h3>
+          <p class="muted">Define el rol y (si es User) su Empresa/Sede.</p>
+        </div>
+      </header>
+
+      <EditForm class="card-body users-form" Model="_vm" OnValidSubmit="OnCreateUserAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="val-summary" />
+
+        <!-- Email -->
+        <div class="field">
+          <label class="form-label">Email</label>
+          <InputText class="form-control" @bind-Value="_vm.Email" inputmode="email" />
+          <ValidationMessage For="() => _vm.Email" />
+        </div>
+
+        <!-- Rol -->
+        <div class="field">
+          <label class="form-label">Rol</label>
+          <div class="role-picker" role="tablist" aria-label="Selecciona el rol">
+            <button type="button"
+                    class="pill @(IsUser ? "active" : null)"
+                    role="tab"
+                    aria-selected="@IsUser"
+                    @onclick='()=>SetRole("User")'>
+              <span class="pill-ic">👤</span> User
+            </button>
+            <button type="button"
+                    class="pill @(!IsUser ? "active" : null)"
+                    role="tab"
+                    aria-selected="@(!IsUser)"
+                    @onclick='()=>SetRole("Admin")'>
+              <span class="pill-ic">🛡️</span> Admin
+            </button>
+          </div>
+          <div class="help">El rol <strong>User</strong> queda restringido por Empresa/Sede.</div>
+        </div>
+
+        <!-- Empresa/Sede (solo User) -->
+        @if (IsUser)
+        {
+          <div class="grid-2">
+            <div class="field">
+              <label class="form-label">Empresa <span class="req">*</span></label>
+              <InputText class="form-control" @bind-Value="_vm.Empresa" />
+            </div>
+            <div class="field">
+              <label class="form-label">Sede (opcional)</label>
+              <InputText class="form-control" @bind-Value="_vm.Sede" />
+            </div>
+          </div>
+        }
+
+        <!-- Password -->
+        <div class="field">
+          <div class="label-row">
+            <label class="form-label">Password</label>
+            <div class="label-tools">
+              <button type="button" class="link" @onclick="GeneratePassword" disabled="@_loading">Generar segura</button>
+              <span class="sep">·</span>
+              <button type="button" class="link" @onclick="CopyPassword" disabled="@string.IsNullOrEmpty(_vm.Password)">Copiar</button>
+            </div>
+          </div>
+
+          <div class="input-with-toggle">
+            <InputText class="form-control"
+                       type="@(_showPwd ? "text" : "password")"
+                       @bind-Value="_vm.Password" />
+            <button type="button"
+                    class="pwd-toggle"
+                    @onclick="TogglePwd"
+                    aria-pressed="@(_showPwd)"
+                    title="@(_showPwd ? "Ocultar contraseña" : "Mostrar contraseña")">
+              @((MarkupString)(_showPwd ? EyeOffSvg : EyeSvg))
+            </button>
+          </div>
+          <ValidationMessage For="() => _vm.Password" />
+
+          <div class="pwd-meter" aria-hidden="true">
+            <div class="bar @(BarOn(1))"></div>
+            <div class="bar @(BarOn(2))"></div>
+            <div class="bar @(BarOn(3))"></div>
+            <div class="bar @(BarOn(4))"></div>
+          </div>
+          <div class="pwd-strength">@StrengthLabel()</div>
+          <div class="pwd-hints">Recomendado: 12+ caracteres con mayúsculas, minúsculas, números y símbolos.</div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" disabled="@(_loading || !CanSubmit())">
+            @if (_loading)
+            {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            @(_loading ? "Creando..." : "Crear usuario")
+          </button>
+        </div>
+      </EditForm>
+    </div>
+
+    <!-- CARD: Preview + Tips -->
+    <aside class="card side">
+      <header class="card-head center">
+        <div class="ic info" aria-hidden="true">👓</div>
+        <div>
+          <h3>Vista previa</h3>
+          <p class="muted">Así verá el sistema a este usuario.</p>
+        </div>
+      </header>
+
+      <div class="card-body">
+        <div class="preview">
+          <div class="avatar" aria-hidden="true">@Initials(_vm.Email)</div>
+          <div class="info">
+            <div class="email">@(_vm.Email?.Trim().Length > 0 ? _vm.Email : "email@empresa.com")</div>
+            <div class="chips">
+              <span class="chip chip-role">@(IsUser ? "User" : "Admin")</span>
+              <span class="chip chip-scope">@ScopePreview()</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="tips">
+          <h4>Consejos</h4>
+          <ul>
+            <li>Usa correos reales para facilitar recuperación de cuenta.</li>
+            <li>Para <b>User</b>, completa <em>Empresa</em> (Sede opcional).</li>
+            <li>Prefiere contraseñas largas y únicas (usa “Generar segura”).</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- CARD: Listado / Edición -->
+  <section class="card list-card">
+    <header class="card-head">
+      <div class="ic gray" aria-hidden="true">📋</div>
+      <div>
+        <h3>Usuarios creados</h3>
+        <p class="muted">Busca, filtra, ordena y edita en línea.</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-outline-light" @onclick="ReloadUsers" disabled="@loadingUsers">Recargar</button>
+      </div>
+    </header>
+
+    <div class="list-toolbar">
+      <!-- Buscar con debounce -->
+      <div class="search-wrap">
+        <span class="search-ic">🔎</span>
+        <input class="form-control search"
+               placeholder="Buscar por email… (Esc limpia)"
+               value="@q"
+               @oninput="OnSearchInput"
+               @onkeydown="OnSearchKeyDown" />
+        @if (!string.IsNullOrWhiteSpace(q))
+        {
+          <button class="btn-clear" title="Limpiar" @onclick="ClearSearch" aria-label="Limpiar búsqueda">✕</button>
+        }
+      </div>
+
+      <!-- Filtros rápidos rol -->
+      <div class="quick-filters" role="group" aria-label="Filtrar por rol">
+        <button type="button" class='chip @(string.IsNullOrEmpty(roleFilter) ? "on" : null)' @onclick='()=>SetRoleFilter(null)'>
+          Todos
+        </button>
+        <button type="button" class='chip @(roleFilter=="User" ? "on" : null)' @onclick='()=>SetRoleFilter("User")'>
+          User
+        </button>
+        <button type="button" class='chip @(roleFilter=="Admin" ? "on" : null)' @onclick='()=>SetRoleFilter("Admin")'>
+          Admin
+        </button>
+      </div>
+
+      <!-- Tamaño página -->
+      <select class="form-select page-size" title="Tamaño de página"
+              @bind="pageSize"
+              @bind:after="@(async ()=> await ResetAndReload())">
+        <option>10</option>
+        <option>20</option>
+        <option>50</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      @if (loadingUsers)
+      {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      }
+      else if (users is null || users.Count == 0)
+      {
+        <div class="empty-row">
+          <div class="empty-ic">🗒️</div>
+          <div>No hay usuarios que coincidan.</div>
+          <button class="btn btn-outline-light mt8" @onclick="ClearFilters">Quitar filtros</button>
+        </div>
+      }
+      else
+      {
+        <table class="table users-table">
+          <thead>
+            <tr>
+              <th class='@SortClass("Email")' @onclick='()=>SortBy("Email")'>
+                Email <span class="sort-ind">@SortGlyph("Email")</span>
+              </th>
+              <th class='@SortClass("Role")' @onclick='()=>SortBy("Role")'>
+                Rol <span class="sort-ind">@SortGlyph("Role")</span>
+              </th>
+              <th class='@SortClass("Scope")' @onclick='()=>SortBy("Scope")'>
+                Ámbito <span class="sort-ind">@SortGlyph("Scope")</span>
+              </th>
+              <th style="width:172px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+          @foreach (var u in Sorted(users))
+          {
+            <tr>
+              <td>
+                <div class="cell-user">
+                  <div class="avatar sm">@Initials(u.Email)</div>
+                  <div class="u-mail">@u.Email</div>
+                  <button class="btn-icon" title="Copiar email" @onclick='()=>Copy(u.Email)'>📋</button>
+                </div>
+              </td>
+              <td>
+                <span class="chip @(u.Role == "Admin" ? "chip-admin" : "chip-user")">@u.Role</span>
+              </td>
+              <td>
+                <span class="chip chip-scope">@((string.IsNullOrWhiteSpace(u.Empresa) ? "—" : u.Empresa) + "/" + (string.IsNullOrWhiteSpace(u.Sede) ? "—" : u.Sede))</span>
+              </td>
+              <td class="actions">
+                <button class="btn btn-xs" title="Editar" @onclick='()=>OpenEdit(u)'>✎ Editar</button>
+                <button class="btn btn-xs btn-danger" title="Eliminar" @onclick='()=>ConfirmDelete(u)'>🗑 Eliminar</button>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <footer class="pager">
+      <div class="info">
+        @if (totalUsers > 0)
+        {
+          <span>Mostrando @((pageIndex * pageSize) + 1)-@((pageIndex * pageSize) + (users?.Count ?? 0)) de @totalUsers</span>
+        }
+      </div>
+      <div class="nav">
+        <button class="btn btn-outline-light" @onclick="PrevPage" disabled="@(!CanPrev)">← Anterior</button>
+        <button class="btn btn-outline-light" @onclick="NextPage" disabled="@(!CanNext)">Siguiente →</button>
+      </div>
+    </footer>
+  </section>
+
+  <!-- MODAL EDICIÓN -->
+  @if (editOpen && editUser is not null)
+  {
+    <div class="modal-scrim" @onclick="CloseEdit"></div>
+    <div class="modal card" role="dialog" aria-modal="true" aria-label="Editar usuario">
+      <header class="modal-head">
+        <h4>Editar usuario</h4>
+        <button class="modal-close" @onclick="CloseEdit" aria-label="Cerrar">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Email</label>
+          <input class="form-control" value="@editUser.Email" disabled />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Rol</label>
+          <select class="form-select" @bind="editRole">
+            <option>User</option>
+            <option>Admin</option>
+          </select>
+        </div>
+
+        @if (string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase))
+        {
+          <div class="grid-2">
+            <div>
+              <label class="form-label">Empresa</label>
+              <input class="form-control" @bind="editEmpresa" />
+            </div>
+            <div>
+              <label class="form-label">Sede (opcional)</label>
+              <input class="form-control" @bind="editSede" />
+            </div>
+          </div>
+        }
+
+        <hr class="sep" />
+
+        <div class="mb-2">
+          <label class="form-label">Resetear contraseña (opcional)</label>
+          <div class="input-with-toggle">
+            <input class="form-control" type="@(_editShowPwd ? "text" : "password")" @bind="editNewPassword" />
+            <button type="button" class="pwd-toggle" @onclick="_=> _editShowPwd = !_editShowPwd">
+              @((MarkupString)(_editShowPwd ? EyeOffSvg : EyeSvg))
+            </button>
+          </div>
+          <div class="label-tools" style="margin-top:6px">
+            <button type="button" class="link" @onclick='()=> editNewPassword = GenPwd(14)'>Generar</button>
+            <span class="sep">·</span>
+            <button type="button" class="link" @onclick='()=> Copy(editNewPassword)' disabled="@string.IsNullOrEmpty(editNewPassword)">Copiar</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-outline-light" @onclick="CloseEdit" disabled="@savingEdit">Cancelar</button>
+        <button class="btn btn-primary" @onclick="SaveEdit" disabled="@savingEdit">
+          @(savingEdit ? "Guardando..." : "Guardar cambios")
+        </button>
+      </footer>
+    </div>
+  }
+</AdminGuard>
+
+@code {
+  // ===== Crear =====
+  private string? _message;
+  private string? _error;
+  private bool _loading;
+  private bool _showPwd;
+  private System.Timers.Timer? _msgTimer;
+  private System.Timers.Timer? _errTimer;
+
+  private CreateUserVM _vm = new();
+
+  private sealed class CreateUserVM
+  {
+      [Required, EmailAddress]
+      public string Email { get; set; } = string.Empty;
+
+      [Required, MinLength(6)]
+      public string? Password { get; set; }
+
+      [Required]
+      public string Role { get; set; } = "User";
+
+      public string? Empresa { get; set; }
+      public string? Sede { get; set; }
+  }
+
+  private bool IsUser => string.Equals(_vm.Role, "User", StringComparison.OrdinalIgnoreCase);
+  private void SetRole(string role) { _vm.Role = role; StateHasChanged(); }
+  private void TogglePwd() => _showPwd = !_showPwd;
+
+  private async Task OnCreateUserAsync()
+  {
+    if (_loading) return;
+    _message = _error = null;
+    _loading = true;
+
+    try
+    {
+      if (IsUser && string.IsNullOrWhiteSpace(_vm.Empresa))
+      {
+        _error = "Para crear un usuario con rol User debes indicar la Empresa.";
+        StartErrTimer();
+        return;
+      }
+
+      var req = new CreateUserRequest {
+        Email = _vm.Email.Trim(),
+        Password = _vm.Password!,
+        Role = _vm.Role,
+        Empresa = IsUser ? _vm.Empresa?.Trim() : null,
+        Sede = IsUser ? _vm.Sede?.Trim() : null
+      };
+
+      await Api.CreateUserAsync(req);
+      _message = $"Usuario creado correctamente: {req.Email} ({req.Role})";
+      StartMsgTimer();
+
+      // Reset manteniendo el rol actual seleccionado
+      var keepRole = _vm.Role;
+      _vm = new CreateUserVM { Role = keepRole };
+      _showPwd = false;
+
+      await ResetAndReload();
+    }
+    catch (Exception ex)
+    {
+      Log.LogError(ex, "Error creando usuario");
+      _error = ex.Message;
+      StartErrTimer();
+    }
+    finally
+    {
+      _loading = false;
+      StateHasChanged();
+    }
+  }
+
+  private int ComputeStrength(string? s)
+  {
+    if (string.IsNullOrEmpty(s)) return 0;
+    int score = 0;
+    if (s.Length >= 8) score++;
+    if (s.Length >= 12) score++;
+    if (s.Any(char.IsLower) && s.Any(char.IsUpper)) score++;
+    if (s.Any(char.IsDigit) || s.Any(ch => !char.IsLetterOrDigit(ch))) score++;
+    return Math.Min(score, 4);
+  }
+  private string BarOn(int n) => ComputeStrength(_vm.Password) >= n ? "on" : "";
+  private string StrengthLabel()
+  {
+    var s = ComputeStrength(_vm.Password);
+    return s switch
+    {
+      0 => "Sin contraseña",
+      1 => "Fortaleza: Débil",
+      2 => "Fortaleza: Media",
+      3 => "Fortaleza: Fuerte",
+      _ => "Fortaleza: Excelente"
+    };
+  }
+
+  private async Task CopyPassword() { try { await JS.InvokeVoidAsync("navigator.clipboard.writeText", _vm.Password ?? ""); } catch { } }
+  private void GeneratePassword() => _vm.Password = GenPwd(14);
+
+  private static string GenPwd(int len)
+  {
+    const string lowers = "abcdefghijkmnopqrstuvwxyz";
+    const string uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const string digits = "23456789";
+    const string syms = "!@#$%&*?";
+    var all = (lowers + uppers + digits + syms).ToCharArray();
+    var rng = Random.Shared;
+    var sb = new System.Text.StringBuilder(len);
+    sb.Append(lowers[rng.Next(lowers.Length)]);
+    sb.Append(uppers[rng.Next(uppers.Length)]);
+    sb.Append(digits[rng.Next(digits.Length)]);
+    sb.Append(syms[rng.Next(syms.Length)]);
+    for (int i = sb.Length; i < len; i++) sb.Append(all[rng.Next(all.Length)]);
+    return new string(sb.ToString().OrderBy(_ => rng.Next()).ToArray());
+  }
+
+  private string Initials(string? email)
+  {
+    if (string.IsNullOrWhiteSpace(email)) return "U";
+    var at = email.IndexOf('@');
+    var name = at > 0 ? email[..at] : email;
+    var parts = name.Split(new[] { '.', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+    if (parts.Length == 1) return char.ToUpper(parts[0][0]).ToString();
+    return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[^1][0])}";
+  }
+
+  private string ScopePreview()
+  {
+    if (!IsUser) return "Global";
+    var emp = string.IsNullOrWhiteSpace(_vm.Empresa) ? "Empresa" : _vm.Empresa;
+    var sede = string.IsNullOrWhiteSpace(_vm.Sede) ? "—" : _vm.Sede;
+    return $"{emp}/{sede}";
+  }
+
+  private bool CanSubmit()
+  {
+    if (string.IsNullOrWhiteSpace(_vm.Email)) return false;
+    if (string.IsNullOrWhiteSpace(_vm.Password) || _vm.Password.Length < 6) return false;
+    if (IsUser && string.IsNullOrWhiteSpace(_vm.Empresa)) return false;
+    return true;
+  }
+
+  // SVGs toggle
+  private const string EyeSvg = @"
+<svg viewBox='0 0 24 24' width='18' height='18' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
+  <path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
+  <circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/>
+</svg>";
+  private const string EyeOffSvg = @"
+<svg viewBox='0 0 24 24' width='18' height='18' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
+  <path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
+  <path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
+  <path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
+</svg>";
+
+  // ===== Listado / edición =====
+  private string q = "";
+  private string roleFilter = "";
+  private int pageIndex = 0;
+  private int pageSize = 10;
+  private int totalUsers = 0;
+  private List<AvatarApiClient.UserItem> users = new();
+  private bool loadingUsers;
+
+  private int AdminsCount => users?.Count(u => string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase)) ?? 0;
+  private int NormalUsersCount => users?.Count(u => string.Equals(u.Role, "User", StringComparison.OrdinalIgnoreCase)) ?? 0;
+
+  // Sort
+  private string sortKey = "Email";
+  private bool sortAsc = true;
+
+  private bool CanPrev => pageIndex > 0;
+  private bool CanNext => (pageIndex + 1) * pageSize < totalUsers;
+
+  // Debounce búsqueda
+  private System.Timers.Timer? _searchTimer;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await ReloadUsers();
+  }
+
+  private async Task ReloadUsers()
+  {
+    loadingUsers = true; StateHasChanged();
+    try
+    {
+      var res = await Api.ListUsersAsync(pageIndex * pageSize, pageSize, q, roleFilter);
+      totalUsers = res.Total;
+      users = res.Items ?? new();
+    }
+    catch (Exception ex)
+    {
+      _error = "No se pudo cargar el listado de usuarios: " + ex.Message;
+      StartErrTimer();
+    }
+    finally
+    {
+      loadingUsers = false;
+    }
+  }
+
+  private async Task ResetAndReload()
+  {
+    pageIndex = 0;
+    await ReloadUsers();
+  }
+
+  private void OnSearchInput(ChangeEventArgs e)
+  {
+    q = e.Value?.ToString() ?? "";
+    _searchTimer?.Stop();
+    _searchTimer?.Dispose();
+    _searchTimer = new System.Timers.Timer(420) { AutoReset = false };
+    _searchTimer.Elapsed += async (_, __) => await InvokeAsync(ResetAndReload);
+    _searchTimer.Start();
+  }
+
+  private async Task ClearSearch()
+  {
+    q = "";
+    await ResetAndReload();
+  }
+
+  private async Task ClearFilters()
+  {
+    q = ""; roleFilter = ""; sortKey = "Email"; sortAsc = true; pageIndex = 0;
+    await ReloadUsers();
+  }
+
+  private void OnSearchKeyDown(KeyboardEventArgs e)
+  {
+    if (string.Equals(e.Key, "Escape", StringComparison.OrdinalIgnoreCase)) _ = ClearSearch();
+  }
+
+  private void SetRoleFilter(string? rf)
+  {
+    roleFilter = rf ?? "";
+    _ = ResetAndReload();
+  }
+
+  private async Task NextPage() { if (!CanNext) return; pageIndex++; await ReloadUsers(); }
+  private async Task PrevPage() { if (!CanPrev) return; pageIndex--; await ReloadUsers(); }
+
+  // ===== Ordenación (cliente) =====
+  private void SortBy(string key)
+  {
+    if (sortKey == key) sortAsc = !sortAsc;
+    else { sortKey = key; sortAsc = true; }
+  }
+
+  private IEnumerable<AvatarApiClient.UserItem> Sorted(IEnumerable<AvatarApiClient.UserItem> src)
+  {
+    IOrderedEnumerable<AvatarApiClient.UserItem> ordered = sortKey switch
+    {
+      "Role"  => sortAsc ? src.OrderBy(u => u.Role) : src.OrderByDescending(u => u.Role),
+      "Scope" => sortAsc ? src.OrderBy(u => u.Empresa).ThenBy(u => u.Sede)
+                         : src.OrderByDescending(u => u.Empresa).ThenByDescending(u => u.Sede),
+      _       => sortAsc ? src.OrderBy(u => u.Email) : src.OrderByDescending(u => u.Email)
+    };
+    return ordered;
+  }
+
+  private string SortClass(string key) => "th-sort " + (sortKey == key ? (sortAsc ? "asc" : "desc") : "");
+  private string SortGlyph(string key) => sortKey == key ? (sortAsc ? "▲" : "▼") : "";
+
+  // ===== Modal edición =====
+  private bool editOpen;
+  private AvatarApiClient.UserItem? editUser;
+  private string editRole = "User";
+  private string? editEmpresa;
+  private string? editSede;
+  private string? editNewPassword;
+  private bool _editShowPwd;
+  private bool savingEdit;
+
+  private void OpenEdit(AvatarApiClient.UserItem u)
+  {
+    editUser = u;
+    editRole = u.Role;
+    editEmpresa = u.Empresa;
+    editSede = u.Sede;
+    editNewPassword = null;
+    _editShowPwd = false;
+    editOpen = true;
+  }
+  private void CloseEdit() { editOpen = false; editUser = null; }
+
+  private async Task SaveEdit()
+  {
+    if (editUser is null) return;
+    savingEdit = true;
+    _message = _error = null;
+
+    try
+    {
+      var req = new AvatarApiClient.UpdateUserRequest {
+        Role = editRole,
+        Empresa = string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase) ? editEmpresa : null,
+        Sede = string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase) ? editSede : null,
+        NewPassword = string.IsNullOrWhiteSpace(editNewPassword) ? null : editNewPassword
+      };
+
+      await Api.UpdateUserAsync(editUser.Id, req);
+      _message = $"Usuario actualizado: {editUser.Email}";
+      StartMsgTimer();
+
+      // refresca fila local
+      editUser.Role = editRole;
+      editUser.Empresa = req.Empresa;
+      editUser.Sede = req.Sede;
+
+      CloseEdit();
+    }
+    catch (Exception ex)
+    {
+      _error = "No se pudo guardar: " + ex.Message;
+      StartErrTimer();
+    }
+    finally
+    {
+      savingEdit = false;
+      await ReloadUsers();
+    }
+  }
+
+  private async Task ConfirmDelete(AvatarApiClient.UserItem u)
+  {
+    try
+    {
+      var ok = await JS.InvokeAsync<bool>("confirm", $"¿Eliminar el usuario {u.Email}?");
+      if (!ok) return;
+      await Api.DeleteUserAsync(u.Id);
+      _message = $"Usuario eliminado: {u.Email}";
+      StartMsgTimer();
+      await ReloadUsers();
+    }
+    catch (Exception ex)
+    {
+      _error = "No se pudo eliminar: " + ex.Message;
+      StartErrTimer();
+    }
+  }
+
+  private async Task Copy(string? text)
+  {
+    try { await JS.InvokeVoidAsync("navigator.clipboard.writeText", text ?? ""); } catch { }
+  }
+
+  // ===== Timers de mensajes =====
+  private void StartMsgTimer()
+  {
+    _msgTimer?.Stop(); _msgTimer?.Dispose();
+    _msgTimer = new System.Timers.Timer(3800) { AutoReset = false };
+    _msgTimer.Elapsed += (_, __) => { _message = null; InvokeAsync(StateHasChanged); };
+    _msgTimer.Start();
+  }
+  private void StartErrTimer()
+  {
+    _errTimer?.Stop(); _errTimer?.Dispose();
+    _errTimer = new System.Timers.Timer(6000) { AutoReset = false };
+    _errTimer.Elapsed += (_, __) => { _error = null; InvokeAsync(StateHasChanged); };
+    _errTimer.Start();
+  }
+
+  public void Dispose()
+  {
+    _searchTimer?.Dispose();
+    _msgTimer?.Dispose();
+    _errTimer?.Dispose();
+  }
+}

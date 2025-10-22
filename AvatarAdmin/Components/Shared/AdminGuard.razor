@@ -1,0 +1,21 @@
+@using AvatarAdmin.Services
+@inject AuthState Auth
+
+@if (!Auth.IsAuthenticated)
+{
+    <RedirectToLogin />
+}
+else if (!string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+{
+    <div class="alert alert-warning mt-3">
+        Solo los usuarios con rol <strong>Admin</strong> pueden acceder a esta página.
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

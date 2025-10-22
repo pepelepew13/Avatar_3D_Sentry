@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Avatar Turnero</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body {height:100%;margin:0;background:#f6f7fb;font-family:system-ui,-apple-system,Segoe UI,Roboto;}
+    .wrap {display:grid;grid-template-rows:auto 1fr auto; height:100%;}
+    header, footer {padding:8px 12px; background:#fff; border-bottom:1px solid #e7e9ef;}
+    footer {border-top:1px solid #e7e9ef;border-bottom:none;}
+    #stage {position:relative;}
+    #avatarCanvas {width:100%; height: calc(100vh - 130px); display:block;}
+    .controls {display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;}
+    button {padding:8px 12px; border:1px solid #cfd3df; border-radius:8px; background:#fff; cursor:pointer;}
+    button:hover {background:#f0f2f7;}
+    input,select {padding:6px 8px; border:1px solid #cfd3df; border-radius:6px;}
+    label {font-size:12px; color:#555;}
+    .field{display:flex;flex-direction:column}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="controls">
+      <div class="field">
+        <label>Empresa</label>
+        <input id="empresa" value="Sentry"/>
+      </div>
+      <div class="field">
+        <label>Sede</label>
+        <input id="sede" value="Bogotá"/>
+      </div>
+      <div class="field">
+        <label>Módulo</label>
+        <input id="modulo" value="3"/>
+      </div>
+      <div class="field">
+        <label>Turno</label>
+        <input id="turno" value="A-042"/>
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input id="nombre" value="Carlos"/>
+      </div>
+
+      <div class="field">
+        <label>Idioma</label>
+        <select id="idioma">
+          <option value="es" selected>Español</option>
+          <option value="en">Inglés</option>
+          <option value="pt">Portugués</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Voz (opcional)</label>
+        <input id="voz" placeholder="Lucia / Joanna / Camila ..." />
+      </div>
+
+      <button id="btnProbar">Probar anuncio</button>
+      <button id="btnFrame">Reencuadrar</button>
+      <button id="btnShot">Captura</button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <canvas id="avatarCanvas"></canvas>
+    <audio id="voice" preload="auto"></audio>
+  </div>
+
+  <footer>
+    <small>Avatar 3D Sentry • Demo de integración</small>
+  </footer>
+</div>
+
+<script type="module">
+  import "/js/avatarViewer.standalone.js";
+
+  const canvas  = document.getElementById("avatarCanvas");
+  const audioEl = document.getElementById("voice");
+
+  // Inicializa el avatar (ajusta outfit/fondo/logo según tu caso)
+  AvatarViewer.init(canvas, {
+    outfit: "predeterminado",
+    background: "oficina"
+    // logoUrl: "/assets/45",
+  });
+
+  document.getElementById("btnFrame").onclick = () => AvatarViewer.frame();
+  document.getElementById("btnShot").onclick  = () => AvatarViewer.screenshot();
+
+  document.getElementById("btnProbar").onclick = async () => {
+    const payload = {
+      empresa: document.getElementById("empresa").value,
+      sede:    document.getElementById("sede").value,
+      modulo:  document.getElementById("modulo").value,
+      turno:   document.getElementById("turno").value,
+      nombre:  document.getElementById("nombre").value
+    };
+    const idioma = document.getElementById("idioma").value;
+    const voz    = document.getElementById("voz").value.trim();
+
+    try {
+      await AvatarViewer.announceAndPlay(audioEl, payload, {
+        idioma,
+        voz: voz || undefined,
+        talkingOpts: { startPhase: 0.7, maxSpeed: 2.0, weight: 0.45 }
+        // baseUrl: "https://tu-backend" // si el API vive en otro host
+      });
+    } catch (err) {
+      alert("Error al anunciar: " + (err?.message || err));
+      console.error(err);
+    }
+  };
+</script>
+</body>
+</html>

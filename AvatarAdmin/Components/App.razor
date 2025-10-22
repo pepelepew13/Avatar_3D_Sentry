@@ -1,6 +1,8 @@
+@using Microsoft.AspNetCore.Components.Routing
+@inject AvatarAdmin.Services.AuthState Auth
+
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,17 +18,18 @@
     <script type="importmap">
         {
             "imports": {
-            "three": "/lib/three/three.module.min.js",
-            "three/addons/": "/lib/three/examples/jsm/"
+                "three": "/lib/three/three.module.min.js",
+                "three/addons/": "/lib/three/examples/jsm/"
             }
         }
     </script>
 </head>
 
 <body>
-  <Routes @rendermode="InteractiveServer" />
-  <script type="module" src="/js/avatarViewer.js?v=3"></script>
-  <script src="_framework/blazor.web.js"></script>
+    <AuthBootstrapper />
+    <SessionToast />
+    <Routes @rendermode="InteractiveServer" />
+    <script type="module" src="/js/avatarViewer.js"></script>
+    <script src="_framework/blazor.web.js"></script>
 </body>
-
 </html>

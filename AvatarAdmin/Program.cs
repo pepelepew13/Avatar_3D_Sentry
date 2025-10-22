@@ -1,120 +1,55 @@
-using System.IO;
-using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using AvatarAdmin.Components;
-using AvatarAdmin.Components.Account;
-using AvatarAdmin.Data;
-using AvatarAdmin.Models;
-using AvatarAdmin.Services;
+using AvatarAdmin.Components;    
+using AvatarAdmin.Services;        
+using DotNetEnv;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services.AddHttpClient();
-
-builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<IdentityUserAccessor>();
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-var dataDirectory = Path.Combine(builder.Environment.ContentRootPath, "Data");
-Directory.CreateDirectory(dataDirectory);
-
-var sqliteBuilder = new SqliteConnectionStringBuilder(connectionString)
+// (Opcional) Cargar .env local para Admin
+try
 {
-    DataSource = Path.Combine(dataDirectory, "app.db")
-};
+    var externalEnv = @"C:\Users\USUARIO\Documents\GitHub\.env";
+    if (System.IO.File.Exists(externalEnv)) Env.Load(externalEnv);
+}
+catch { /* ignore */ }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(sqliteBuilder.ToString()));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+// Base URL del backend
+var apiBase = Environment.GetEnvironmentVariable("AVATARBACK_BASEURL")
+              ?? builder.Configuration["Api:BaseUrl"]
+              ?? "http://localhost:5216";
 
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+// Blazor Server (.NET 8)
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+// Estado de autenticación (JWT, claims)
+builder.Services.AddScoped<AuthState>();
 
-builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection("Api"));
-builder.Services.AddHttpClient<AvatarApiClient>((serviceProvider, client) =>
+// Persistencia de sesión (localStorage) y handler de Bearer + 401
+builder.Services.AddScoped<AuthPersistence>();
+builder.Services.AddScoped<BearerHandler>();
+
+// HttpClient tipado para la API del backend con handler (auto-Bearer + manejo 401)
+builder.Services.AddHttpClient<AvatarApiClient>(client =>
 {
-    var options = serviceProvider.GetRequiredService<IOptions<ApiOptions>>().Value;
-    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
-    {
-        client.BaseAddress = new Uri(options.BaseUrl);
-    }
-
-    if (!string.IsNullOrWhiteSpace(options.BearerToken))
-    {
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", options.BearerToken);
-    }
-
-    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
+    client.BaseAddress = new Uri(apiBase);
+})
+.AddHttpMessageHandler<BearerHandler>();
 
 var app = builder.Build();
 
-// Seed default roles
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsDevelopment())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await context.Database.MigrateAsync();
-
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var roles = new[] { "admin", "operador" };
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-}
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseMigrationsEndPoint();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseRouting();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-// Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
 
 app.Run();

@@ -1,6 +1,6 @@
 @implements IDisposable
-
-@inject NavigationManager NavigationManager
+@inject NavigationManager Nav
+@inject AvatarAdmin.Services.AuthState Auth
 
 <nav class="nav-shell">
     <header class="nav-brand">
@@ -16,71 +16,88 @@
                 <p class="nav-card-description">Accede al editor principal</p>
             </div>
         </div>
+
         <NavLink class="nav-card-link" href="" Match="NavLinkMatch.All">
             <span class="nav-card-link-icon nav-card-link-icon-home" aria-hidden="true"></span>
             <span>Panel principal</span>
         </NavLink>
+
+        <!-- Deshabilita si no hay sesión -->
+        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/editor">
+            <span class="nav-card-link-icon nav-card-link-icon-edit" aria-hidden="true"></span>
+            <span>Editor de Avatar</span>
+        </NavLink>
+
+        @* Mostrar Usuarios solo si el rol es Admin *@
+        @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            <NavLink class="nav-card-link" href="/users">
+                <span class="nav-card-link-icon nav-card-link-icon-users" aria-hidden="true"></span>
+                <span>Usuarios</span>
+            </NavLink>
+        }
     </section>
 
-    <AuthorizeView>
-        <Authorized>
-            <section class="nav-card">
-                <div class="nav-card-header">
-                    <span class="nav-card-icon nav-card-icon-session" aria-hidden="true"></span>
-                    <div>
-                        <p class="nav-card-title">Tu sesión</p>
-                        <p class="nav-card-description">@context.User.Identity?.Name</p>
-                    </div>
+    <section class="nav-card">
+        <div class="nav-card-header">
+            <span class="nav-card-icon nav-card-icon-session" aria-hidden="true"></span>
+            <div>
+                <p class="nav-card-title">Tu sesión</p>
+                <p class="nav-card-description">
+                    @(Auth.IsAuthenticated ? Auth.Email : "No has iniciado sesión")
+                </p>
+            </div>
+        </div>
+
+        @if (Auth.IsAuthenticated)
+        {
+            <button class=@($"nav-card-link as-button {(_showUserInfo ? "is-open" : "")}") @onclick="ToggleUserInfo">
+                <span class="nav-card-link-icon nav-card-link-icon-user" aria-hidden="true"></span>
+                <span>@Auth.Email</span>
+            </button>
+
+            @if (_showUserInfo)
+            {
+                <div class="nav-card-userinfo" role="region" aria-label="Información de usuario">
+                    <div><strong>Rol</strong><span class="kv-value">@Auth.Role</span></div>
+                    <div><strong>Empresa</strong><span class="kv-value">@((Auth.Empresa ?? "—"))</span></div>
+                    <div><strong>Sede</strong><span class="kv-value">@((Auth.Sede ?? "—"))</span></div>
                 </div>
-                <form action="Account/Logout" method="post" class="nav-card-form">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                    <button type="submit" class="nav-card-link as-button">
-                        <span class="nav-card-link-icon nav-card-link-icon-logout" aria-hidden="true"></span>
-                        <span>Cerrar sesión</span>
-                    </button>
-                </form>
-            </section>
-        </Authorized>
-        <NotAuthorized>
-            <section class="nav-card">
-                <div class="nav-card-header">
-                    <span class="nav-card-icon nav-card-icon-access" aria-hidden="true"></span>
-                    <div>
-                        <p class="nav-card-title">Acceso</p>
-                        <p class="nav-card-description">Gestiona tu cuenta</p>
-                    </div>
-                </div>
-                <NavLink class="nav-card-link" href="Account/Login">
-                    <span class="nav-card-link-icon nav-card-link-icon-login" aria-hidden="true"></span>
-                    <span>Iniciar sesión</span>
-                </NavLink>
-                <NavLink class="nav-card-link" href="Account/Register">
-                    <span class="nav-card-link-icon nav-card-link-icon-register" aria-hidden="true"></span>
-                    <span>Crear cuenta</span>
-                </NavLink>
-            </section>
-        </NotAuthorized>
-    </AuthorizeView>
+            }
+
+            <button class="nav-card-link as-button" @onclick="Logout">
+                <span class="nav-card-link-icon nav-card-link-icon-logout" aria-hidden="true"></span>
+                <span>Cerrar sesión</span>
+            </button>
+        }
+        else
+        {
+            <NavLink class="nav-card-link" href="/auth">
+                <span class="nav-card-link-icon nav-card-link-icon-login" aria-hidden="true"></span>
+                <span>Iniciar sesión</span>
+            </NavLink>
+        }
+    </section>
 </nav>
 
 @code {
-    private string? currentUrl;
+    private bool _showUserInfo;
 
     protected override void OnInitialized()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
+        Auth.Changed += OnAuthChanged;
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnAuthChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleUserInfo() => _showUserInfo = !_showUserInfo;
+
+    private void Logout()
     {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
+        Auth.Logout();
+        _showUserInfo = false;
+        Nav.NavigateTo("/auth", forceLoad: true);
     }
 
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
+    public void Dispose() => Auth.Changed -= OnAuthChanged;
 }

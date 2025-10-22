@@ -1,0 +1,328 @@
+@page "/editor"
+@using AvatarAdmin.Services
+@using AvatarAdmin.Models
+@using Microsoft.AspNetCore.Components.Forms
+@inject AvatarApiClient Api
+@inject AuthState Auth
+@inject IJSRuntime JS
+@inject ILogger<Editor> Log
+
+<PageTitle>Editor de Avatar</PageTitle>
+
+<AuthGuard>
+<div class="vg-shell">
+
+  <!-- Rail izquierdo (categorías) -->
+  <aside class="vg-rail">
+    <div class="vg-rail-header">
+      <img src="/img/Logo_Sentry.png" alt="Sentry" />
+      <div>
+        <strong>Avatar Studio</strong>
+        <small>@(empresa ?? "—") / @(sede ?? "—")</small>
+      </div>
+    </div>
+
+    <nav class="vg-rail-nav">
+        <button class="@RailBtn("identidad")" @onclick="@(()=>SetPanel("identidad"))" title="Identidad">
+            <span>🏷️</span><b>Identidad</b>
+        </button>
+        <button class="@RailBtn("vestimenta")" @onclick="@(()=>SetPanel("vestimenta"))" title="Vestimenta">
+            <span>🧥</span><b>Vestimenta</b>
+        </button>
+        <button class="@RailBtn("cuerpo")" @onclick="@(()=>SetPanel("cuerpo"))" title="Cuerpo">
+            <span>🧑</span><b>Cuerpo</b>
+        </button>
+        <button class="@RailBtn("voz")" @onclick="@(()=>SetPanel("voz"))" title="Voz">
+            <span>🎤</span><b>Voz</b>
+        </button>
+        <button class="@RailBtn("fondo")" @onclick="@(()=>SetPanel("fondo"))" title="Escena">
+            <span>🌆</span><b>Escena</b>
+        </button>
+    </nav>
+
+    <div class="vg-rail-footer">
+      <div class="vg-form">
+        <label>Empresa</label>
+        <input class="form-control" @bind="empresa" placeholder="ACME" />
+        <label>Sede</label>
+        <input class="form-control" @bind="sede" placeholder="CENTRO" />
+        <button class="btn btn-secondary w-100" @onclick="LoadAsync">Cargar</button>
+      </div>
+      <button class="btn btn-primary w-100" @onclick="SaveAsync" disabled="@saving">
+        @(saving ? "Guardando..." : "Guardar cambios")
+      </button>
+    </div>
+  </aside>
+
+  <!-- Área principal -->
+  <section class="vg-stage">
+
+    <!-- Encabezado -->
+    <header class="vg-topbar">
+        <div class="vg-tags">
+            <span class="tag">@Auth.Email</span>
+            <span class="tag">@($"Rol: {Auth.Role}")</span>
+            <span class="tag">@($"{empresa}/{sede}")</span>
+        </div>
+        <div class="vg-tools">
+            <button class="icon-btn" title="Girar 360°" @onclick="TurntableAsync">⟳</button>
+            <button class="icon-btn" title="Centrar"     @onclick="FrameAsync">⊕</button>
+            <button class="icon-btn" title="Captura"     @onclick="ScreenshotAsync">📷</button>
+        </div>
+    </header>
+
+    <!-- Lienzo 3D -->
+    <div class="vg-canvas">
+      <canvas @ref="canvasRef" class="avatar-viewer-canvas"></canvas>
+      <audio @ref="audioRef" hidden preload="auto"></audio>
+    </div>
+
+    <!-- Banda de controles (según panel) -->
+    <footer class="vg-dock">
+      @switch (panel)
+      {
+        case "identidad":
+          <div class="vg-dock-row">
+            <div class="vg-slot">
+              <h6>Logo corporativo</h6>
+              <div class="vg-logo-preview">
+                @if (!string.IsNullOrWhiteSpace(logoUrl))
+                { <img src="@logoUrl" alt="Logo" /> } else { <span>Sin logo</span> }
+              </div>
+              <InputFile OnChange="OnLogoPicked" accept=".png,.jpg,.jpeg,.webp" />
+              <small>PNG con transparencia recomendado</small>
+            </div>
+          </div>
+          break;
+
+        case "vestimenta":
+          <div class="vg-dock-row">
+            <div class="vg-slot">
+              <h6>Preset</h6>
+              <div class="vg-pills">
+                @foreach (var opt in outfitOptions)
+                {
+                  var active = string.Equals(vestimenta, opt.Value, StringComparison.OrdinalIgnoreCase);
+                  <button class="pill @(active?"active":null)" @onclick="@(()=>SelectOutfit(opt.Value))">@opt.Label</button>
+                }
+              </div>
+            </div>
+            <div class="vg-slot">
+              <h6>Color cabello</h6>
+              <div class="vg-swatches">
+                @foreach (var c in hairColors)
+                {
+                  var active = string.Equals(colorCabello, c.Value, StringComparison.OrdinalIgnoreCase);
+                  <button class="swatch @(active?"active":null)" style="--sw:@c.Hex" @onclick="@(()=>SelectHair(c.Value))"></button>
+                }
+              </div>
+            </div>
+          </div>
+          break;
+
+        case "cuerpo":
+          <div class="vg-dock-row">
+            <div class="vg-slot">
+              <h6>Tono de piel (mock)</h6>
+              <div class="vg-swatches">
+                @foreach (var c in skinTones)
+                {
+                  <button class="swatch" style="--sw:@c"></button>
+                }
+              </div>
+              <small>Placeholder. (Si luego mapeamos materiales del modelo, lo conectamos).</small>
+            </div>
+          </div>
+          break;
+
+        case "voz":
+          <div class="vg-dock-row">
+            <div class="vg-slot">
+              <h6>Idioma</h6>
+              <select class="form-select" @bind="idioma">
+                @foreach (var kv in voiceMap) { <option value="@kv.Key">@LangLabel(kv.Key)</option> }
+              </select>
+            </div>
+            <div class="vg-slot">
+              <h6>Voz</h6>
+              <select class="form-select" @bind="voz">
+                @foreach (var v in (voiceMap.TryGetValue(idioma, out var list) ? list : new List<string>()))
+                { <option value="@v">@v</option> }
+              </select>
+            </div>
+            <div class="vg-slot">
+              <h6>Texto de prueba</h6>
+              <textarea class="form-control" rows="2" @bind="textoPreview"></textarea>
+              <div class="vg-row-gap">
+                <button class="btn btn-secondary" @onclick="PreviewVozAsync">Reproducir vista previa</button>
+              </div>
+            </div>
+          </div>
+          break;
+
+        case "fondo":
+          <div class="vg-dock-row">
+            <div class="vg-slot">
+              <h6>Escena</h6>
+              <div class="vg-pills">
+                @foreach (var opt in bgOptions)
+                {
+                  var active = string.Equals(fondo, opt.Value, StringComparison.OrdinalIgnoreCase);
+                  <button class="pill @(active?"active":null)" @onclick="@(()=>SelectBg(opt.Value))">@opt.Label</button>
+                }
+              </div>
+            </div>
+          </div>
+          break;
+      }
+    </footer>
+  </section>
+</div>
+</AuthGuard>
+
+@code {
+    // ------------ estado ------------
+    private ElementReference canvasRef;
+    private ElementReference audioRef;
+
+    private string empresa = "ACME";
+    private string sede    = "CENTRO";
+
+    private string? vestimenta;
+    private string? fondo;
+    private string? colorCabello;
+    private string? logoUrl;
+
+    private string panel = "identidad";
+    private bool saving;
+
+    // Voz
+    private string idioma = "es";
+    private string voz    = "Lucia";
+    private string textoPreview = "Hola, soy tu avatar Sentry. Estoy listo para ayudarte.";
+    private Dictionary<string, List<string>> voiceMap = new();
+
+    // ------------ catálogo UI ------------
+    private readonly (string Value, string Label)[] outfitOptions = new[] {
+        ("corporativo","Corporativo"),
+        ("ejecutivo","Ejecutivo"),
+        ("casual","Casual")
+    };
+
+    private readonly (string Value, string Label)[] bgOptions = new[] {
+        ("oficina","Lobby corporativo"),
+        ("moderno","Sala moderna"),
+        ("naturaleza","Exterior natural")
+    };
+
+    private readonly (string Value, string Hex)[] hairColors = new[] {
+        ("predeterminado","#2b2b2b"), ("negro","#1f1b18"), ("castano","#4b2e21"), ("rubio","#d3b26b")
+    };
+
+    private readonly string[] skinTones = new[] { "#ffd9c2","#f2c6a0","#da9c6b","#b87a4b","#8b5a2b" };
+
+    // ------------ helpers ------------
+    private string RailBtn(string k) => $"vg-rail-btn {(panel==k ? "active" : "")}";
+    private void SetPanel(string k) { panel = k; }
+
+    private static string LangLabel(string k) => k switch {
+        "es" => "Español", "en" => "Inglés", "pt" => "Portugués (BR)", _ => k.ToUpperInvariant()
+    };
+
+    // ------------ ciclo ------------
+    protected override async Task OnInitializedAsync()
+    {
+        try { voiceMap = await Api.GetVoicesAsync(); }
+        catch { voiceMap = new(); }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+        await JS.InvokeVoidAsync("AvatarViewer.init", canvasRef, new {
+            modelUrl = "/models/Avatar.glb", // si no existe, tu viewer ya hace fallback
+            outfit   = vestimenta,
+            background = fondo,
+            hairColor  = 0x2b2b2b,
+        });
+        }
+    }
+
+    // ------------ acciones ------------
+    private async Task LoadAsync()
+    {
+        var cfg = await Api.GetConfigAsync(empresa, sede);
+        vestimenta = cfg.Vestimenta;
+        fondo      = cfg.Fondo;
+        colorCabello = cfg.ColorCabello;
+        logoUrl    = cfg.LogoPath;
+        await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new {
+        modelUrl = "/models/Avatar.glb",
+        outfit = vestimenta,
+        background = fondo,
+        hairColor = ColorToHex(colorCabello)
+        });
+        StateHasChanged();
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        try
+        {
+        var upd = new AvatarConfigUpdate { Vestimenta = vestimenta, Fondo = fondo, ColorCabello = colorCabello, Idioma = idioma, Voz = voz };
+        var saved = await Api.UpdateConfigAsync(empresa, sede, upd);
+        vestimenta = saved.Vestimenta; fondo = saved.Fondo; colorCabello = saved.ColorCabello; logoUrl = saved.LogoPath;
+        }
+        finally { saving = false; }
+    }
+
+    private async Task OnLogoPicked(InputFileChangeEventArgs e)
+    {
+        var f = e.File; if (f is null) return;
+        await using var s = f.OpenReadStream(2 * 1024 * 1024);
+        var saved = await Api.UploadLogoAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
+        logoUrl = saved.LogoPath;
+        StateHasChanged();
+    }
+
+    private async Task SelectOutfit(string v)
+    {
+        vestimenta = v;
+        await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { outfit = vestimenta });
+    }
+
+    private async Task SelectBg(string v)
+    {
+        fondo = v;
+        await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { background = fondo });
+    }
+
+    private async Task SelectHair(string v)
+    {
+        colorCabello = v;
+        await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { hairColor = ColorToHex(colorCabello) });
+    }
+
+    private async Task PreviewVozAsync()
+    {
+        // tu backend espera “nombre” como texto
+        var req = new AnnouncementRequest {
+        Empresa = empresa, Sede = sede, Modulo = "A1", Turno = "0001", Nombre = textoPreview
+        };
+        var res = await Api.AnnounceAsync(req, idioma, voz);
+        var dur = await JS.InvokeAsync<double>("AvatarViewer.prepareAudioClip", audioRef, res.AudioUrl);
+        await JS.InvokeVoidAsync("AvatarViewer.applyVisemes", res.Visemas);
+        await JS.InvokeVoidAsync("AvatarViewer.playTalking", dur);
+        await JS.InvokeVoidAsync("AvatarViewer.playPreparedAudioClip", audioRef);
+    }
+
+    private static int? ColorToHex(string? key) => key?.ToLowerInvariant() switch {
+        "negro" => 0x1f1b18, "castano" => 0x4b2e21, "rubio" => 0xd3b26b, _ => 0x2b2b2b
+    };
+
+    private Task TurntableAsync()  => JS.InvokeVoidAsync("AvatarViewer.turntable", 3000).AsTask();
+    private Task FrameAsync()      => JS.InvokeVoidAsync("AvatarViewer.frame").AsTask();
+    private Task ScreenshotAsync() => JS.InvokeVoidAsync("AvatarViewer.screenshot").AsTask();
+}

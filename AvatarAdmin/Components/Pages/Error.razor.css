@@ -1,0 +1,52 @@
+:host {
+    display: grid;
+    place-items: center;
+    min-height: calc(100vh - 140px);
+  }
+  
+  .error-card {
+    width: min(720px, 94vw);
+    padding: 18px;
+    border-radius: 20px;
+    background:
+      radial-gradient(700px 320px at 0% -10%, rgba(255,59,48,.18), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 24px 60px rgba(8,10,16,.35);
+    text-align: center;
+  }
+  
+  .error-card h3 {
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  
+  .error-card p {
+    color: #9aa3b2;
+    margin-bottom: 12px;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .btn {
+    border-radius: 12px;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #ff3b30, #b00020);
+    border: none;
+  }
+  .btn-outline-light {
+    border: 1px solid rgba(255,255,255,.18);
+    background: #0c0f14;
+    color: #eef2ff;
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  

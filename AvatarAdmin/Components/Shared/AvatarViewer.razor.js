@@ -1,317 +1,403 @@
-import * as THREE from '/lib/three/three.module.min.js';
-import { GLTFLoader } from '/lib/three/GLTFLoader.js';
+// === IMPORTS (ajusta la ruta si la tuya difiere) ===
+import * as THREE from '/js/lib/three/build/three.module.min.js';
+import { GLTFLoader }   from '/js/lib/three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from '/js/lib/three/examples/jsm/controls/OrbitControls.js';
 
+// ======= Paletas =======
 const outfitPalettes = {
-    corporativo: { color: '#1c8f6d', emissive: '#174d3c' },
-    ejecutivo: { color: '#1b4332', emissive: '#0f241c' },
-    casual: { color: '#0d6efd', emissive: '#11284a' }
+  corporativo: { color: '#1c8f6d', emissive: '#174d3c' },
+  ejecutivo:   { color: '#1b4332', emissive: '#0f241c' },
+  casual:      { color: '#0d6efd', emissive: '#11284a' }
 };
 
 const backgroundPalettes = {
-    oficina: { light: '#f7f8fb', ground: '#f2f6f9' },
-    moderno: { light: '#f2f3ff', ground: '#e1e0ff' },
-    naturaleza: { light: '#f6fff7', ground: '#d6f5e3' },
-    default: { light: '#ffffff', ground: '#f0f0f0' }
+  oficina:    { light: '#f7f8fb', ground: '#f2f6f9' },
+  moderno:    { light: '#f2f3ff', ground: '#e1e0ff' },
+  naturaleza: { light: '#f6fff7', ground: '#d6f5e3' },
+  default:    { light: '#ffffff', ground: '#f0f0f0' }
 };
 
 const defaultOutfit = outfitPalettes.corporativo;
 
+// Visemas más comunes
+const VISEME_KEYS = ['viseme_aa','viseme_E','viseme_I','viseme_O','viseme_U','viseme_SS','viseme_RR','viseme_kk'];
+
+// ======= FACTORÍA =======
 export async function createViewer(canvas, options) {
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.setPixelRatio(window.devicePixelRatio ?? 1);
-    renderer.shadowMap.enabled = true;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setPixelRatio(window.devicePixelRatio ?? 1);
+  renderer.shadowMap.enabled = true;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    camera.position.set(0, 1.55, 3.2);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 1.0);
-    scene.add(hemiLight);
+  // Posiciones base
+  const CAM_BASE = { x: 0, y: 1.6, z: 3.2 };
+  setCam(camera, CAM_BASE);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
-    keyLight.position.set(3, 6, 6);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(2048, 2048);
-    scene.add(keyLight);
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 1.0);
+  scene.add(hemiLight);
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
-    fillLight.position.set(-2.5, 4, -4);
-    scene.add(fillLight);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+  keyLight.position.set(3, 6, 6);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  scene.add(keyLight);
 
-    const groundMaterial = new THREE.MeshStandardMaterial({ color: backgroundPalettes.default.ground, roughness: 0.9, metalness: 0.05 });
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(3, 48), groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    ground.receiveShadow = true;
-    scene.add(ground);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.35);
+  fillLight.position.set(-2.5, 4, -4);
+  scene.add(fillLight);
 
-    const loader = new GLTFLoader();
-    loader.setCrossOrigin('anonymous');
+  const groundMaterial = new THREE.MeshStandardMaterial({ color: backgroundPalettes.default.ground, roughness: 0.9, metalness: 0.05 });
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(3, 48), groundMaterial);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
+  ground.receiveShadow = true;
+  scene.add(ground);
 
-    const state = {
-        renderer,
-        scene,
-        camera,
-        canvas,
-        keyLight,
-        groundMaterial,
-        outfitMaterials: new Set(),
-        logoMaterial: null,
-        logoTexture: null,
-        resizeObserver: null,
-        animationHandle: 0,
-        root: null,
-        clock: new THREE.Clock()
-    };
+  // Orbit controls
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.minDistance = 1.2;
+  controls.maxDistance = 6.5;
+  controls.target.set(0, 1.5, 0);
+  controls.autoRotate = false;
+  controls.autoRotateSpeed = 0.8;
 
-    let root;
-    if (options?.modelUrl) {
-        try {
-            const gltf = await loader.loadAsync(options.modelUrl);
-            root = gltf.scene;
-            root.traverse((child) => {
-                if (!child.isMesh) {
-                    return;
-                }
+  const loader = new GLTFLoader();
+  loader.setCrossOrigin('anonymous');
 
-                child.castShadow = true;
-                child.receiveShadow = true;
-                const lower = child.name?.toLowerCase?.() ?? '';
+  const state = {
+    renderer, scene, camera, canvas, keyLight, groundMaterial, ground,
+    controls,
+    outfitMaterials: new Set(),
+    logoMaterial: null,
+    logoTexture: null,
+    resizeObserver: null,
+    animationHandle: 0,
+    root: null, clock: new THREE.Clock(),
+    mouthMeshes: [],
+    audio: null, mouthTimer: 0, currentVisemeTimeout: 0,
+    dragHandlers: []
+  };
 
-                if (/(shirt|cloth|outfit|jacket|torso|body)/.test(lower)) {
-                    collectMaterial(state.outfitMaterials, child.material);
-                }
-
-                if (!state.logoMaterial && /(logo|badge|emblem)/.test(lower)) {
-                    state.logoMaterial = ensureSingleMaterial(child);
-                }
-            });
-        } catch (error) {
-            console.warn('No se pudo cargar el modelo GLB. Se usará una silueta base.', error);
-        }
-    }
-
-    if (!root) {
-        root = createFallbackAvatar(state.outfitMaterials);
-        state.logoMaterial = createLogoPlane(root);
-    } else {
-        if (!state.logoMaterial) {
-            state.logoMaterial = createLogoPlane(root);
-        }
-    }
-
-    if (!state.logoMaterial) {
-        state.logoMaterial = createLogoPlane(root);
-    }
-
-    state.logoMaterial.transparent = true;
-    state.logoMaterial.opacity = 0;
-
-    root.position.y = 0;
-    scene.add(root);
-    state.root = root;
-
-    renderer.setClearColor(0x000000, 0);
-    resizeRenderer(state);
-
-    const resizeObserver = new ResizeObserver(() => resizeRenderer(state));
-    resizeObserver.observe(canvas);
-    state.resizeObserver = resizeObserver;
-
-    const renderLoop = () => {
-        state.animationHandle = window.requestAnimationFrame(renderLoop);
-        const delta = state.clock.getDelta();
-        if (state.root) {
-            state.root.rotation.y += delta * 0.35;
-        }
-
-        renderer.render(scene, camera);
-    };
-
-    renderLoop();
-
-    if (options?.logoUrl) {
-        await applyLogo(state, options.logoUrl);
-    }
-
-    if (options?.outfit) {
-        applyOutfit(state, options.outfit);
-    } else {
-        applyOutfit(state, null);
-    }
-
-    if (options?.background) {
-        applyBackground(state, options.background);
-    } else {
-        applyBackground(state, null);
-    }
-
-    return {
-        setLogo: (value) => applyLogo(state, value),
-        setOutfit: (value) => applyOutfit(state, value),
-        setBackground: (value) => applyBackground(state, value),
-        dispose: () => disposeViewer(state)
-    };
-}
-
-function collectMaterial(collection, material) {
-    if (!material) {
-        return;
-    }
-
-    if (Array.isArray(material)) {
-        material.forEach((m) => collectMaterial(collection, m));
-        return;
-    }
-
-    collection.add(material);
-}
-
-function ensureSingleMaterial(mesh) {
-    if (!mesh.material) {
-        mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-        return mesh.material;
-    }
-
-    if (Array.isArray(mesh.material)) {
-        const material = mesh.material[0];
-        mesh.material = material;
-        return material;
-    }
-
-    return mesh.material;
-}
-
-function createLogoPlane(root) {
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), material);
-    plane.position.set(0, 1.55, 0.52);
-    root.add(plane);
-    return material;
-}
-
-function createFallbackAvatar(outfitMaterials) {
-    const group = new THREE.Group();
-
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: defaultOutfit.color, roughness: 0.55, metalness: 0.1 });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.6, 24, 32), bodyMaterial);
-    body.position.y = 1.4;
-    body.castShadow = true;
-    body.receiveShadow = true;
-    group.add(body);
-    outfitMaterials.add(bodyMaterial);
-
-    const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6, metalness: 0.1 });
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 32), headMaterial);
-    head.position.set(0, 2.35, 0);
-    head.castShadow = true;
-    head.receiveShadow = true;
-    group.add(head);
-
-    return group;
-}
-
-async function applyLogo(state, url) {
-    if (!state.logoMaterial) {
-        return;
-    }
-
-    if (state.logoTexture) {
-        state.logoTexture.dispose();
-        state.logoTexture = null;
-    }
-
-    if (!url) {
-        state.logoMaterial.map = null;
-        state.logoMaterial.opacity = 0;
-        state.logoMaterial.needsUpdate = true;
-        return;
-    }
-
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin('anonymous');
-
+  // === Cargar modelo ===
+  let root;
+  if (options?.modelUrl) {
     try {
-        const texture = await loader.loadAsync(url);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = Math.min(8, state.renderer.capabilities.getMaxAnisotropy?.() ?? 4);
-        state.logoMaterial.map = texture;
-        state.logoMaterial.opacity = 1;
-        state.logoMaterial.needsUpdate = true;
-        state.logoTexture = texture;
-    } catch (error) {
-        console.warn('No fue posible cargar la textura del logo.', error);
-        state.logoMaterial.map = null;
-        state.logoMaterial.opacity = 0;
-        state.logoMaterial.needsUpdate = true;
+      const gltf = await loader.loadAsync(options.modelUrl);
+      root = gltf.scene;
+      root.traverse(child => {
+        if (!child.isMesh) return;
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+        const lower = (child.name ?? '').toLowerCase();
+        if (/(shirt|cloth|outfit|jacket|torso|body)/.test(lower)) collectMaterial(state.outfitMaterials, child.material);
+
+        if (child.morphTargetDictionary && typeof child.morphTargetDictionary === 'object') {
+          const dict = child.morphTargetDictionary;
+          const hits = VISEME_KEYS.filter(k => dict[k] !== undefined);
+          if (hits.length > 0) state.mouthMeshes.push(child);
+        }
+      });
+    } catch { /* si falla, usamos fallback */ }
+  }
+  if (!root) root = createFallbackAvatar(state.outfitMaterials);
+
+  state.logoMaterial = ensureLogoPlaneOrFind(root);
+  state.logoMaterial.transparent = true;
+  state.logoMaterial.opacity = 0;
+
+  root.position.y = 0;
+  scene.add(root);
+  state.root = root;
+
+  renderer.setClearColor(0x000000, 0);
+  resizeRenderer(state);
+  const resizeObserver = new ResizeObserver(() => resizeRenderer(state));
+  resizeObserver.observe(canvas);
+  state.resizeObserver = resizeObserver;
+
+  // Drag&drop de imagen para logo
+  setupDragAndDrop(state);
+
+  const renderLoop = () => {
+    state.animationHandle = window.requestAnimationFrame(renderLoop);
+    const delta = state.clock.getDelta();
+
+    // si no hay morphs y está hablando, cabeceo sutil
+    if (state.mouthTimer > 0 && !hasMorphTargets(state)) {
+      state.root.rotation.x = Math.sin(performance.now() * 0.02) * 0.04;
+      state.mouthTimer -= delta;
+      if (state.mouthTimer <= 0) state.root.rotation.x = 0;
     }
+
+    state.controls.update();
+    renderer.render(scene, camera);
+  };
+  renderLoop();
+
+  // Aplicar estado inicial
+  if (options?.logoUrl) await applyLogo(state, options.logoUrl);
+  applyOutfit(state, options?.outfit ?? null);
+  applyBackground(state, options?.background ?? null);
+
+  // ===== API expuesta a .NET =====
+  return {
+    setLogo: (value) => applyLogo(state, value),
+    setOutfit: (value) => applyOutfit(state, value),
+    setBackground: (value) => applyBackground(state, value),
+    setAutoRotate: (on) => { state.controls.autoRotate = !!on; },
+    resetCamera: () => { controls.reset(); setCam(camera, CAM_BASE); controls.target.set(0,1.5,0); controls.update(); },
+    setCameraPreset: (p) => setPreset(state, p),
+    toggleGround: () => { state.ground.visible = !state.ground.visible; },
+    toggleLight:  () => { state.keyLight.intensity = state.keyLight.intensity > 0.05 ? 0.0 : 1.15; },
+    speak: (audioUrl, visemas) => speak(state, audioUrl, visemas),
+    screenshot: (scale=1) => capture(renderer, scale),
+    dispose: () => disposeViewer(state)
+  };
 }
 
-function applyOutfit(state, value) {
-    const key = (value ?? '').toString().toLowerCase();
-    const palette = outfitPalettes[key] ?? defaultOutfit;
+// ======= util =======
+function setCam(cam, {x,y,z}){ cam.position.set(x,y,z); cam.lookAt(0,1.5,0); cam.updateProjectionMatrix(); }
+function hasMorphTargets(state){ return state.mouthMeshes.length > 0; }
 
-    state.outfitMaterials.forEach((material) => {
-        if (!material) {
-            return;
-        }
+function collectMaterial(set, material){
+  if (!material) return;
+  if (Array.isArray(material)){ material.forEach(m => collectMaterial(set, m)); return; }
+  set.add(material);
+}
 
-        if (material.color) {
-            material.color.set(palette.color);
-        }
+function ensureLogoPlaneOrFind(root){
+  let material = null;
+  root.traverse(child=>{
+    if (material) return;
+    if (!child.isMesh) return;
+    const lower = (child.name ?? '').toLowerCase();
+    if (/(logo|badge|emblem)/.test(lower)){
+      material = ensureSingleMaterial(child);
+    }
+  });
+  if (!material) material = createLogoPlane(root);
+  return material;
+}
 
-        if (material.emissive && palette.emissive) {
-            material.emissive.set(palette.emissive);
-        }
+function ensureSingleMaterial(mesh){
+  if (!mesh.material){
+    mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+    return mesh.material;
+  }
+  if (Array.isArray(mesh.material)){
+    const m = mesh.material[0]; mesh.material = m; return m;
+  }
+  return mesh.material;
+}
 
-        material.needsUpdate = true;
+function createLogoPlane(root){
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), material);
+  plane.position.set(0, 1.55, 0.52);
+  root.add(plane);
+  return material;
+}
+
+function createFallbackAvatar(outfitMaterials){
+  const group = new THREE.Group();
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: defaultOutfit.color, roughness: 0.55, metalness: 0.1 });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.6, 24, 32), bodyMaterial);
+  body.position.y = 1.4; body.castShadow = true; body.receiveShadow = true;
+  group.add(body); outfitMaterials.add(bodyMaterial);
+  const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6, metalness: 0.1 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 32), headMaterial);
+  head.position.set(0, 2.35, 0); head.castShadow = true; head.receiveShadow = true;
+  group.add(head);
+  return group;
+}
+
+async function applyLogo(state, url){
+  if (!state.logoMaterial) return;
+  if (state.logoTexture){ state.logoTexture.dispose(); state.logoTexture = null; }
+
+  if (!url){ state.logoMaterial.map = null; state.logoMaterial.opacity = 0; state.logoMaterial.needsUpdate = true; return; }
+
+  const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
+  try{
+    const texture = await loader.loadAsync(url);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(8, state.renderer.capabilities.getMaxAnisotropy?.() ?? 4);
+    state.logoMaterial.map = texture; state.logoMaterial.opacity = 1; state.logoMaterial.needsUpdate = true;
+    state.logoTexture = texture;
+  }catch{
+    state.logoMaterial.map = null; state.logoMaterial.opacity = 0; state.logoMaterial.needsUpdate = true;
+  }
+}
+
+function applyOutfit(state, value){
+  const key = (value ?? '').toString().toLowerCase();
+  const palette = outfitPalettes[key] ?? defaultOutfit;
+  state.outfitMaterials.forEach(m=>{
+    if (!m) return;
+    if (m.color) m.color.set(palette.color);
+    if (m.emissive && palette.emissive) m.emissive.set(palette.emissive);
+    m.needsUpdate = true;
+  });
+}
+
+function applyBackground(state, value){
+  const key = (value ?? '').toString().toLowerCase();
+  const palette = backgroundPalettes[key] ?? backgroundPalettes.default;
+  state.keyLight.color.set(palette.light);
+  if (state.groundMaterial?.color){ state.groundMaterial.color.set(palette.ground); state.groundMaterial.needsUpdate = true; }
+}
+
+function resizeRenderer(state){
+  const canvas = state.canvas; if (!canvas) return;
+  const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return;
+  state.renderer.setSize(w, h, false); state.camera.aspect = w/h; state.camera.updateProjectionMatrix();
+}
+
+// ======= Cámara: presets =======
+function setPreset(state, preset){
+  const cam = state.camera, controls = state.controls;
+  switch ((preset||'').toString()){
+    case 'head':  setCam(cam, {x:0.0, y:1.7, z:1.1}); controls.target.set(0,1.7,0); break;
+    case 'chest': setCam(cam, {x:0.0, y:1.6, z:1.6}); controls.target.set(0,1.5,0); break;
+    case 'waist': setCam(cam, {x:0.0, y:1.5, z:2.2}); controls.target.set(0,1.45,0); break;
+    default:      setCam(cam, {x:0.0, y:1.6, z:3.2}); controls.target.set(0,1.5,0); break;
+  }
+  controls.update();
+}
+
+// ======= Hablar =======
+async function speak(state, audioUrl, visemas){
+  stopMouth(state);
+
+  const audio = new Audio(audioUrl);
+  audio.crossOrigin = 'anonymous';
+  state.audio = audio;
+
+  const list = Array.isArray(visemas) ? visemas.slice().sort((a,b)=> (a?.tiempo ?? 0) - (b?.tiempo ?? 0)) : [];
+
+  audio.addEventListener('play', () => {
+    if (hasMorphTargets(state)){
+      scheduleMorphs(state, list, audio);
+    }else{
+      state.mouthTimer = Math.max(0.6, audio.duration || 2);
+    }
+  }, { once:true });
+  audio.addEventListener('ended', ()=> stopMouth(state));
+  await audio.play().catch(()=>{ /* autoplay bloqueado por user gesture */ });
+}
+
+function scheduleMorphs(state, visemas, audio){
+  if (!visemas?.length) return;
+
+  // Apaga todos
+  state.mouthMeshes.forEach(mesh=>{
+    const dict = mesh.morphTargetDictionary;
+    const inf  = mesh.morphTargetInfluences ?? [];
+    VISEME_KEYS.forEach(k => { if (dict[k] !== undefined) inf[dict[k]] = 0; });
+  });
+
+  // Timeline simple basada en currentTime del audio
+  let i = 0;
+  const tick = ()=>{
+    if (i >= visemas.length) return;
+    const tNow = audio.currentTime * 1000;
+    const tNext = visemas[i].tiempo ?? 0;
+    if (tNow >= tNext - 30){
+      applyMorph(state, visemas[i].shapeKey);
+      i++;
+    }
+    if (!audio.paused) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function applyMorph(state, key){
+  if (!key) return;
+  state.mouthMeshes.forEach(mesh=>{
+    const dict = mesh.morphTargetDictionary;
+    const inf  = mesh.morphTargetInfluences ?? [];
+    VISEME_KEYS.forEach(k => { if (dict[k] !== undefined) inf[dict[k]] = 0; });
+    if (dict[key] !== undefined){
+      const idx = dict[key];
+      inf[idx] = 0.85;
+      setTimeout(()=>{ if (inf[idx] > 0) inf[idx] *= 0.35; }, 80);
+      setTimeout(()=>{ if (inf[idx] > 0) inf[idx] *= 0.15; }, 140);
+      setTimeout(()=>{ if (inf[idx] > 0) inf[idx] = 0; }, 220);
+    }
+  });
+}
+
+function stopMouth(state){
+  state.mouthTimer = 0;
+  if (state.mouthMeshes.length){
+    state.mouthMeshes.forEach(mesh=>{
+      const dict = mesh.morphTargetDictionary;
+      const inf  = mesh.morphTargetInfluences ?? [];
+      VISEME_KEYS.forEach(k => { if (dict[k] !== undefined) inf[dict[k]] = 0; });
     });
+  }
+  if (state.audio){ try{ state.audio.pause(); }catch{} state.audio = null; }
 }
 
-function applyBackground(state, value) {
-    const key = (value ?? '').toString().toLowerCase();
-    const palette = backgroundPalettes[key] ?? backgroundPalettes.default;
-
-    state.keyLight.color.set(palette.light);
-    if (state.groundMaterial && state.groundMaterial.color) {
-        state.groundMaterial.color.set(palette.ground);
-        state.groundMaterial.needsUpdate = true;
-    }
+// ======= Captura =======
+function capture(renderer, scale=1){
+  // (preserveDrawingBuffer:true en renderer) así podemos usar toDataURL
+  const dataUrl = renderer.domElement.toDataURL('image/png');
+  return dataUrl;
 }
 
-function resizeRenderer(state) {
-    const canvas = state.canvas;
-    if (!canvas) {
-        return;
-    }
+// ======= Drag & Drop (logo) =======
+function setupDragAndDrop(state){
+  const el = state.canvas;
+  const prevent = e => { e.preventDefault(); e.stopPropagation(); };
+  const over     = e => { prevent(e); el.style.outline = '2px dashed rgba(255,255,255,.45)'; };
+  const leave    = e => { prevent(e); el.style.outline = 'none'; };
+  const drop     = e => {
+    prevent(e); el.style.outline = 'none';
+    const f = e.dataTransfer?.files?.[0]; if (!f) return;
+    if (!/^image\//i.test(f.type)) return;
+    const url = URL.createObjectURL(f);
+    applyLogo(state, url);
+  };
 
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    if (width === 0 || height === 0) {
-        return;
-    }
+  el.addEventListener('dragenter', over);
+  el.addEventListener('dragover',  over);
+  el.addEventListener('dragleave', leave);
+  el.addEventListener('drop',      drop);
 
-    state.renderer.setSize(width, height, false);
-    state.camera.aspect = width / height;
-    state.camera.updateProjectionMatrix();
+  state.dragHandlers.push(['dragenter', over], ['dragover', over], ['dragleave', leave], ['drop', drop]);
 }
 
-async function disposeViewer(state) {
-    if (state.animationHandle) {
-        window.cancelAnimationFrame(state.animationHandle);
-        state.animationHandle = 0;
-    }
+async function disposeViewer(state){
+  if (state.animationHandle) window.cancelAnimationFrame(state.animationHandle);
+  if (state.resizeObserver) state.resizeObserver.disconnect();
+  if (state.logoTexture) state.logoTexture.dispose();
+  stopMouth(state);
 
-    if (state.resizeObserver) {
-        state.resizeObserver.disconnect();
-        state.resizeObserver = null;
-    }
+  // remove DnD listeners
+  if (state.dragHandlers?.length){
+    for (const [evt, fn] of state.dragHandlers) state.canvas.removeEventListener(evt, fn);
+    state.dragHandlers.length = 0;
+  }
 
-    if (state.logoTexture) {
-        state.logoTexture.dispose();
-        state.logoTexture = null;
-    }
+  state.controls?.dispose?.();
+  state.renderer.dispose();
+}
 
-    state.renderer.dispose();
+// ======= Helper para descargar desde .NET =======
+export function downloadDataUrl(filename, dataUrl){
+  try{
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename || 'captura.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }catch{}
 }

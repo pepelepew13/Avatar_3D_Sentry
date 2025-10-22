@@ -1,24 +1,81 @@
-:host {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-.viewer-wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    justify-content: center;
-    overflow: hidden;
-}
-
-canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-    border-radius: 12px;
-    filter: drop-shadow(0 18px 25px rgba(15, 47, 58, 0.25));
+:host{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  
+  .viewer-wrapper{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    overflow:hidden;
+    border-radius:18px;
+  }
+  
+  .avatar-viewer-canvas{
+    width:100%;
+    height:100%;
+    display:block;
     background: transparent;
-}
+    border-radius:18px;
+    filter: drop-shadow(0 18px 25px rgba(15,47,58,.25));
+  }
+  
+  /* ===== HUD estilo videojuego ===== */
+  .viewer-overlay{
+    position:absolute;
+    inset:auto 0 10px 0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.75rem;
+    padding: .55rem .8rem;
+    margin: 0 .6rem;
+    border-radius:14px;
+    background: rgba(0,0,0,.25);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border:1px solid rgba(255,255,255,.18);
+    color:#fff;
+    pointer-events: none; /* deja pasar el mouse al canvas salvo botones */
+  }
+  
+  .viewer-left{ display:flex; align-items:center; gap:.6rem; }
+  .viewer-pill{
+    background: rgba(255,255,255,.18);
+    color:#fff;
+    padding:.28rem .6rem;
+    border-radius:999px;
+    font-weight:800;
+    letter-spacing:.03em;
+  }
+  .hint{ opacity:.9; font-size:.9rem; }
+  .kbd{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:.8rem;
+    padding:.12rem .35rem;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,.28);
+    background: rgba(0,0,0,.35);
+  }
+  
+  .viewer-tools{ display:flex; align-items:center; gap:.45rem; pointer-events: auto; }
+  .viewer-tools .preset{ display:flex; align-items:center; gap:.35rem; }
+  .sep{ width:1px; height:20px; background:rgba(255,255,255,.25); display:inline-block; margin:0 .25rem; }
+  
+  .icon-btn{
+    display:grid; place-items:center;
+    min-width:38px; height:38px; padding:0;
+    border-radius:10px; border:1px solid rgba(255,255,255,.25);
+    background: rgba(0,0,0,.45);
+    color:#fff;
+    box-shadow: 0 8px 22px rgba(0,0,0,.35);
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease, filter .12s ease;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ transform:translateY(-1px); filter:brightness(1.05); }
+  .icon-btn:active{ transform:translateY(0); }
+  

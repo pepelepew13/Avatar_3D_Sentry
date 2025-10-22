@@ -1,0 +1,19 @@
+@implements IDisposable
+@inject AvatarAdmin.Services.AuthState Auth
+@inject AvatarAdmin.Services.AuthPersistence Persist
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Persist.TryRestoreAsync(Auth);
+        Auth.Changed += OnAuthChanged;
+    }
+
+    private async void OnAuthChanged()
+    {
+        try { await Persist.PersistAsync(Auth); } catch { }
+        StateHasChanged();
+    }
+
+    public void Dispose() => Auth.Changed -= OnAuthChanged;
+}

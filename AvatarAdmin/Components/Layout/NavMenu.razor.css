@@ -175,6 +175,15 @@
     margin: 0;
 }
 
+/* Iconos adicionales */
+.nav-card-link-icon-edit::before  { content: "✎"; }
+.nav-card-link-icon-users::before { content: "👥"; }
+.nav-card-link-icon-user::before  { content: "👤"; }
+
+/* Deshabilitado cuando no hay sesión */
+.nav-card-link.is-disabled { opacity: .55; pointer-events: none; }
+
+
 @media (max-width: 1024px) {
     .nav-brand,
     .nav-card {
@@ -186,4 +195,92 @@
     .nav-card-link.as-button {
         padding: 0.75rem 0.9rem;
     }
+}
+
+/* ===== User info panel (bonito) ===== */
+.nav-card-userinfo{
+    padding: 0.85rem;
+    border-radius: 16px;
+    background:
+        radial-gradient(120% 160% at -20% -30%, rgba(255,255,255,.18), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+    border: 1px solid rgba(255,255,255,.28);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.35),
+        0 12px 28px rgba(0,0,0,.18);
+    color: #ffffff;
+    transform-origin: top center;
+    animation: navUserInfoIn .22s ease-out;
+}
+
+@keyframes navUserInfoIn{
+    from{ opacity: 0; transform: translateY(-6px) scaleY(.98); }
+    to  { opacity: 1; transform: translateY(0)    scaleY(1); }
+}
+
+/* Fila clave:valor */
+.nav-card-userinfo > div{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .5rem;
+    padding: .35rem .25rem;
+    font-size: .9rem;
+}
+
+.nav-card-userinfo > div + div{
+    border-top: 1px dashed rgba(255,255,255,.25);
+}
+
+/* Etiqueta (clave) */
+.nav-card-userinfo strong{
+    font-weight: 800;
+    letter-spacing: .02em;
+    opacity: .95;
+}
+
+/* Valor con “pill” */
+.nav-card-userinfo .kv-value{
+    display: inline-block;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.28);
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
+/* Botón “Tu sesión” con caret que gira al abrir */
+.nav-card-link.as-button{
+    position: relative;
+    padding-right: 2.25rem; /* espacio para caret */
+}
+
+.nav-card-link.as-button::after{
+    content: "▾";
+    position: absolute;
+    right: .9rem;
+    top: 50%;
+    transform: translateY(-50%) rotate(0deg);
+    transition: transform .2s ease;
+    opacity: .7;
+}
+
+.nav-card-link.as-button.is-open::after{
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Un poco más de contraste en el icono user cuando está abierto */
+.nav-card-link.as-button.is-open .nav-card-link-icon{
+    box-shadow: 0 10px 22px rgba(0,0,0,.18);
+    outline: 2px solid rgba(255,255,255,.25);
+}
+
+/* Responsive toque fino */
+@media (max-width: 1024px){
+    .nav-card-userinfo{
+        border-radius: 14px;
+        padding: .75rem;
+    }
+    .nav-card-userinfo > div{ font-size: .88rem; }
 }

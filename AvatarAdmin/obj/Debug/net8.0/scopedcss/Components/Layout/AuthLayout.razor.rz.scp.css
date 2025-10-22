@@ -1,0 +1,156 @@
+:host[b-4w45dngw9n] { display:block }
+
+/* ========= LAYOUT CON COLOR ========= */
+.auth-layout[b-4w45dngw9n]{
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+
+  /* Base clara + manchas de color (mesh) */
+  background:
+    /* manchas cálidas/frías grandes */
+    radial-gradient(1200px 700px at -10% -20%, rgba(255, 59, 48, .14), transparent 60%),
+    radial-gradient(900px 540px  at 115% -10%, rgba(31, 78, 121, .12), transparent 55%),
+
+    /* mesh suave multicolor */
+    radial-gradient(800px 500px at 15% 80%, rgba(255, 122, 182, .12), transparent 60%),
+    radial-gradient(820px 520px at 85% 20%, rgba(0, 212, 255, .12), transparent 60%),
+    radial-gradient(600px 420px at 65% 85%, rgba(255, 190, 11, .10), transparent 65%),
+    radial-gradient(700px 460px at 30% 25%, rgba(123, 97, 255, .12), transparent 60%),
+
+    /* capa base */
+    linear-gradient(180deg, rgba(255,255,255,.97), rgba(245,245,245,.90));
+}
+
+/* Malla sutil (grid) con leve tinte */
+.auth-layout[b-4w45dngw9n]::before{
+  content:"";
+  position:absolute; inset:-80px;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(176,0,32,.045), rgba(176,0,32,.045) 1px,
+      transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg,
+      rgba(31,78,121,.045), rgba(31,78,121,.045) 1px,
+      transparent 1px, transparent 20px);
+  -webkit-mask-image: radial-gradient(65% 60% at 50% 45%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(65% 60% at 50% 45%, #000 55%, transparent 100%);
+  pointer-events:none;
+  z-index: 0;
+}
+
+/* Halo con conic + blur, multicolor y animado */
+.auth-layout[b-4w45dngw9n]::after{
+  content:"";
+  position:absolute; inset:-42%;
+  background:
+    radial-gradient(closest-side at 50% 50%, rgba(255,59,48,.10), transparent 60%),
+    conic-gradient(from 0turn at 50% 50%,
+      rgba(176, 0, 32, .10) 0deg,
+      rgba(255, 122, 182, .10) 60deg,
+      rgba(123, 97, 255, .10) 120deg,
+      rgba(31, 78, 121, .10) 180deg,
+      rgba(0, 212, 255, .10) 240deg,
+      rgba(255, 190, 11, .10) 300deg,
+      rgba(176, 0, 32, .10) 360deg);
+  filter: blur(48px) saturate(1.05);
+  opacity:.40;
+  animation: orbSpin-b-4w45dngw9n 28s linear infinite;
+  pointer-events:none;
+  z-index: 0;
+}
+
+@keyframes orbSpin-b-4w45dngw9n { to { transform: rotate(1turn) } }
+
+/* Contenedor del contenido */
+.auth-layout-content[b-4w45dngw9n]{
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(1240px, 98vw);
+  padding: clamp(10px, 2.6vw, 18px);
+}
+
+/* ========= ORBES DECORATIVAS ========= */
+.auth-bg.orb[b-4w45dngw9n]{
+  position:absolute; filter: blur(55px); pointer-events:none; opacity:.55;
+  z-index: 0;
+}
+/* Orb cálida */
+.orb-1[b-4w45dngw9n]{
+  width:460px;height:460px;border-radius:50%;
+  background:
+    radial-gradient(closest-side, rgba(255, 59, 48, .35), transparent 60%),
+    radial-gradient(closest-side at 30% 30%, rgba(255, 190, 11, .22), transparent 70%);
+  left:-140px; bottom:-140px;
+}
+/* Orb fría */
+.orb-2[b-4w45dngw9n]{
+  width:380px;height:380px;border-radius:50%;
+  background:
+    radial-gradient(closest-side, rgba(31, 78, 121, .32), transparent 60%),
+    radial-gradient(closest-side at 60% 60%, rgba(0, 212, 255, .22), transparent 70%);
+  right:-90px; top:-90px;
+}
+
+/* ========= 1080p (más presencia) ========= */
+@media (min-width: 1850px) and (min-height: 980px){
+  .auth-layout[b-4w45dngw9n]{
+    background:
+      radial-gradient(1600px 900px at -10% -20%, rgba(255,59,48,.14), transparent 60%),
+      radial-gradient(1200px 680px at 115% -10%, rgba(31,78,121,.12), transparent 55%),
+      radial-gradient(900px 540px at 15% 80%, rgba(255, 122, 182, .12), transparent 60%),
+      radial-gradient(960px 560px at 85% 20%, rgba(0, 212, 255, .12), transparent 60%),
+      radial-gradient(760px 520px at 65% 85%, rgba(255, 190, 11, .10), transparent 65%),
+      radial-gradient(880px 520px at 30% 25%, rgba(123, 97, 255, .12), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,245,245,.92));
+  }
+  .auth-layout-content[b-4w45dngw9n]{ max-width: min(1400px, 94vw); }
+  .auth-layout[b-4w45dngw9n]::before{
+    inset:-100px;
+    -webkit-mask-image: radial-gradient(62% 58% at 50% 45%, #000 50%, transparent 100%);
+            mask-image: radial-gradient(62% 58% at 50% 45%, #000 50%, transparent 100%);
+  }
+  .auth-layout[b-4w45dngw9n]::after{
+    inset:-38%;
+    filter: blur(56px);
+    opacity:.42;
+    animation-duration: 32s;
+  }
+  .orb-1[b-4w45dngw9n]{ width:560px;height:560px; left:-170px; bottom:-170px; filter: blur(60px); }
+  .orb-2[b-4w45dngw9n]{ width:460px;height:460px; right:-140px; top:-140px; filter: blur(60px); }
+}
+
+/* ========= HD intermedio (1366×768 / 1600×900) ========= */
+@media (min-width: 1366px) and (min-height: 720px){
+  .auth-layout-content[b-4w45dngw9n]{ max-width: min(1320px, 96vw); }
+}
+
+/* ========= Móvil: suaviza overlays ========= */
+@media (max-width: 640px){
+  .auth-layout[b-4w45dngw9n]::before{
+    inset:-40px;
+    -webkit-mask-image: radial-gradient(78% 70% at 50% 48%, #000 55%, transparent 100%);
+            mask-image: radial-gradient(78% 70% at 50% 48%, #000 55%, transparent 100%);
+    opacity:.95;
+  }
+  .auth-layout[b-4w45dngw9n]::after{
+    inset:-55%;
+    filter: blur(40px);
+    opacity:.34;
+    animation-duration: 36s;
+  }
+  .orb-1[b-4w45dngw9n], .orb-2[b-4w45dngw9n]{ opacity:.50; filter: blur(52px); }
+}
+
+/* Respeta safe-area */
+@supports (padding: max(0px)) {
+  .auth-layout-content[b-4w45dngw9n] { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce){
+  .auth-layout[b-4w45dngw9n]::after{ animation: none; }
+}

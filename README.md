@@ -107,3 +107,53 @@ La URL del panel autorizado para consumir la API se controla mediante la clave
 `Dashboard:PanelUrl` en `appsettings*.json`. Ajusta este valor para coincidir con
 la dirección desde la que se hospeda el panel (por defecto `http://localhost:5168`).
 
+## Snippet para el sistema de turnos del cliente
+
+Si ellos ya muestran “turno / módulo” a la izquierda, a la derecha pueden incrustar un canvas y el script. Con una sola llamada a tu API, el avatar habla y mueve labios:
+
+
+`<!-- En la página del cliente -->
+<div style="width:100%;max-width:520px;margin:auto">
+  <canvas id="avatar-canvas" style="width:100%;height:420px;border-radius:16px"></canvas>
+  <audio id="avatar-audio" hidden preload="auto"></audio>
+</div>
+
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+window.THREE = THREE;
+import "https://tu-panel-o-cdn/js/avatarViewer.js"; // sirve el que ya tienes
+
+async function announceTurno(payload){
+  // payload: { empresa, sede, modulo, turno, nombre }
+  const res = await fetch("https://TU_API/api/avatar/announce?idioma=es", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "Authorization":"Bearer secret-token" },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error("API error");
+  return res.json();
+}
+
+(async () => {
+  const canvas = document.getElementById("avatar-canvas");
+  // inicializa viewer (modelo por defecto; el logo/fondo lo trae el admin)
+  window.AvatarViewer.init(canvas, { modelUrl: "/models/Avatar.glb", background: "oficina" });
+
+  // Ejemplo: cuando tu sistema llame un turno:
+  const data = await announceTurno({
+    empresa: "Sentry",
+    sede: "Pereira",
+    modulo: "Módulo 3",
+    turno: "A015",
+    nombre: "Juan Pérez"
+  });
+
+  // Preparar audio y visemas
+  const audio = document.getElementById("avatar-audio");
+  const durationMs = await window.AvatarViewer.prepareAudioClip(audio, data.audioUrl);
+  window.AvatarViewer.applyVisemes(data.visemas);
+  window.AvatarViewer.playTalking(durationMs);
+  await window.AvatarViewer.playPreparedAudioClip(audio);
+})();
+</script>
+`

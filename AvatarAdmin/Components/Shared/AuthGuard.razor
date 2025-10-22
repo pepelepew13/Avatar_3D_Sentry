@@ -1,0 +1,15 @@
+@using AvatarAdmin.Services
+@inject AuthState Auth
+
+@if (!Auth.IsAuthenticated)
+{
+    <RedirectToLogin />
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

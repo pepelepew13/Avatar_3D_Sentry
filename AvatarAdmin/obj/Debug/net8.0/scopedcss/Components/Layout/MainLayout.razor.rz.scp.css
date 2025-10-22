@@ -1,0 +1,109 @@
+.layout-shell[b-ixifbd6ad3] {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: clamp(260px, 24vw, 320px) 1fr;
+    background: radial-gradient(circle at top left, rgba(255, 0, 0, 0.12), transparent 55%),
+                radial-gradient(circle at 85% 15%, rgba(31, 78, 121, 0.1), transparent 50%),
+                linear-gradient(125deg, rgba(247, 247, 247, 0.98), rgba(239, 239, 239, 0.85));
+}
+
+.layout-sidebar[b-ixifbd6ad3] {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.94);
+    border-right: 1px solid rgba(224, 224, 224, 0.9);
+    padding: 2.25rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    box-shadow: 4px 0 24px rgba(192, 0, 0, 0.08);
+}
+
+.layout-brand[b-ixifbd6ad3] {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-logo[b-ixifbd6ad3] {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+}
+
+.brand-copy[b-ixifbd6ad3] {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.brand-copy strong[b-ixifbd6ad3] {
+    font-size: 1.08rem;
+    font-weight: 700;
+}
+
+.brand-copy span[b-ixifbd6ad3] {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 0, 0, 0.7);
+}
+
+.layout-main[b-ixifbd6ad3] {
+    padding: 2.5rem clamp(1.5rem, 3vw, 3.5rem);
+    overflow-x: auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 245, 0.85));
+}
+
+.layout-content[b-ixifbd6ad3] {
+    max-width: none;   /* antes: 1100px */
+    width: 100%;
+    margin: 0;         /* fuera centrado */
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#blazor-error-ui[b-ixifbd6ad3] {
+    background: rgba(192, 0, 0, 0.95);
+    color: #fff;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    display: none;
+    padding: 0.7rem 1.5rem;
+    z-index: 1000;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+}
+
+#blazor-error-ui .dismiss[b-ixifbd6ad3] {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 0.6rem;
+}
+
+@media (max-width: 1024px) {
+    .layout-shell[b-ixifbd6ad3] {
+        grid-template-columns: 1fr;
+    }
+
+    .layout-sidebar[b-ixifbd6ad3] {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.5rem clamp(1rem, 5vw, 2rem);
+        border-right: none;
+        border-bottom: 1px solid rgba(192, 0, 0, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(15px);
+    }
+
+    .layout-main[b-ixifbd6ad3] {
+        padding-top: 1.5rem;
+    }
+}

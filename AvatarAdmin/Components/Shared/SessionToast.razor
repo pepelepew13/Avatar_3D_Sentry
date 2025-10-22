@@ -1,0 +1,72 @@
+@using AvatarAdmin.Services
+@implements IDisposable
+@inject AuthState Auth
+
+@if (_visible)
+{
+  <div class="session-toast" role="status" aria-live="polite">
+    <div class="session-toast__icon">🔒</div>
+    <div class="session-toast__body">
+      <strong>@_title</strong>
+      <div class="session-toast__msg">@_message</div>
+    </div>
+    <button class="session-toast__close" @onclick="Close" aria-label="Cerrar notificación">✕</button>
+  </div>
+}
+
+@code {
+  private bool _visible;
+  private string _title = "Sesión finalizada";
+  private string _message = "Vuelve a iniciar sesión para continuar.";
+  private System.Timers.Timer? _timer;
+
+  protected override void OnInitialized()
+  {
+    Auth.Changed += OnAuthChanged;
+    RefreshFromState();
+  }
+
+  private void OnAuthChanged()
+  {
+    RefreshFromState();
+    InvokeAsync(StateHasChanged);
+  }
+
+  private void RefreshFromState()
+  {
+    if (!Auth.IsAuthenticated && !string.IsNullOrWhiteSpace(Auth.LastLogoutReason))
+    {
+      (_title, _message) = Auth.LastLogoutReason switch
+      {
+        "expired" => ("Tu sesión ha expirado", "Por seguridad, vuelve a iniciar sesión."),
+        "unauthorized" => ("Sesión inválida", "Tu sesión ya no es válida o fue revocada."),
+        _ => ("Sesión cerrada", "Vuelve a iniciar sesión cuando lo necesites.")
+      };
+
+      Show();
+    }
+  }
+
+  private void Show()
+  {
+    _visible = true;
+    _timer?.Stop();
+    _timer?.Dispose();
+    _timer = new System.Timers.Timer(6000);
+    _timer.Elapsed += (_, _) => { _visible = false; _timer?.Stop(); InvokeAsync(StateHasChanged); };
+    _timer.AutoReset = false;
+    _timer.Start();
+  }
+
+  private void Close()
+  {
+    _visible = false;
+    _timer?.Stop();
+  }
+
+  public void Dispose()
+  {
+    Auth.Changed -= OnAuthChanged;
+    _timer?.Dispose();
+  }
+}
