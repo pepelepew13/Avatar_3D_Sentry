@@ -23,34 +23,23 @@ dotnet run
 Configura las mismas variables de entorno en el servidor y asegúrate de que el
 archivo del certificado esté disponible en la ruta indicada.
 
-## Configurar AWS Polly
+## Configurar Azure Speech (TTS)
 
-Para habilitar la síntesis de voz real con Amazon Polly debes proporcionar
-credenciales válidas. **No** almacenes las llaves en el repositorio; usa variables
-de entorno o `dotnet user-secrets` durante el desarrollo.
+La API usa Azure Speech para generar audio y visemas (lip-sync). Define las
+variables de entorno antes de ejecutar la aplicación. No guardes las llaves en
+el repositorio.
 
 ```bash
-export AWS_ACCESS_KEY_ID="<tu_access_key>"
-export AWS_SECRET_ACCESS_KEY="<tu_secret_key>"
-export AWS_REGION="us-east-1"  # opcional, por defecto us-east-1
-dotnet run
+export SPEECH_KEY="<tu_speech_key>"
+export SPEECH_REGION="eastus2"                    # o usa SPEECH_ENDPOINT si prefieres
+export SPEECH_ENDPOINT="https://<tu_endpoint>.api.cognitive.microsoft.com/"  # opcional
+export VOICE_NAME="es-CO-SalomeNeural"            # voz por defecto
+dotnet run --project AvatarBack/Avatar_3D_Sentry.csproj
 ```
 
-También puedes crear un archivo `appsettings.Development.json` local (excluido
-del control de versiones) con la sección `AWS`:
-
-```json
-{
-  "AWS": {
-    "Region": "us-east-1",
-    "AccessKeyId": "<tu_access_key>",
-    "SecretAccessKey": "<tu_secret_key>"
-  }
-}
-```
-
-En entornos productivos se recomienda usar perfiles compartidos de AWS o un
-servicio de gestión de secretos compatible.
+Si usas un archivo `.env` o `appsettings.Development.json` local (ambos están
+excluidos del control de versiones), la sección `Speech` acepta los mismos
+campos (`Key`, `Region`, `Endpoint`, `DefaultVoice`).
 
 ## Autenticación de la API
 

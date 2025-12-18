@@ -22,6 +22,7 @@ public class NullTtsService : ITtsService
 
     public Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
     {
-        throw new InvalidOperationException("No hay un proveedor TTS configurado. Agrega credenciales para habilitar la síntesis de voz.");
+        throw new InvalidOperationException(
+            "No hay un proveedor TTS configurado. Define SPEECH_KEY y SPEECH_REGION o SPEECH_ENDPOINT para habilitar Azure Speech.");
     }
 }
