@@ -266,7 +266,7 @@
 
   // Voz
   private string idioma = "es";
-  private string voz    = "Lucia";
+  private string voz    = "es-CO-SalomeNeural";
   private string textoPreview = "Hola, soy tu avatar Sentry. Estoy listo para ayudarte.";
   private Dictionary<string, List<string>> voiceMap = new();
 
@@ -359,6 +359,8 @@
         Log.LogWarning(ex, "No se pudo obtener el mapa de voces");
         voiceMap = new();
       }
+
+      NormalizarVoz();
     }
   }
 
@@ -504,6 +506,22 @@
     catch (Exception ex)
     {
       Log.LogError(ex, "PreviewVozAsync falló");
+    }
+  }
+
+  private void NormalizarVoz()
+  {
+    if (voiceMap.Count == 0) return;
+
+    if (!voiceMap.TryGetValue(idioma, out var lista) || lista.Count == 0)
+    {
+      idioma = voiceMap.Keys.First();
+      lista = voiceMap[idioma];
+    }
+
+    if (!lista.Contains(voz) && lista.Count > 0)
+    {
+      voz = lista[0];
     }
   }
 

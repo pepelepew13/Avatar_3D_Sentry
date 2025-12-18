@@ -92,14 +92,8 @@ namespace Avatar_3D_Sentry.Controllers
         [AllowAnonymous]
         public ActionResult<Dictionary<string, List<string>>> GetVoices()
         {
-            // En un futuro puedes consultar Azure Voices. Por ahora devuelve por defecto:
-            var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["es"] = new() { "es-CO-SalomeNeural" },
-                ["en"] = new() { "en-US-GuyNeural" },
-                ["pt"] = new() { "pt-BR-AntonioNeural" }
-            };
-            return Ok(map);
+            var voices = _tts.GetAvailableVoices();
+            return Ok(new Dictionary<string, List<string>>(voices, StringComparer.OrdinalIgnoreCase));
         }
     }
 }

@@ -178,13 +178,18 @@ builder.Services.AddDbContext<AvatarContext>(opt =>
 });
 
 // ==================== Opciones: Speech & Storage ====================
+var speechSection   = builder.Configuration.GetSection("Speech");
+var speechKey       = ResolveEnv(speechSection["Key"])          ?? speechSection["Key"];
+var speechRegion    = ResolveEnv(speechSection["Region"])       ?? speechSection["Region"];
+var speechEndpoint  = ResolveEnv(speechSection["Endpoint"])     ?? speechSection["Endpoint"];
+var speechVoice     = ResolveEnv(speechSection["DefaultVoice"]) ?? speechSection["DefaultVoice"] ?? "es-CO-SalomeNeural";
+
 builder.Services.Configure<SpeechOptions>(opts =>
 {
-    var s = builder.Configuration.GetSection("Speech");
-    opts.Key          = ResolveEnv(s["Key"])      ?? s["Key"];
-    opts.Region       = ResolveEnv(s["Region"])   ?? s["Region"];
-    opts.Endpoint     = ResolveEnv(s["Endpoint"]) ?? s["Endpoint"];
-    opts.DefaultVoice = ResolveEnv(s["DefaultVoice"]) ?? s["DefaultVoice"] ?? "es-CO-SalomeNeural";
+    opts.Key          = speechKey;
+    opts.Region       = speechRegion;
+    opts.Endpoint     = speechEndpoint;
+    opts.DefaultVoice = speechVoice;
 });
 
 builder.Services.Configure<StorageOptions>(opts =>
@@ -214,7 +219,16 @@ builder.Services.Configure<StorageOptions>(opts =>
 
 // ==================== Servicios propios (TTS, Storage) ====================
 builder.Services.AddSingleton<PhraseGenerator>();
-builder.Services.AddSingleton<ITtsService, AzureTtsService>();
+
+if (string.IsNullOrWhiteSpace(speechKey) ||
+    (string.IsNullOrWhiteSpace(speechRegion) && string.IsNullOrWhiteSpace(speechEndpoint)))
+{
+    builder.Services.AddSingleton<ITtsService, NullTtsService>();
+}
+else
+{
+    builder.Services.AddSingleton<ITtsService, AzureTtsService>();
+}
 
 builder.Services.AddSingleton<IAssetStorage>(sp =>
 {

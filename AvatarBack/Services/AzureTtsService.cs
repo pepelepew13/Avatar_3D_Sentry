@@ -50,14 +50,22 @@ namespace Avatar_3D_Sentry.Services
         /// </summary>
         public IReadOnlyDictionary<string, List<string>> GetAvailableVoices()
         {
+            var voiceName = string.IsNullOrWhiteSpace(_opt.DefaultVoice)
+                ? "es-CO-SalomeNeural"
+                : _opt.DefaultVoice;
+
+            // Derivamos claves útiles a partir del nombre de la voz (ej. es-CO-SalomeNeural)
+            var localeKey = ExtractLocale(voiceName) ?? "es-CO";
+            var langKey   = localeKey.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                     .FirstOrDefault()
+                           ?? "es";
+
+            var voices = new List<string> { voiceName };
+
             var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
             {
-                ["es-CO"] = new()
-                {
-                    string.IsNullOrWhiteSpace(_opt.DefaultVoice)
-                        ? "es-CO-SalomeNeural"
-                        : _opt.DefaultVoice
-                }
+                [localeKey] = voices,
+                [langKey]   = voices
             };
 
             return dict;
@@ -76,7 +84,21 @@ namespace Avatar_3D_Sentry.Services
             if (string.IsNullOrWhiteSpace(texto))
                 throw new ArgumentException("El texto para TTS no puede ser vacío.", nameof(texto));
 
-            var config = SpeechConfig.FromSubscription(_opt.Key!, _opt.Region!);
+            if (string.IsNullOrWhiteSpace(_opt.Key))
+                throw new InvalidOperationException("Falta la llave SPEECH_KEY para Azure Speech.");
+
+            if (string.IsNullOrWhiteSpace(_opt.Region) && string.IsNullOrWhiteSpace(_opt.Endpoint))
+                throw new InvalidOperationException("Configura SPEECH_REGION o SPEECH_ENDPOINT para Azure Speech.");
+            SpeechConfig config;
+
+            if (!string.IsNullOrWhiteSpace(_opt.Endpoint))
+            {
+                config = SpeechConfig.FromHost(new Uri(_opt.Endpoint!), _opt.Key);
+            }
+            else
+            {
+                config = SpeechConfig.FromSubscription(_opt.Key!, _opt.Region!);
+            }
             config.SpeechSynthesisVoiceName = string.IsNullOrWhiteSpace(voz) ? _opt.DefaultVoice : voz;
             config.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
 
@@ -164,6 +186,18 @@ namespace Avatar_3D_Sentry.Services
                 // Resto: boca media
                 _ => "viseme_aa"
             };
+        }
+
+        private static string? ExtractLocale(string voiceName)
+        {
+            // Formatos típicos: es-CO-SalomeNeural, en-US-JennyNeural
+            var parts = voiceName.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length >= 2)
+            {
+                return $"{parts[0]}-{parts[1]}";
+            }
+
+            return null;
         }
     }
 }
