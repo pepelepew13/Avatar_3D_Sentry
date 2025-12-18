@@ -17,16 +17,17 @@ public sealed class BearerHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
+        // Espera breve a que la sesión se restaure (si aplica)
+        await _auth.EnsureHydratedAsync(ct);
+
         var path = request.RequestUri?.AbsolutePath ?? "";
         var isAuthEndpoint = path.Contains("/api/auth/login", StringComparison.OrdinalIgnoreCase);
 
-        // Adjunta bearer si procede
         if (!isAuthEndpoint && !string.IsNullOrWhiteSpace(_auth.Token))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _auth.Token);
         }
 
-        // Sesión local expirada: corta pronto y redirige a /auth (si es posible)
         if (!isAuthEndpoint && _auth.IsExpired && !string.IsNullOrWhiteSpace(_auth.Token))
         {
             _auth.Logout("expired");
@@ -44,7 +45,6 @@ public sealed class BearerHandler : DelegatingHandler
 
         var resp = await base.SendAsync(request, ct);
 
-        // 401 del backend => cierra sesión y manda a /auth con returnUrl relativo
         if (resp.StatusCode == HttpStatusCode.Unauthorized && !isAuthEndpoint)
         {
             _auth.Logout("unauthorized");
@@ -61,15 +61,14 @@ public sealed class BearerHandler : DelegatingHandler
     {
         try
         {
-            var abs = _nav.Uri;                     // absoluto actual
-            var rel = _nav.ToBaseRelativePath(abs); // relativo: "" o "editor?..."
+            var abs = _nav.Uri;
+            var rel = _nav.ToBaseRelativePath(abs);
             relPath = "/" + rel;
             if (string.IsNullOrEmpty(rel)) relPath = "/";
             return true;
         }
         catch (InvalidOperationException)
         {
-            // RemoteNavigationManager no inicializado (p.ej. prerender)
             relPath = "/";
             return false;
         }

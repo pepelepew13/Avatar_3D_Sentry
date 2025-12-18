@@ -1,14 +1,12 @@
-// Controllers/AvatarController.cs
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.StaticFiles;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -21,7 +19,11 @@ public class AvatarController : ControllerBase
     private readonly ITtsService _tts;
     private readonly IWebHostEnvironment _env;
 
-    public AvatarController(ILogger<AvatarController> logger, PhraseGenerator phrases, ITtsService tts, IWebHostEnvironment env)
+    public AvatarController(
+        ILogger<AvatarController> logger,
+        PhraseGenerator phrases,
+        ITtsService tts,
+        IWebHostEnvironment env)
     {
         _logger = logger;
         _phrases = phrases;
@@ -34,7 +36,10 @@ public class AvatarController : ControllerBase
     /// </summary>
     [HttpPost("announce")]
     [ProducesResponseType(typeof(AnnouncementResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> AnnounceAsync([FromBody] SolicitudAnuncio request, [FromQuery] string? idioma = null, [FromQuery] string? voz = null)
+    public async Task<IActionResult> AnnounceAsync(
+        [FromBody] SolicitudAnuncio request,
+        [FromQuery] string? idioma = null,
+        [FromQuery] string? voz = null)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
@@ -47,6 +52,7 @@ public class AvatarController : ControllerBase
             ["turno"]   = request.Turno,
             ["nombre"]  = request.Nombre
         };
+
         var lang = string.IsNullOrWhiteSpace(idioma) ? "es" : idioma;
         string texto;
         try
@@ -77,14 +83,16 @@ public class AvatarController : ControllerBase
             return StatusCode(StatusCodes.Status502BadGateway, new { error = "No fue posible generar la locución." });
         }
 
-        // 3) Guardar audio en /resources/audio
+        // 3) Guardar audio en /Resources/audio
         var root = Path.Combine(_env.ContentRootPath, "Resources", "audio");
         Directory.CreateDirectory(root);
         var fileName = $"{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.mp3";
         var fullPath = Path.Combine(root, fileName);
-        await System.IO.File.WriteAllBytesAsync(fullPath, tts.Audio);
 
-        // 4) URL pública (sirves /resources como estático en Program.cs)
+        // ⬅️ AudioBytes, no Audio
+        await System.IO.File.WriteAllBytesAsync(fullPath, tts.AudioBytes);
+
+        // 4) URL pública
         var audioUrl = $"/resources/audio/{fileName}";
 
         var response = new AnnouncementResponse
@@ -93,7 +101,7 @@ public class AvatarController : ControllerBase
             Sede     = request.Sede,
             Texto    = texto,
             AudioUrl = audioUrl,
-            Visemas  = tts.Visemas
+            Visemas  = tts.Visemes  // modelo de salida ya es List<Visema>
         };
 
         return Ok(response);

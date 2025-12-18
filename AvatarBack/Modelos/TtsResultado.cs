@@ -1,3 +1,4 @@
+// AvatarBack/Modelos/TtsResultado.cs
 using System;
 using System.Collections.Generic;
 
@@ -11,7 +12,7 @@ namespace Avatar_3D_Sentry.Modelos
         /// <summary>Tiempo en milisegundos desde el inicio del audio.</summary>
         public int Tiempo { get; set; }
 
-        /// <summary>Opcional: ID de visema de Azure (si sirve para debug/mapeo).</summary>
+        /// <summary>Opcional: ID de visema del proveedor (Azure), útil para debug.</summary>
         public int? Id { get; set; }
     }
 
@@ -20,10 +21,30 @@ namespace Avatar_3D_Sentry.Modelos
         /// <summary>Audio sintetizado (MP3 recomendado por latencia).</summary>
         public byte[] AudioBytes { get; set; } = Array.Empty<byte>();
 
+        /// <summary>
+        /// Alias para compatibilidad con código que usa tts.Audio.
+        /// Internamente usa AudioBytes.
+        /// </summary>
+        public byte[] Audio
+        {
+            get => AudioBytes;
+            set => AudioBytes = value ?? Array.Empty<byte>();
+        }
+
         /// <summary>Duración del audio en milisegundos.</summary>
         public int DurationMs { get; set; }
 
         /// <summary>Visemas mapeados a shape keys que entiende el visor.</summary>
-        public List<Visema> Visemes { get; set; } = new();
+        public List<Visema> Visemas { get; set; } = new();
+
+        /// <summary>
+        /// Alias en inglés para compatibilidad con código que usa "Visemes".
+        /// Apunta a la misma lista que <see cref="Visemas"/>.
+        /// </summary>
+        public List<Visema> Visemes
+        {
+            get => Visemas;
+            set => Visemas = value ?? new List<Visema>();
+        }
     }
 }

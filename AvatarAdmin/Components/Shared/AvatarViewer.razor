@@ -18,18 +18,18 @@
 
       <div class="viewer-tools">
         <div class="preset">
-          <button class="icon-btn" title="Cuerpo entero" @onclick='() => Call("setCameraPreset","full")'>🧍</button>
-          <button class="icon-btn" title="Plano medio"  @onclick='() => Call("setCameraPreset","waist")'>🧍‍♂️</button>
-          <button class="icon-btn" title="Pecho"        @onclick='() => Call("setCameraPreset","chest")'>👔</button>
-          <button class="icon-btn" title="Cabeza"       @onclick='() => Call("setCameraPreset","head")'>🙂</button>
+          <button class="icon-btn" title="Cuerpo entero (1)" @onclick='() => Call("setCameraPreset","full")'>🧍</button>
+          <button class="icon-btn" title="Plano medio (2)"  @onclick='() => Call("setCameraPreset","waist")'>🧍‍♂️</button>
+          <button class="icon-btn" title="Pecho (3)"        @onclick='() => Call("setCameraPreset","chest")'>👔</button>
+          <button class="icon-btn" title="Cabeza (4)"       @onclick='() => Call("setCameraPreset","head")'>🙂</button>
           <span class="sep"></span>
         </div>
 
-        <button class="icon-btn" title="Reset cámara" @onclick='() => Call("resetCamera")'>↺</button>
-        <button class="icon-btn" title="Auto-rotar"   @onclick="ToggleRotate">@((autoRotate ? "⏸" : "⟳"))</button>
-        <button class="icon-btn" title="Luz on/off"   @onclick='() => Call("toggleLight")'>💡</button>
-        <button class="icon-btn" title="Suelo on/off" @onclick='() => Call("toggleGround")'>⎚</button>
-        <button class="icon-btn" title="Captura PNG"  @onclick="Screenshot">📸</button>
+        <button class="icon-btn" title="Reset cámara (R)" @onclick='() => Call("resetCamera")'>↺</button>
+        <button class="icon-btn" title="Auto-rotar (A)"   @onclick="ToggleRotate">@((autoRotate ? "⏸" : "⟳"))</button>
+        <button class="icon-btn" title="Luz on/off (L)"   @onclick='() => Call("toggleLight")'>💡</button>
+        <button class="icon-btn" title="Suelo on/off (G)" @onclick='() => Call("toggleGround")'>⎚</button>
+        <button class="icon-btn" title="Captura PNG (S)"  @onclick="Screenshot">📸</button>
       </div>
     </div>
   }

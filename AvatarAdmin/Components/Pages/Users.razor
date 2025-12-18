@@ -13,7 +13,10 @@
 
 <AdminGuard>
   <!-- HERO -->
-  <section class="users-hero">
+  <section class="users-hero" role="region" aria-label="Gestión de usuarios">
+    <div class="hero-decor orb orb-1" aria-hidden="true"></div>
+    <div class="hero-decor orb orb-2" aria-hidden="true"></div>
+
     <div class="hero-left">
       <div class="hero-ic" aria-hidden="true">👥</div>
       <div class="hero-copy">
@@ -76,30 +79,36 @@
 
         <!-- Email -->
         <div class="field">
-          <label class="form-label">Email</label>
-          <InputText class="form-control" @bind-Value="_vm.Email" inputmode="email" />
+          <label class="form-label" for="u-email">Email</label>
+          <InputText id="u-email" class="form-control" @bind-Value="_vm.Email" inputmode="email" autocomplete="email" />
           <ValidationMessage For="() => _vm.Email" />
         </div>
 
         <!-- Rol -->
         <div class="field">
           <label class="form-label">Rol</label>
-          <div class="role-picker" role="tablist" aria-label="Selecciona el rol">
+
+          <!-- segmented control -->
+          <div class="segmented" role="tablist" aria-label="Selecciona el rol">
             <button type="button"
-                    class="pill @(IsUser ? "active" : null)"
+                    class="segmented-item @(IsUser ? "is-active" : null)"
                     role="tab"
                     aria-selected="@IsUser"
                     @onclick='()=>SetRole("User")'>
-              <span class="pill-ic">👤</span> User
+              <span class="segmented-ic">👤</span>
+              <span>User</span>
             </button>
+
             <button type="button"
-                    class="pill @(!IsUser ? "active" : null)"
+                    class="segmented-item @(!IsUser ? "is-active" : null)"
                     role="tab"
                     aria-selected="@(!IsUser)"
                     @onclick='()=>SetRole("Admin")'>
-              <span class="pill-ic">🛡️</span> Admin
+              <span class="segmented-ic">🛡️</span>
+              <span>Admin</span>
             </button>
           </div>
+
           <div class="help">El rol <strong>User</strong> queda restringido por Empresa/Sede.</div>
         </div>
 
@@ -108,12 +117,12 @@
         {
           <div class="grid-2">
             <div class="field">
-              <label class="form-label">Empresa <span class="req">*</span></label>
-              <InputText class="form-control" @bind-Value="_vm.Empresa" />
+              <label class="form-label" for="u-empresa">Empresa <span class="req">*</span></label>
+              <InputText id="u-empresa" class="form-control" @bind-Value="_vm.Empresa" />
             </div>
             <div class="field">
-              <label class="form-label">Sede (opcional)</label>
-              <InputText class="form-control" @bind-Value="_vm.Sede" />
+              <label class="form-label" for="u-sede">Sede (opcional)</label>
+              <InputText id="u-sede" class="form-control" @bind-Value="_vm.Sede" />
             </div>
           </div>
         }
@@ -121,16 +130,20 @@
         <!-- Password -->
         <div class="field">
           <div class="label-row">
-            <label class="form-label">Password</label>
+            <label class="form-label" for="u-pass">Password</label>
             <div class="label-tools">
-              <button type="button" class="link" @onclick="GeneratePassword" disabled="@_loading">Generar segura</button>
+              <button type="button" class="ghost-link" @onclick="GeneratePassword" disabled="@_loading">
+                <span class="ghost-link-ic">✨</span> Generar segura
+              </button>
               <span class="sep">·</span>
-              <button type="button" class="link" @onclick="CopyPassword" disabled="@string.IsNullOrEmpty(_vm.Password)">Copiar</button>
+              <button type="button" class="ghost-link" @onclick="CopyPassword" disabled="@string.IsNullOrEmpty(_vm.Password)">
+                <span class="ghost-link-ic">📋</span> Copiar
+              </button>
             </div>
           </div>
 
           <div class="input-with-toggle">
-            <InputText class="form-control"
+            <InputText id="u-pass" class="form-control"
                        type="@(_showPwd ? "text" : "password")"
                        @bind-Value="_vm.Password" />
             <button type="button"
@@ -167,7 +180,7 @@
 
     <!-- CARD: Preview + Tips -->
     <aside class="card side">
-      <header class="card-head center">
+      <header class="card-head preview-head">
         <div class="ic info" aria-hidden="true">👓</div>
         <div>
           <h3>Vista previa</h3>
@@ -175,16 +188,22 @@
         </div>
       </header>
 
-      <div class="card-body">
-        <div class="preview">
-          <div class="avatar" aria-hidden="true">@Initials(_vm.Email)</div>
-          <div class="info">
-            <div class="email">@(_vm.Email?.Trim().Length > 0 ? _vm.Email : "email@empresa.com")</div>
+      <div class="card-body preview-body">
+        <div class="preview-hero">
+          <div class="avatar xl" aria-hidden="true">@Initials(_vm.Email)</div>
+          <div class="preview-meta">
+            <div class="email big">@(_vm.Email?.Trim().Length > 0 ? _vm.Email : "email@empresa.com")</div>
             <div class="chips">
-              <span class="chip chip-role">@(IsUser ? "User" : "Admin")</span>
+              <span class="chip chip-role @(IsUser ? "chip-user" : "chip-admin")">@(IsUser ? "User" : "Admin")</span>
               <span class="chip chip-scope">@ScopePreview()</span>
             </div>
           </div>
+        </div>
+
+        <div class="preview-banner" aria-hidden="true">
+          <span class="pill-soft">
+            <span class="dot"></span> Previsualización en vivo
+          </span>
         </div>
 
         <hr class="sep" />

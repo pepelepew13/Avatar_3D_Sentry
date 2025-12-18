@@ -1,26 +1,28 @@
 @inherits LayoutComponentBase
 
-<div class="layout-shell">
-    <aside class="layout-sidebar">
-        <div class="layout-brand">
-            <img class="brand-logo" src="img/Logo_Sentry.png" alt="Sentry" />
-            <div class="brand-copy">
-                <strong>Sentry · Panel de avatar 3D</strong>
-                <span>Personalización corporativa</span>
-            </div>
-        </div>
-        <NavMenu />
-    </aside>
+<a href="#main-content" class="visually-hidden">Saltar al contenido</a>
 
-    <main class="layout-main">
-        <article class="layout-content">
-            @Body
-        </article>
-    </main>
+<div class="layout-shell" role="application">
+  <aside class="layout-sidebar" aria-label="Barra lateral">
+    <div class="layout-brand">
+      <img class="brand-logo" src="img/Logo_Sentry.png" alt="Sentry" />
+      <div class="brand-copy">
+        <strong>Sentry · Panel de avatar 3D</strong>
+        <span>Personalización corporativa</span>
+      </div>
+    </div>
+    <NavMenu />
+  </aside>
+
+  <main id="main-content" class="layout-main" role="main">
+    <article class="layout-content">
+      @Body
+    </article>
+  </main>
 </div>
 
-<div id="blazor-error-ui">
-    Ha ocurrido un error.
-    <a href="" class="reload">Recargar</a>
-    <a class="dismiss">🗙</a>
+<div id="blazor-error-ui" role="status" aria-live="polite">
+  Ha ocurrido un error.
+  <a href="" class="reload">Recargar</a>
+  <button class="dismiss" type="button" onclick="document.getElementById('blazor-error-ui').style.display='none'">🗙</button>
 </div>

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 
 namespace Avatar_3D_Sentry.Services;
@@ -29,5 +31,21 @@ public class PhraseGenerator
             result = result.Replace($"{{{kv.Key}}}", kv.Value);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Helper específico para TtsController (module/ticket/name/language).
+    /// Usa los mismos placeholders que tengas en phrases.json.
+    /// </summary>
+    public string Build(string module, string ticket, string? name, string language)
+    {
+        var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["modulo"] = module,
+            ["turno"]  = ticket,
+            ["nombre"] = name ?? string.Empty
+        };
+
+        return Generate(language, fields);
     }
 }

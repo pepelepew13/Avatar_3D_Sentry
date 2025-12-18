@@ -33,28 +33,41 @@
 
       <header class="auth-header">
         <h3>Iniciar sesión</h3>
-        <p class="muted">Usa tu correo corporativo y contraseña</p>
+        <p id="login-help" class="muted">Usa tu correo corporativo y contraseña</p>
       </header>
 
       @if (!string.IsNullOrWhiteSpace(_error))
       {
-        <div class="alert alert-danger">@(_error)</div>
+        <div class="alert alert-danger" role="alert" aria-live="assertive">
+          @(_error)
+        </div>
       }
 
       <EditForm class="auth-form-inner" Model="_model" OnValidSubmit="OnLoginAsync">
         <DataAnnotationsValidator />
-        <ValidationSummary class="val-summary" />
+        <ValidationSummary class="visually-hidden" />
 
         <div class="mb-3">
-          <label class="form-label">Email</label>
-          <InputText class="form-control" @bind-Value="_model.Email" inputmode="email" />
+          <label class="form-label" for="login-email">Email</label>
+          <InputText id="login-email"
+                     class="form-control"
+                     @bind-Value="_model.Email"
+                     inputmode="email"
+                     autocomplete="username"
+                     autofocus
+                     aria-describedby="login-help" />
           <ValidationMessage For="() => _model.Email" />
         </div>
 
         <div class="mb-2">
-          <label class="form-label">Password</label>
+          <label class="form-label" for="login-pass">Password</label>
           <div class="input-with-toggle">
-            <InputText class="form-control" type="@(_showPwd ? "text" : "password")" @bind-Value="_model.Password" />
+            <InputText id="login-pass"
+                       class="form-control"
+                       type="@(_showPwd ? "text" : "password")"
+                       @bind-Value="_model.Password"
+                       autocomplete="current-password"
+                       aria-describedby="login-help" />
             <button type="button"
                     class="pwd-toggle"
                     @onclick="TogglePwd"
@@ -71,7 +84,9 @@
           <small class="muted">¿Olvidaste tu contraseña? Contacta al administrador.</small>
         </div>
 
-        <button class="btn btn-primary w-100" disabled="@_loading">
+        <button class="btn-sentry w-100"
+                disabled="@_loading"
+                aria-busy="@_loading">
           @if (_loading)
           {
             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -88,7 +103,6 @@
 </section>
 
 @code {
-    // <-- lee ?returnUrl=... desde la querystring (puede venir absoluta)
     [Parameter, SupplyParameterFromQuery(Name = "returnUrl")]
     public string? ReturnUrl { get; set; }
 
@@ -99,19 +113,9 @@
 
     private void TogglePwd() => _showPwd = !_showPwd;
 
-    // SVGs del toggle (centrados y nítidos)
-    private const string EyeSvg = @"
-<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
-  <path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
-  <circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/>
-</svg>";
-
-    private const string EyeOffSvg = @"
-<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
-  <path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
-  <path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
-  <path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/>
-</svg>";
+    // SVGs del toggle
+    private const string EyeSvg = @"<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/></svg>";
+    private const string EyeOffSvg = @"<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>";
 
     private async Task OnLoginAsync()
     {
@@ -125,7 +129,6 @@
                 Password = _model.Password
             });
 
-            // Normaliza returnUrl a relativo y NO forzar recarga:
             var target = NormalizeReturnUrl(ReturnUrl) ?? "/editor";
             Nav.NavigateTo(target, replace: true);
         }
@@ -144,18 +147,15 @@
     {
         if (string.IsNullOrWhiteSpace(url)) return null;
 
-        // Si es absoluta y del mismo origen -> quedarnos con Path+Query
         if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
         {
             var baseUri = new Uri(Nav.BaseUri);
             if (abs.Scheme == baseUri.Scheme && abs.Host == baseUri.Host && abs.Port == baseUri.Port)
                 return string.IsNullOrEmpty(abs.PathAndQuery) ? "/" : abs.PathAndQuery;
 
-            // Si es otro origen, por seguridad ignórala
             return "/editor";
         }
 
-        // Aseguramos que empiece por "/"
         return url.StartsWith("/") ? url : "/" + url;
     }
 

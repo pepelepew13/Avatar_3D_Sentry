@@ -1,11 +1,13 @@
 @inherits LayoutComponentBase
 
+<a href="#auth-main" class="visually-hidden">Saltar al contenido principal</a>
+
 <div class="auth-layout">
-  <article class="auth-layout-content">
+  <article id="auth-main">
     @Body
   </article>
 
   <!-- Fondo decorativo -->
-  <div class="auth-bg orb orb-1"></div>
-  <div class="auth-bg orb orb-2"></div>
+  <div class="auth-bg orb orb-1" aria-hidden="true"></div>
+  <div class="auth-bg orb orb-2" aria-hidden="true"></div>
 </div>

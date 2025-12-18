@@ -23,11 +23,22 @@ try
 {
     var userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     var envPath = Path.Combine(userHome, "Documents", "GitHub", ".env");
-    if (File.Exists(envPath)) DotNetEnv.Env.Load(envPath);
-    // También intenta .env del cwd (sin reventar si no está)
-    DotNetEnv.Env.Load(require: false);
+
+    if (File.Exists(envPath))
+    {
+        DotNetEnv.Env.Load(envPath);
+    }
+
+    // Intenta cargar .env del directorio actual, si existe.
+    if (File.Exists(".env"))
+    {
+        DotNetEnv.Env.Load();
+    }
 }
-catch { /* ignore */ }
+catch
+{
+    // Ignorar errores de carga de .env
+}
 
 // ==================== Helper para "env:VAR" ====================
 static string? ResolveEnv(string? value)
@@ -64,6 +75,14 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKeyRaw = jwtSection["Key"] ?? throw new InvalidOperationException("Config Jwt:Key requerido");
 var jwtKey = ResolveEnv(jwtKeyRaw) ?? jwtKeyRaw;
+
+// 🔒 Validación mínima de longitud (HS256 => >= 32 bytes)
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        $"Jwt:Key debe tener al menos 32 bytes. Longitud actual: {Encoding.UTF8.GetByteCount(jwtKey)} bytes.");
+}
+
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 
 builder.Services
@@ -162,16 +181,16 @@ builder.Services.AddDbContext<AvatarContext>(opt =>
 builder.Services.Configure<SpeechOptions>(opts =>
 {
     var s = builder.Configuration.GetSection("Speech");
-    opts.Key         = ResolveEnv(s["Key"])      ?? s["Key"];
-    opts.Region      = ResolveEnv(s["Region"])   ?? s["Region"];
-    opts.Endpoint    = ResolveEnv(s["Endpoint"]) ?? s["Endpoint"];
-    opts.DefaultVoice= ResolveEnv(s["DefaultVoice"]) ?? s["DefaultVoice"] ?? "es-CO-SalomeNeural";
+    opts.Key          = ResolveEnv(s["Key"])      ?? s["Key"];
+    opts.Region       = ResolveEnv(s["Region"])   ?? s["Region"];
+    opts.Endpoint     = ResolveEnv(s["Endpoint"]) ?? s["Endpoint"];
+    opts.DefaultVoice = ResolveEnv(s["DefaultVoice"]) ?? s["DefaultVoice"] ?? "es-CO-SalomeNeural";
 });
 
 builder.Services.Configure<StorageOptions>(opts =>
 {
     var s = builder.Configuration.GetSection("Storage");
-    opts.Mode = s["Mode"] ?? "Auto";
+    opts.Mode           = s["Mode"] ?? "Auto";
     opts.AzureConnection = ResolveEnv(s["AzureConnection"]) ?? s["AzureConnection"];
 
     opts.Containers.Models      = ResolveEnv(s.GetSection("Containers")["Models"])      ?? "models";
@@ -183,11 +202,11 @@ builder.Services.Configure<StorageOptions>(opts =>
         opts.SasExpiryMinutes = sasMin;
 
     var local = s.GetSection("Local");
-    opts.Local.Root         = local["Root"]         ?? "wwwroot";
-    opts.Local.ModelsPath   = local["ModelsPath"]   ?? "wwwroot/models";
-    opts.Local.LogosPath    = local["LogosPath"]    ?? "wwwroot/logos";
-    opts.Local.BackgroundsPath = local["BackgroundsPath"] ?? "wwwroot/backgrounds";
-    opts.Local.AudioPath    = local["AudioPath"]    ?? "Resources/audio";
+    opts.Local.Root           = local["Root"]           ?? "wwwroot";
+    opts.Local.ModelsPath     = local["ModelsPath"]     ?? "wwwroot/models";
+    opts.Local.LogosPath      = local["LogosPath"]      ?? "wwwroot/logos";
+    opts.Local.BackgroundsPath= local["BackgroundsPath"]?? "wwwroot/backgrounds";
+    opts.Local.AudioPath      = local["AudioPath"]      ?? "Resources/audio";
 });
 
 // ==================== Servicios propios (TTS, Storage) ====================
@@ -196,8 +215,8 @@ builder.Services.AddSingleton<ITtsService, AzureTtsService>();
 
 builder.Services.AddSingleton<IAssetStorage>(sp =>
 {
-    var so = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
-    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    var so     = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+    var env    = sp.GetRequiredService<IWebHostEnvironment>();
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("AssetStorage");
 
     if (!string.IsNullOrWhiteSpace(so.AzureConnection) &&
@@ -249,9 +268,9 @@ if (Directory.Exists(modelsPath))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new PhysicalFileProvider(modelsPath),
-        RequestPath = "/models",
-        ContentTypeProvider = ctp
+        FileProvider       = new PhysicalFileProvider(modelsPath),
+        RequestPath        = "/models",
+        ContentTypeProvider= ctp
     });
 }
 
@@ -261,9 +280,9 @@ if (Directory.Exists(resourcesPath))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new PhysicalFileProvider(resourcesPath),
-        RequestPath = "/resources",
-        ContentTypeProvider = ctp
+        FileProvider       = new PhysicalFileProvider(resourcesPath),
+        RequestPath        = "/resources",
+        ContentTypeProvider= ctp
     });
 }
 

@@ -1,8 +1,25 @@
 ﻿@* Components/Routes.razor *@
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(AvatarAdmin.Components.Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        <!-- ✅ Capturamos excepciones de componentes y mostramos contenido de error -->
+        <ErrorBoundary>
+            <ChildContent>
+                <RouteView RouteData="routeData" DefaultLayout="typeof(AvatarAdmin.Components.Layout.MainLayout)" />
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </ChildContent>
+            <ErrorContent>
+                <LayoutView Layout="typeof(AvatarAdmin.Components.Layout.MainLayout)">
+                    <div class="container py-4">
+                        <h3>Ocurrió un error en la página</h3>
+                        <p>Inténtalo de nuevo o visita la página de error para más detalles.</p>
+                        <div class="d-flex gap-2 mt-2">
+                            <a class="btn btn-primary" href="/Error">Ver detalles</a>
+                            <button class="btn btn-outline-light" onclick="location.reload()">Reintentar</button>
+                        </div>
+                    </div>
+                </LayoutView>
+            </ErrorContent>
+        </ErrorBoundary>
     </Found>
 
     <NotFound>

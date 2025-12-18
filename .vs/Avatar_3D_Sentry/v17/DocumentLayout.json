@@ -1,10 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\USUARIO\\Documents\\GitHub\\Avatar_3D_Sentry\\",
+  "WorkspaceRootPath": "C:\\Users\\USUARIO\\OneDrive\\Documentos\\GitHub\\Avatar_3D_Sentry\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}|Avatar_3D_Sentry.csproj|c:\\users\\usuario\\documents\\github\\avatar_3d_sentry\\services\\ittsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C1C7DEC1-CE35-A95D-62B6-4B621CA2C290}|Avatar_3D_Sentry.csproj|solutionrelative:services\\ittsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\USUARIO\\Documents\\GitHub\\Avatar_3D_Sentry\\Services\\ITtsService.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -21,13 +20,11 @@
               "DocumentIndex": 0,
               "Title": "ITtsService.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\GitHub\\Avatar_3D_Sentry\\Services\\ITtsService.cs",
-              "RelativeDocumentMoniker": "Services\\ITtsService.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\Documents\\GitHub\\Avatar_3D_Sentry\\Services\\ITtsService.cs",
               "ToolTip": "C:\\Users\\USUARIO\\Documents\\GitHub\\Avatar_3D_Sentry\\Services\\ITtsService.cs",
-              "RelativeToolTip": "Services\\ITtsService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "RelativeToolTip": "..\\..\\..\\..\\Documents\\GitHub\\Avatar_3D_Sentry\\Services\\ITtsService.cs",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-25T09:10:41.757Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-25T09:10:41.757Z"
             }
           ]
         }

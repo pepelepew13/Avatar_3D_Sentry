@@ -1,109 +1,118 @@
-.layout-shell[b-ixifbd6ad3] {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: clamp(260px, 24vw, 320px) 1fr;
-    background: radial-gradient(circle at top left, rgba(255, 0, 0, 0.12), transparent 55%),
-                radial-gradient(circle at 85% 15%, rgba(31, 78, 121, 0.1), transparent 50%),
-                linear-gradient(125deg, rgba(247, 247, 247, 0.98), rgba(239, 239, 239, 0.85));
+/* MainLayout.razor.css — Layout de app (aislado) */
+:host[b-ixifbd6ad3]{ display:block }
+
+/* ===== Shell: contenido desplaza por padding-left, sin scroll fantasma ===== */
+.layout-shell[b-ixifbd6ad3]{
+  --sidebar-w: 320px;
+  --shell-pad: clamp(12px, 2vw, var(--sp-16));
+  --shell-gap: clamp(12px, 2vw, var(--sp-16));
+  min-height: auto;
+  padding: var(--shell-pad);
+  padding-left: calc(var(--sidebar-w) + var(--shell-gap) + var(--shell-pad));
+  overflow: clip;
 }
 
-.layout-sidebar[b-ixifbd6ad3] {
-    backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.94);
-    border-right: 1px solid rgba(224, 224, 224, 0.9);
-    padding: 2.25rem 1.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    box-shadow: 4px 0 24px rgba(192, 0, 0, 0.08);
+/* ===== Sidebar: fija y usando todo el lateral ===== */
+.layout-sidebar[b-ixifbd6ad3]{
+  position: fixed;
+  left: var(--shell-pad);
+  top: var(--shell-pad);
+  bottom: var(--shell-pad);
+  width: var(--sidebar-w);
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--surface);
+  border:1px solid var(--line-strong);
+  border-radius: var(--r-20);
+  box-shadow: var(--shadow-md);
+  padding: var(--sp-10);
+
+  /* Scroll interno sin cambiar el tamaño del contenedor */
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;         /* iOS suave */
+  scrollbar-gutter: stable both-edges;       /* <-- evita “saltitos” de layout cuando aparece el scroll */
+
+  /* Firefox (colores y grosor finito) */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--brand-red-2) 55%, #cfcfd6)
+                   color-mix(in srgb, #ffffff 80%, transparent);
 }
 
-.layout-brand[b-ixifbd6ad3] {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+/* Chrome/Edge/Safari */
+.layout-sidebar[b-ixifbd6ad3]::-webkit-scrollbar{
+  width: 10px;                /* grosor */
+}
+.layout-sidebar[b-ixifbd6ad3]::-webkit-scrollbar-track{
+  background: color-mix(in srgb, #ffffff 80%, transparent);
+  border-radius: 999px;
+}
+.layout-sidebar[b-ixifbd6ad3]::-webkit-scrollbar-thumb{
+  background: color-mix(in srgb, var(--brand-red-2) 55%, #cfcfd6);
+  border-radius: 999px;
+  border: 2px solid transparent;             /* crea “gap” visual */
+  background-clip: padding-box;
+}
+.layout-sidebar:hover[b-ixifbd6ad3]::-webkit-scrollbar-thumb{
+  background: color-mix(in srgb, var(--brand-red-2) 70%, #bbbbc4);
+}
+.layout-sidebar[b-ixifbd6ad3]::-webkit-scrollbar-thumb:active{
+  background: color-mix(in srgb, var(--brand-red-2) 85%, #a0a0aa);
 }
 
-.brand-logo[b-ixifbd6ad3] {
-    width: 54px;
-    height: 54px;
-    object-fit: contain;
+/* Marca arriba del menú (compacta y limpia) */
+.layout-brand[b-ixifbd6ad3]{
+  display:flex; gap:.75rem; align-items:center; margin-bottom: .75rem;
+  padding: .35rem .35rem .25rem .35rem;
+  border-radius: 12px;
+  font-size: larger;
+}
+.brand-logo[b-ixifbd6ad3]{ width:80px; height:80px; object-fit:contain }
+.brand-copy strong[b-ixifbd6ad3]{ display:block; line-height:1.1; font-weight:800 }
+.brand-copy span[b-ixifbd6ad3]{ color: var(--brand-red); font-size:.7rem; font-family: 'Lucida Sans','Lucida Grande',Verdana,sans-serif }
+
+/* Main */
+.layout-main[b-ixifbd6ad3]{ display:block }
+.layout-content[b-ixifbd6ad3]{
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--brand-red) 12%, transparent) 0 40%, transparent 41%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--brand-blue) 10%, transparent) 0 38%, transparent 39%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border:1px solid var(--line-strong);
+  border-radius: var(--r-20);
+  box-shadow: var(--shadow-md);
+  padding: clamp(.75rem, 1.8vw, 1.25rem);
+  overflow: auto; /* evita que el vg-sub absoluto cause scroll del documento */
+  contain: layout paint;
 }
 
-.brand-copy[b-ixifbd6ad3] {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-    color: var(--text-primary);
+/* Barra de error Blazor */
+#blazor-error-ui[b-ixifbd6ad3]{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:16px; background:#fff; border:1px solid var(--line-strong); border-radius:10px;
+  padding:.5rem .75rem; box-shadow: var(--shadow-sm); z-index:9999; color:var(--ink);
+  max-width: calc(100% - 24px);
 }
+#blazor-error-ui .dismiss[b-ixifbd6ad3]{ margin-left:.5rem; cursor:pointer; background:none; border:0 }
+#blazor-error-ui .reload[b-ixifbd6ad3]{ margin-left:.75rem }
 
-.brand-copy strong[b-ixifbd6ad3] {
-    font-size: 1.08rem;
-    font-weight: 700;
+/* ===== Responsive ===== */
+@media (max-width: 1280px){
+  .layout-shell[b-ixifbd6ad3]{ --sidebar-w: 256px }
 }
-
-.brand-copy span[b-ixifbd6ad3] {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgba(255, 0, 0, 0.7);
+@media (max-width: 1100px){
+  .layout-shell[b-ixifbd6ad3]{ padding-left: var(--shell-pad) }
+  .layout-sidebar[b-ixifbd6ad3]{
+    position: static; width:auto; height:auto;
+    max-height:none; overflow:visible;
+    margin-bottom: var(--shell-gap);
+    scrollbar-gutter: auto;               /* ya no hace falta al estar arriba */
+  }
 }
-
-.layout-main[b-ixifbd6ad3] {
-    padding: 2.5rem clamp(1.5rem, 3vw, 3.5rem);
-    overflow-x: auto;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 245, 0.85));
-}
-
-.layout-content[b-ixifbd6ad3] {
-    max-width: none;   /* antes: 1100px */
-    width: 100%;
-    margin: 0;         /* fuera centrado */
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-#blazor-error-ui[b-ixifbd6ad3] {
-    background: rgba(192, 0, 0, 0.95);
-    color: #fff;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    position: fixed;
-    display: none;
-    padding: 0.7rem 1.5rem;
-    z-index: 1000;
-    box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
-}
-
-#blazor-error-ui .dismiss[b-ixifbd6ad3] {
-    cursor: pointer;
-    position: absolute;
-    right: 1rem;
-    top: 0.6rem;
-}
-
-@media (max-width: 1024px) {
-    .layout-shell[b-ixifbd6ad3] {
-        grid-template-columns: 1fr;
-    }
-
-    .layout-sidebar[b-ixifbd6ad3] {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1.5rem clamp(1rem, 5vw, 2rem);
-        border-right: none;
-        border-bottom: 1px solid rgba(192, 0, 0, 0.15);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(15px);
-    }
-
-    .layout-main[b-ixifbd6ad3] {
-        padding-top: 1.5rem;
-    }
+@media (max-width: 640px){
+  .layout-shell[b-ixifbd6ad3]{ padding: 12px }
+  .layout-content[b-ixifbd6ad3]{ border-radius: 16px }
+  .layout-sidebar[b-ixifbd6ad3]{ border-radius: 16px; padding: 12px }
 }

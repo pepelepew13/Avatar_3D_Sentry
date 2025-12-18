@@ -1,3 +1,4 @@
+// AvatarBack/Services/ITtsService.cs
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
@@ -13,6 +14,7 @@ public interface ITtsService
 
     /// <summary>
     /// Obtiene las voces neurales disponibles agrupadas por idioma.
+    /// Ejemplo: { "es": ["es-CO-SalomeNeural"], "en": ["en-US-GuyNeural"] }
     /// </summary>
     IReadOnlyDictionary<string, List<string>> GetAvailableVoices();
 }

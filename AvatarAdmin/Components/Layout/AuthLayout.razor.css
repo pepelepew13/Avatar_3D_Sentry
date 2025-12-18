@@ -1,156 +1,36 @@
-:host { display:block }
+/* AuthLayout.razor.css — Contenedor de Auth */
+:host{ display:block }
 
-/* ========= LAYOUT CON COLOR ========= */
 .auth-layout{
-  position: relative;
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  overflow: clip;
-
-  /* Base clara + manchas de color (mesh) */
+  min-height: 100dvh;                    /* viewport real (evita barras en móvil) */
+  display:grid; place-items:center; position:relative;
+  padding: clamp(1rem, 3vw, 2rem);
+  overflow: clip;                        /* ← recorta orbs/sombras para NO crear scroll */
   background:
-    /* manchas cálidas/frías grandes */
-    radial-gradient(1200px 700px at -10% -20%, rgba(255, 59, 48, .14), transparent 60%),
-    radial-gradient(900px 540px  at 115% -10%, rgba(31, 78, 121, .12), transparent 55%),
-
-    /* mesh suave multicolor */
-    radial-gradient(800px 500px at 15% 80%, rgba(255, 122, 182, .12), transparent 60%),
-    radial-gradient(820px 520px at 85% 20%, rgba(0, 212, 255, .12), transparent 60%),
-    radial-gradient(600px 420px at 65% 85%, rgba(255, 190, 11, .10), transparent 65%),
-    radial-gradient(700px 460px at 30% 25%, rgba(123, 97, 255, .12), transparent 60%),
-
-    /* capa base */
-    linear-gradient(180deg, rgba(255,255,255,.97), rgba(245,245,245,.90));
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--brand-red) 18%, transparent) 0 40%, transparent 41%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--brand-blue) 16%, transparent) 0 38%, transparent 39%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
 }
 
-/* Malla sutil (grid) con leve tinte */
-.auth-layout::before{
-  content:"";
-  position:absolute; inset:-80px;
-  background:
-    repeating-linear-gradient(0deg,
-      rgba(176,0,32,.045), rgba(176,0,32,.045) 1px,
-      transparent 1px, transparent 20px),
-    repeating-linear-gradient(90deg,
-      rgba(31,78,121,.045), rgba(31,78,121,.045) 1px,
-      transparent 1px, transparent 20px);
-  -webkit-mask-image: radial-gradient(65% 60% at 50% 45%, #000 55%, transparent 100%);
-          mask-image: radial-gradient(65% 60% at 50% 45%, #000 55%, transparent 100%);
-  pointer-events:none;
-  z-index: 0;
-}
+/* ancho máximo del contenedor del login */
+#auth-main{ width: min(1160px, 100%); }
 
-/* Halo con conic + blur, multicolor y animado */
-.auth-layout::after{
-  content:"";
-  position:absolute; inset:-42%;
-  background:
-    radial-gradient(closest-side at 50% 50%, rgba(255,59,48,.10), transparent 60%),
-    conic-gradient(from 0turn at 50% 50%,
-      rgba(176, 0, 32, .10) 0deg,
-      rgba(255, 122, 182, .10) 60deg,
-      rgba(123, 97, 255, .10) 120deg,
-      rgba(31, 78, 121, .10) 180deg,
-      rgba(0, 212, 255, .10) 240deg,
-      rgba(255, 190, 11, .10) 300deg,
-      rgba(176, 0, 32, .10) 360deg);
-  filter: blur(48px) saturate(1.05);
-  opacity:.40;
-  animation: orbSpin 28s linear infinite;
-  pointer-events:none;
-  z-index: 0;
-}
-
-@keyframes orbSpin { to { transform: rotate(1turn) } }
-
-/* Contenedor del contenido */
-.auth-layout-content{
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: min(1240px, 98vw);
-  padding: clamp(10px, 2.6vw, 18px);
-}
-
-/* ========= ORBES DECORATIVAS ========= */
+/* orbes decorativos */
 .auth-bg.orb{
-  position:absolute; filter: blur(55px); pointer-events:none; opacity:.55;
-  z-index: 0;
+  position:absolute; filter: blur(40px); opacity:.25; z-index:0; pointer-events:none
 }
-/* Orb cálida */
-.orb-1{
-  width:460px;height:460px;border-radius:50%;
-  background:
-    radial-gradient(closest-side, rgba(255, 59, 48, .35), transparent 60%),
-    radial-gradient(closest-side at 30% 30%, rgba(255, 190, 11, .22), transparent 70%);
-  left:-140px; bottom:-140px;
-}
-/* Orb fría */
-.orb-2{
-  width:380px;height:380px;border-radius:50%;
-  background:
-    radial-gradient(closest-side, rgba(31, 78, 121, .32), transparent 60%),
-    radial-gradient(closest-side at 60% 60%, rgba(0, 212, 255, .22), transparent 70%);
-  right:-90px; top:-90px;
+.orb-1{ width:360px;height:360px; background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand-red) 58%, transparent) 0 60%, transparent 61%); top:-60px; left:-60px }
+.orb-2{ width:320px;height:320px; background: radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--brand-yellow) 55%, transparent) 0 60%, transparent 61%); bottom:-40px; right:-40px }
+
+/* reduce orbs en pantallas pequeñas para bajar aún más el riesgo de overflow */
+@media (max-width: 480px){
+  .orb-1{ width:260px;height:260px; top:-40px; left:-40px }
+  .orb-2{ width:240px;height:240px; bottom:-30px; right:-30px }
 }
 
-/* ========= 1080p (más presencia) ========= */
-@media (min-width: 1850px) and (min-height: 980px){
-  .auth-layout{
-    background:
-      radial-gradient(1600px 900px at -10% -20%, rgba(255,59,48,.14), transparent 60%),
-      radial-gradient(1200px 680px at 115% -10%, rgba(31,78,121,.12), transparent 55%),
-      radial-gradient(900px 540px at 15% 80%, rgba(255, 122, 182, .12), transparent 60%),
-      radial-gradient(960px 560px at 85% 20%, rgba(0, 212, 255, .12), transparent 60%),
-      radial-gradient(760px 520px at 65% 85%, rgba(255, 190, 11, .10), transparent 65%),
-      radial-gradient(880px 520px at 30% 25%, rgba(123, 97, 255, .12), transparent 60%),
-      linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,245,245,.92));
-  }
-  .auth-layout-content{ max-width: min(1400px, 94vw); }
-  .auth-layout::before{
-    inset:-100px;
-    -webkit-mask-image: radial-gradient(62% 58% at 50% 45%, #000 50%, transparent 100%);
-            mask-image: radial-gradient(62% 58% at 50% 45%, #000 50%, transparent 100%);
-  }
-  .auth-layout::after{
-    inset:-38%;
-    filter: blur(56px);
-    opacity:.42;
-    animation-duration: 32s;
-  }
-  .orb-1{ width:560px;height:560px; left:-170px; bottom:-170px; filter: blur(60px); }
-  .orb-2{ width:460px;height:460px; right:-140px; top:-140px; filter: blur(60px); }
-}
-
-/* ========= HD intermedio (1366×768 / 1600×900) ========= */
-@media (min-width: 1366px) and (min-height: 720px){
-  .auth-layout-content{ max-width: min(1320px, 96vw); }
-}
-
-/* ========= Móvil: suaviza overlays ========= */
-@media (max-width: 640px){
-  .auth-layout::before{
-    inset:-40px;
-    -webkit-mask-image: radial-gradient(78% 70% at 50% 48%, #000 55%, transparent 100%);
-            mask-image: radial-gradient(78% 70% at 50% 48%, #000 55%, transparent 100%);
-    opacity:.95;
-  }
-  .auth-layout::after{
-    inset:-55%;
-    filter: blur(40px);
-    opacity:.34;
-    animation-duration: 36s;
-  }
-  .orb-1, .orb-2{ opacity:.50; filter: blur(52px); }
-}
-
-/* Respeta safe-area */
-@supports (padding: max(0px)) {
-  .auth-layout-content { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-}
-
-/* Accesibilidad */
-@media (prefers-reduced-motion: reduce){
-  .auth-layout::after{ animation: none; }
+@media (prefers-reduced-motion: no-preference){
+  .orb-1{ animation: float1 18s ease-in-out infinite }
+  .orb-2{ animation: float2 22s ease-in-out infinite }
+  @keyframes float1{ 50%{ transform: translate3d(8px,10px,0) scale(1.02) } }
+  @keyframes float2{ 50%{ transform: translate3d(-10px,-8px,0) scale(1.015) } }
 }

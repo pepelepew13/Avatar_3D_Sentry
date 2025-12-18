@@ -25,9 +25,13 @@ public sealed class AuthPersistence
         {
             if (state.IsAuthenticated && !string.IsNullOrWhiteSpace(state.Token) && state.ExpiresAtUtc is not null)
             {
+                var exp = state.ExpiresAtUtc!.Value;
+                if (exp.Kind == DateTimeKind.Local) exp = exp.ToUniversalTime();
+                else if (exp.Kind == DateTimeKind.Unspecified) exp = DateTime.SpecifyKind(exp, DateTimeKind.Utc);
+
                 var payload = new Persisted(
                     state.Token!,
-                    state.ExpiresAtUtc!.Value,
+                    exp,
                     state.Email,
                     state.Role,
                     state.Empresa,
@@ -42,7 +46,7 @@ public sealed class AuthPersistence
                 await _js.InvokeVoidAsync("localStorage.removeItem", Key);
             }
         }
-        catch { /* no romper UI si storage falla */ }
+        catch { /* silencioso */ }
     }
 
     public async Task TryRestoreAsync(AuthState state)
@@ -55,13 +59,17 @@ public sealed class AuthPersistence
             var p = JsonSerializer.Deserialize<Persisted>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             if (p is null) return;
 
-            if (p.ExpiresAtUtc <= DateTime.UtcNow)
+            var exp = p.ExpiresAtUtc;
+            if (exp.Kind == DateTimeKind.Local) exp = exp.ToUniversalTime();
+            else if (exp.Kind == DateTimeKind.Unspecified) exp = DateTime.SpecifyKind(exp, DateTimeKind.Utc);
+
+            if (exp <= DateTime.UtcNow)
             {
                 await _js.InvokeVoidAsync("localStorage.removeItem", Key);
                 return;
             }
 
-            state.SetSession(p.Token, p.ExpiresAtUtc, p.Email, p.Role, p.Empresa, p.Sede);
+            state.SetSession(p.Token, exp, p.Email, p.Role, p.Empresa, p.Sede);
         }
         catch { /* silencioso */ }
     }

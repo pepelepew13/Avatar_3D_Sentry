@@ -30,7 +30,48 @@ namespace Avatar_3D_Sentry.Services
             _logger = logger;
         }
 
-        public async Task<TtsResultado> GenerarAudioConVisemasAsync(string texto, string idioma, string voz, CancellationToken ct = default)
+        // ============================================================
+        // IMPLEMENTACIÓN DE ITtsService
+        // ============================================================
+
+        /// <summary>
+        /// Implementación estándar de la interfaz. Delegamos en el método
+        /// interno que ya tenías: GenerarAudioConVisemasAsync.
+        /// </summary>
+        public Task<TtsResultado> SynthesizeAsync(string texto, string idioma, string voz)
+        {
+            // La interfaz no expone CancellationToken, usamos None.
+            return GenerarAudioConVisemasAsync(texto, idioma, voz, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// De momento devolvemos un diccionario sencillo con la voz por defecto.
+        /// Si más adelante quieres, aquí podemos llamar al SDK de Azure para listar voces reales.
+        /// </summary>
+        public IReadOnlyDictionary<string, List<string>> GetAvailableVoices()
+        {
+            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["es-CO"] = new()
+                {
+                    string.IsNullOrWhiteSpace(_opt.DefaultVoice)
+                        ? "es-CO-SalomeNeural"
+                        : _opt.DefaultVoice
+                }
+            };
+
+            return dict;
+        }
+
+        // ============================================================
+        // MÉTODO INTERNO CON CANCELLATIONTOKEN (TU IMPLEMENTACIÓN ORIGINAL)
+        // ============================================================
+
+        public async Task<TtsResultado> GenerarAudioConVisemasAsync(
+            string texto,
+            string idioma,
+            string voz,
+            CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(texto))
                 throw new ArgumentException("El texto para TTS no puede ser vacío.", nameof(texto));
@@ -39,11 +80,10 @@ namespace Avatar_3D_Sentry.Services
             config.SpeechSynthesisVoiceName = string.IsNullOrWhiteSpace(voz) ? _opt.DefaultVoice : voz;
             config.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
 
-            // Habilitar notificaciones de visemas (SSML + evento)
+            // Habilitar notificaciones de visemas (eventos)
             config.SetProperty(PropertyId.SpeechServiceResponse_RequestSentenceBoundary, "true");
             config.SetProperty(PropertyId.SpeechServiceResponse_RequestWordBoundary, "true");
 
-            // Recoger visemas por evento
             var visemas = new List<Visema>();
 
             using var audioStream = AudioOutputStream.CreatePullStream();
@@ -52,32 +92,49 @@ namespace Avatar_3D_Sentry.Services
 
             synthesizer.VisemeReceived += (s, e) =>
             {
-                // e.VisemeId (int) y e.AudioOffset (ticks)
+                // e.VisemeId es uint → lo convertimos
                 var ms = (int)(e.AudioOffset / TimeSpan.TicksPerMillisecond);
-                var shape = MapAzureVisemeToShapeKey(e.VisemeId);
-                visemas.Add(new Visema { Id = e.VisemeId, ShapeKey = shape, Tiempo = ms });
+                var visemeId = (int)e.VisemeId;
+                var shape = MapAzureVisemeToShapeKey(visemeId);
+
+                visemas.Add(new Visema
+                {
+                    Id       = visemeId,
+                    ShapeKey = shape,
+                    Tiempo   = ms
+                });
             };
 
-            // SSML simple (puedes enriquecer con <prosody>, <break>, etc.)
-            var ssml = $"<speak version='1.0' xml:lang='{idioma}'>" +
-                       $"<voice name='{config.SpeechSynthesisVoiceName}'>" +
-                       $"{System.Security.SecurityElement.Escape(texto)}</voice></speak>";
+            var ssml =
+                $"<speak version='1.0' xml:lang='{idioma}'>" +
+                $"<voice name='{config.SpeechSynthesisVoiceName}'>" +
+                $"{System.Security.SecurityElement.Escape(texto)}</voice></speak>";
 
             var result = await synthesizer.SpeakSsmlAsync(ssml);
+
             if (result.Reason != ResultReason.SynthesizingAudioCompleted)
-                throw new InvalidOperationException($"Azure Speech no pudo sintetizar: {result.Reason} / {result.ErrorDetails}");
+            {
+                string error = result.Reason.ToString();
+
+                if (result.Reason == ResultReason.Canceled)
+                {
+                    var cancellation = SpeechSynthesisCancellationDetails.FromResult(result);
+                    error = $"{cancellation.Reason}: {cancellation.ErrorDetails}";
+                }
+
+                throw new InvalidOperationException($"Azure Speech no pudo sintetizar: {error}");
+            }
 
             var audioBytes = result.AudioData;
             var durationMs = (int)result.AudioDuration.TotalMilliseconds;
 
-            // Normalizamos visemas por si vienen fuera de orden
             var ordered = visemas.OrderBy(v => v.Tiempo).ToList();
 
             return new TtsResultado
             {
                 AudioBytes = audioBytes,
                 DurationMs = durationMs,
-                Visemes = ordered
+                Visemes    = ordered
             };
         }
 
@@ -86,8 +143,6 @@ namespace Avatar_3D_Sentry.Services
         /// </summary>
         private static string MapAzureVisemeToShapeKey(int visemeId)
         {
-            // Azure TTS reporta ~22 visemas. Aquí los agrupamos a tus keys usadas en el visor.
-            // Ajusta según tu modelo (ej.: ARKit o tus "viseme_*").
             return visemeId switch
             {
                 // Vocales abiertas
@@ -106,7 +161,7 @@ namespace Avatar_3D_Sentry.Services
                 10 => "viseme_RR",
                 11 => "viseme_kk",
 
-                // Resto: cae a una boca media (aa)
+                // Resto: boca media
                 _ => "viseme_aa"
             };
         }

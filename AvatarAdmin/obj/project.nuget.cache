@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "oyu2eIpU3ek=",
+  "dgSpecHash": "Oj7Maz725EM=",
   "success": true,
-  "projectFilePath": "C:\\Users\\USUARIO\\Documents\\GitHub\\Avatar_3D_Sentry\\AvatarAdmin\\AvatarAdmin.csproj",
+  "projectFilePath": "C:\\Users\\USUARIO\\OneDrive\\Documentos\\GitHub\\Avatar_3D_Sentry\\AvatarAdmin\\AvatarAdmin.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\USUARIO\\.nuget\\packages\\dotnetenv\\3.1.1\\dotnetenv.3.1.1.nupkg.sha512",
     "C:\\Users\\USUARIO\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

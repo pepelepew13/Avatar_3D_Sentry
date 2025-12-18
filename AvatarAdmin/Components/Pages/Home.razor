@@ -8,10 +8,14 @@
 
 <PageTitle>Panel Avatar</PageTitle>
 
-<section class="page-hero">
+<section class="page-hero" role="region" aria-label="Resumen y accesos rápidos">
+  <div class="hero-bg orb orb-1" aria-hidden="true"></div>
+  <div class="hero-bg orb orb-2" aria-hidden="true"></div>
+
   <div class="hero-head">
     <h1>Panel del Avatar 3D</h1>
-    <div class="hero-tags">
+
+    <div class="hero-tags" aria-label="Datos de sesión">
       <span class="tag">@Auth.Email</span>
       <span class="tag">Rol: @Auth.Role</span>
       <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
@@ -19,40 +23,54 @@
     </div>
   </div>
 
-  <p>Consulta y gestiona la configuración por empresa y sede. Cuando estés listo, abre el editor.</p>
+  <p class="hero-sub">Consulta y gestiona la configuración por empresa y sede. Cuando estés listo, abre el editor.</p>
 
   <div class="cta-row">
-    <button class="btn btn-primary" @onclick="GoEditor">Ir al editor</button>
+    <button class="btn btn-primary u-anim" @onclick="GoEditor" aria-label="Ir al editor de avatar">
+      Ir al editor
+    </button>
     @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
     {
-      <button class="btn btn-outline-light" @onclick="GoUsers">Gestión de usuarios</button>
+      <button class="btn btn-outline-light u-anim" @onclick="GoUsers" aria-label="Ir a gestión de usuarios">
+        Gestión de usuarios
+      </button>
     }
   </div>
 </section>
 
-<section class="card-grid">
+<section class="card-grid" role="region" aria-label="Configuración de avatar">
   <!-- Card: Empresa / Sede -->
-  <div class="card" style="grid-column: span 4;">
-    <h5>Empresa / Sede</h5>
-    <p class="text-muted">Selecciona el ámbito que quieres revisar.</p>
+  <div class="card">
+    <header class="card-h">
+      <h5>Empresa / Sede</h5>
+      <p class="text-muted">Selecciona el ámbito que quieres revisar</p>
+    </header>
 
-    <div class="mt-2">
-      <label class="form-label">Empresa</label>
-      <input class="form-control" @bind="empresa" />
+    <div class="form-row">
+      <label class="form-label" for="empresa-input">Empresa</label>
+      <div class="input-icon">
+        <span class="ii" aria-hidden="true">🏢</span>
+        <input id="empresa-input" class="form-control" @bind="empresa" autocomplete="organization" />
+      </div>
     </div>
-    <div class="mt-2">
-      <label class="form-label">Sede</label>
-      <input class="form-control" @bind="sede" />
+
+    <div class="form-row">
+      <label class="form-label" for="sede-input">Sede</label>
+      <div class="input-icon">
+        <span class="ii" aria-hidden="true">📍</span>
+        <input id="sede-input" class="form-control" @bind="sede" autocomplete="section" />
+      </div>
     </div>
+
     <div class="mt-3 d-grid">
-      <button class="btn btn-primary" @onclick="LoadAsync" disabled="@loading">
+      <button class="btn btn-primary u-anim" @onclick="LoadAsync" disabled="@loading" aria-busy="@loading">
         @(loading ? "Cargando..." : "Cargar configuración")
       </button>
     </div>
   </div>
 
   <!-- Card: Configuración actual -->
-  <div class="card" style="grid-column: span 8;">
+  <div class="card card--wide">
     <div class="card-title-row">
       <h5>Configuración actual</h5>
       @if (cfg is not null)
@@ -63,7 +81,7 @@
 
     @if (loading)
     {
-      <div class="skeleton">
+      <div class="skeleton" aria-live="polite">
         <div class="skeleton-line w-60"></div>
         <div class="skeleton-line w-40"></div>
         <div class="skeleton-grid">
@@ -76,35 +94,41 @@
     }
     else if (error is not null)
     {
-      <div class="alert alert-danger mt-2">@error</div>
+      <div class="alert alert-danger mt-2" role="alert">@error</div>
     }
     else if (cfg is null)
     {
-      <div class="text-muted mt-2">Sin datos. Indica empresa y sede y pulsa “Cargar configuración”.</div>
+      <div class="empty">
+        <div class="empty-illustration" aria-hidden="true">🗂️</div>
+        <p class="empty-text">Sin datos. Indica empresa y sede y pulsa <strong>“Cargar configuración”</strong>.</p>
+      </div>
     }
     else
     {
-      <div class="kv">
-        <div><span>Vestimenta</span><code>@cfg.Vestimenta</code></div>
-        <div><span>Fondo</span><code>@cfg.Fondo</code></div>
-        <div><span>Proveedor TTS</span><code>@cfg.ProveedorTts</code></div>
-        <div><span>Voz</span><code>@cfg.Voz</code></div>
-        <div><span>Idioma</span><code>@cfg.Idioma</code></div>
-        <div><span>Color Cabello</span><code>@cfg.ColorCabello</code></div>
-        <div class="kv-logo">
-          <span>Logo</span>
-          <div class="logo-row">
-            <code class="logo-path">@cfg.LogoPath</code>
+      <div class="kv" role="table" aria-label="Detalles de configuración cargada">
+        <div role="row"><span role="rowheader">Vestimenta</span><code role="cell">@cfg.Vestimenta</code></div>
+        <div role="row"><span role="rowheader">Fondo</span><code role="cell">@cfg.Fondo</code></div>
+        <div role="row"><span role="rowheader">Proveedor TTS</span><code role="cell">@cfg.ProveedorTts</code></div>
+        <div role="row"><span role="rowheader">Voz</span><code role="cell">@cfg.Voz</code></div>
+        <div role="row"><span role="rowheader">Idioma</span><code role="cell">@cfg.Idioma</code></div>
+        <div role="row"><span role="rowheader">Color Cabello</span><code role="cell">@cfg.ColorCabello</code></div>
+
+        <div class="kv-logo" role="row">
+          <span role="rowheader">Logo</span>
+          <div class="logo-row" role="cell">
+            <code class="logo-path" title="@cfg.LogoPath">@cfg.LogoPath</code>
             @if (!string.IsNullOrWhiteSpace(cfg.LogoPath))
             {
-              <img src="@cfg.LogoPath" alt="Logo" class="logo-preview" />
+              <img src="@Abs(cfg.LogoPath)" alt="Logo cargado" class="logo-preview" />
             }
           </div>
         </div>
       </div>
 
       <div class="mt-3 d-flex justify-content-end">
-        <button class="btn btn-primary" @onclick="GoEditor">Abrir editor</button>
+        <button class="btn btn-primary u-anim" @onclick="GoEditor" aria-label="Abrir editor">
+          Abrir editor
+        </button>
       </div>
     }
   </div>
@@ -118,6 +142,15 @@
   private string? error;
   private AvatarConfigDto? cfg;
 
+  // Convierte rutas relativas del backend en absolutas
+  private string Abs(string? path)
+  {
+    if (string.IsNullOrWhiteSpace(path)) return "";
+    if (Uri.TryCreate(path, UriKind.Absolute, out var abs)) return abs.ToString();
+    var baseUrl = Api.BaseUrl?.TrimEnd('/') ?? "";
+    return string.IsNullOrEmpty(baseUrl) ? path : $"{baseUrl}/{path.TrimStart('/')}";
+  }
+
   protected override void OnInitialized()
   {
     if (!string.IsNullOrWhiteSpace(Auth.Empresa)) empresa = Auth.Empresa!;
@@ -126,7 +159,11 @@
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
-    if (firstRender && !string.IsNullOrWhiteSpace(empresa) && !string.IsNullOrWhiteSpace(sede))
+    if (!firstRender) return;
+
+    await Auth.EnsureHydratedAsync();
+
+    if (Auth.IsAuthenticated && !string.IsNullOrWhiteSpace(empresa) && !string.IsNullOrWhiteSpace(sede))
     {
       await LoadAsync();
     }

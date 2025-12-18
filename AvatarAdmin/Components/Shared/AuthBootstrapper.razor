@@ -3,10 +3,22 @@
 @inject AvatarAdmin.Services.AuthPersistence Persist
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await Persist.TryRestoreAsync(Auth);
         Auth.Changed += OnAuthChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try { await Persist.TryRestoreAsync(Auth); }
+        catch { /* silencioso */ }
+        finally
+        {
+            Auth.MarkHydrated();   // Señal para guards y HttpClient
+            StateHasChanged();
+        }
     }
 
     private async void OnAuthChanged()

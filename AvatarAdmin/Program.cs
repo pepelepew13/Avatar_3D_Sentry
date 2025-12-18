@@ -20,7 +20,13 @@ var apiBase = Environment.GetEnvironmentVariable("AVATARBACK_BASEURL")
               ?? "http://localhost:5216";
 
 // Blazor Server (.NET 8)
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services
+    .AddRazorComponents()
+    // ✅ activar errores detallados del circuito para Interactive Server
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = true;
+    });
 
 // Estado de autenticación (JWT, claims)
 builder.Services.AddScoped<AuthState>();
@@ -38,7 +44,12 @@ builder.Services.AddHttpClient<AvatarApiClient>(client =>
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    // ✅ ver detalles de excepciones en desarrollo (además del DetailedErrors del circuito)
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();

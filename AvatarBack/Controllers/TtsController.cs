@@ -1,9 +1,16 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Avatar_3D_Sentry.Controllers
 {
@@ -16,7 +23,11 @@ namespace Avatar_3D_Sentry.Controllers
         private readonly IAssetStorage _storage;
         private readonly ILogger<TtsController> _logger;
 
-        public TtsController(PhraseGenerator phrases, ITtsService tts, IAssetStorage storage, ILogger<TtsController> logger)
+        public TtsController(
+            PhraseGenerator phrases,
+            ITtsService tts,
+            IAssetStorage storage,
+            ILogger<TtsController> logger)
         {
             _phrases = phrases;
             _tts = tts;
@@ -28,12 +39,12 @@ namespace Avatar_3D_Sentry.Controllers
         public class AnuncioRequest
         {
             [Required] public string company { get; set; } = default!;
-            [Required] public string site { get; set; } = default!;
-            [Required] public string module { get; set; } = default!;
-            [Required] public string ticket { get; set; } = default!;
-            public string? name { get; set; }
+            [Required] public string site    { get; set; } = default!;
+            [Required] public string module  { get; set; } = default!;
+            [Required] public string ticket  { get; set; } = default!;
+            public string? name    { get; set; }
             public string language { get; set; } = "es";
-            public string? voice { get; set; }
+            public string? voice   { get; set; }
         }
 
         public record VisemeOut(string shapeKey, int tiempo);
@@ -43,17 +54,24 @@ namespace Avatar_3D_Sentry.Controllers
         // POST /api/tts/announce
         [HttpPost("announce")]
         [AllowAnonymous] // cámbialo a [Authorize] si tu integración lo requiere
-        public async Task<ActionResult<TtsResponse>> Announce([FromBody] AnuncioRequest req, CancellationToken ct)
+        public async Task<ActionResult<TtsResponse>> Announce(
+            [FromBody] AnuncioRequest req,
+            CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             // 1) Texto de anuncio (localizable)
-            var text = _phrases.Build(module: req.module, ticket: req.ticket, name: req.name, language: req.language);
+            var text = _phrases.Build(
+                module:   req.module,
+                ticket:   req.ticket,
+                name:     req.name,
+                language: req.language
+            );
 
-            // 2) TTS Azure → bytes + visemas (shapeKey/tiempo)
-            var result = await _tts.GenerarAudioConVisemasAsync(text, req.language, req.voice ?? string.Empty, ct);
+            // 2) TTS → bytes + visemas
+            var result = await _tts.SynthesizeAsync(text, req.language, req.voice ?? string.Empty);
 
-            // 3) Subida al storage dual
+            // 3) Subida al storage
             //    audio/{company}/{site}/yyyyMMdd/uuid.mp3
             var fileName = $"{DateTime.UtcNow:yyyyMMdd}/{Guid.NewGuid():N}.mp3";
             var blobPath = $"audio/{req.company.ToLowerInvariant()}/{req.site.ToLowerInvariant()}/{fileName}";
@@ -62,13 +80,14 @@ namespace Avatar_3D_Sentry.Controllers
             var url = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", ct);
 
             // 4) Salida compatible con el visor: { shapeKey, tiempo }
-            var vis = result.Visemes.Select(v => new VisemeOut(v.ShapeKey, v.Tiempo)).ToList();
+            var vis = result.Visemes
+                .Select(v => new VisemeOut(v.ShapeKey, v.Tiempo))
+                .ToList();
 
             return Ok(new TtsResponse(url, result.DurationMs, vis));
         }
 
         // (Opcional) GET /api/tts/voices
-        // Devuelve un catálogo simple para el editor (ajústalo si ya lo tienes)
         [HttpGet("voices")]
         [AllowAnonymous]
         public ActionResult<Dictionary<string, List<string>>> GetVoices()

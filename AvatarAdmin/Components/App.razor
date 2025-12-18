@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.Routing
+@using AvatarAdmin.Components.Shared
 @inject AvatarAdmin.Services.AuthState Auth
 
 <!DOCTYPE html>
@@ -11,10 +12,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="app.css?" />
     <link rel="stylesheet" href="AvatarAdmin.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
+
+    <!-- Import map para Three.js + addons -->
     <script type="importmap">
         {
             "imports": {
@@ -28,8 +31,33 @@
 <body>
     <AuthBootstrapper />
     <SessionToast />
-    <Routes @rendermode="InteractiveServer" />
-    <script type="module" src="/js/avatarViewer.js"></script>
+
+    <ErrorBoundary>
+        <ChildContent>
+            <Routes @rendermode="InteractiveServer" />
+        </ChildContent>
+        <ErrorContent Context="ex">
+            <div class="container py-4">
+                <div class="error-card">
+                    <h3>Algo no salió bien</h3>
+                    <p>Ocurrió un error procesando tu solicitud.</p>
+                    <details class="mt-2">
+                        <summary>Detalle técnico</summary>
+                        <pre>@ex?.Message</pre>
+                    </details>
+                    <div class="error-actions mt-3">
+                        <a class="btn btn-primary" href="/">Volver al inicio</a>
+                        <button class="btn btn-outline-light" onclick="location.reload()">Reintentar</button>
+                    </div>
+                </div>
+            </div>
+        </ErrorContent>
+    </ErrorBoundary>
+
+    <!-- Carga primero el runtime de Blazor -->
     <script src="_framework/blazor.web.js"></script>
+    <!-- Luego tus módulos -->
+    <script type="module" src="/js/avatarViewer.js"></script>
+    <script type="module" src="/js/EditorHelpers.js"></script>
 </body>
 </html>
