@@ -183,11 +183,30 @@ public sealed class AvatarApiClient
         public List<string> Files { get; set; } = new();
     }
 
+    public sealed class AssetUrlResponse
+    {
+        public string Path { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+    }
+
     public async Task<ModelsResponse> GetModelsAsync(CancellationToken ct = default)
     {
         var resp = await _http.GetAsync("/api/models", ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<ModelsResponse>(_json, ct))!;
+    }
+
+    public async Task<string?> GetAssetUrlAsync(string path, int? ttlSeconds = null, CancellationToken ct = default)
+    {
+        var qs = new List<string> { "path=" + Uri.EscapeDataString(path) };
+        if (ttlSeconds is not null) qs.Add($"ttlSeconds={ttlSeconds.Value}");
+
+        var url = "/api/assets/url?" + string.Join('&', qs);
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+
+        var payload = await resp.Content.ReadFromJsonAsync<AssetUrlResponse>(_json, ct);
+        return payload?.Url ?? payload?.Path;
     }
 
     public async Task<AnnouncementResponse> AnnounceAsync(AnnouncementRequest req, string idioma, string voz, CancellationToken ct = default)
@@ -196,6 +215,20 @@ public sealed class AvatarApiClient
         var resp = await _http.PostAsJsonAsync(url, req, _json, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AnnouncementResponse>(_json, ct))!;
+    }
+
+    public async Task<AvatarConfigDto> UploadOutfitAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        using var content = new MultipartFormDataContent();
+        var fileContent = new StreamContent(file);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+        content.Add(fileContent, "file", fileName);
+
+        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/model";
+        var resp = await _http.PostAsync(url, content, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
     public string BaseUrl => _http.BaseAddress?.ToString() ?? "/";

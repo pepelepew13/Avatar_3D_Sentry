@@ -1,7 +1,9 @@
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -11,10 +13,11 @@ public class AvatarEditorController : ControllerBase
 {
     private readonly AvatarContext _db;
     private readonly ILogger<AvatarEditorController> _logger;
+    private readonly IAssetStorage _storage;
 
-    public AvatarEditorController(AvatarContext db, ILogger<AvatarEditorController> logger)
+    public AvatarEditorController(AvatarContext db, ILogger<AvatarEditorController> logger, IAssetStorage storage)
     {
-        _db = db; _logger = logger;
+        _db = db; _logger = logger; _storage = storage;
     }
 
     // ===================== GET CONFIG (RUTA LARGA) =====================
@@ -42,56 +45,62 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR LOGO =====================
     [HttpPost("{empresa}/{sede}/logo")]
-    public async Task<ActionResult<AvatarConfig>> UploadLogo(
+    [Authorize(Policy = "CanEditAvatar")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadLogo(
         string empresa, string sede, IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms, ct);
-        var asset = new AssetFile
-        {
-            Empresa = cfg.Empresa,
-            Sede = cfg.Sede,
-            Tipo = "logo",
-            FileName = file.FileName,
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
-            Data = ms.ToArray()
-        };
-        _db.Assets.Add(asset);
-        await _db.SaveChangesAsync(ct);
+        var blobPath = BuildBlobPath("logos", empresa, sede, file.FileName, "branding");
 
-        cfg.LogoPath = $"/assets/{asset.Id}";
+        await using var ms = file.OpenReadStream();
+        await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
+
+        cfg.LogoPath = blobPath;
         await _db.SaveChangesAsync(ct);
-        return Ok(cfg);
+        return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
     // ===================== SUBIR FONDO =====================
     [HttpPost("{empresa}/{sede}/background")]
-    public async Task<ActionResult<AvatarConfig>> UploadBackground(
+    [Authorize(Policy = "CanEditAvatar")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadBackground(
         string empresa, string sede, IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms, ct);
-        var asset = new AssetFile
-        {
-            Empresa = cfg.Empresa,
-            Sede = cfg.Sede,
-            Tipo = "fondo",
-            FileName = file.FileName,
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
-            Data = ms.ToArray()
-        };
-        _db.Assets.Add(asset);
-        await _db.SaveChangesAsync(ct);
+        var blobPath = BuildBlobPath("backgrounds", empresa, sede, file.FileName, "branding");
 
-        cfg.Fondo = $"/assets/{asset.Id}";
+        await using var ms = file.OpenReadStream();
+        await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
+
+        cfg.Fondo = blobPath;
         await _db.SaveChangesAsync(ct);
-        return Ok(cfg);
+        return Ok(AvatarConfigDto.FromEntity(cfg));
+    }
+
+    // ===================== SUBIR MODELO/VESTIMENTA =====================
+    [HttpPost("{empresa}/{sede}/model")]
+    [Authorize(Policy = "CanEditAvatar")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadModel(
+        string empresa, string sede, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
+
+        var blobPath = BuildBlobPath("models", empresa, sede, file.FileName, "models");
+        var contentType = file.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
+            ? "model/gltf-binary"
+            : file.ContentType ?? "application/octet-stream";
+
+        await using var ms = file.OpenReadStream();
+        await _storage.UploadAsync(ms, blobPath, contentType, ct);
+
+        cfg.Vestimenta = blobPath;
+        await _db.SaveChangesAsync(ct);
+        return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
     // ===================== UTIL PRIVADA =====================
@@ -112,5 +121,21 @@ public class AvatarEditorController : ControllerBase
             await _db.SaveChangesAsync(ct);
         }
         return cfg;
+    }
+
+    private static string BuildBlobPath(string alias, string company, string site, string fileName, string? subfolder = null)
+    {
+        static string Sanitize(string input)
+        {
+            var s = input.Trim().ToLowerInvariant();
+            foreach (var c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '-');
+            return s.Replace(' ', '-');
+        }
+
+        var prefix = $"{alias}/{Sanitize(company)}/{Sanitize(site)}";
+        if (!string.IsNullOrWhiteSpace(subfolder))
+            prefix = $"{prefix}/{subfolder}";
+
+        return $"{prefix}/{Sanitize(fileName)}";
     }
 }

@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Services;
-using Microsoft.AspNetCore.Hosting;
+using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -17,18 +17,18 @@ public class AvatarController : ControllerBase
     private readonly ILogger<AvatarController> _logger;
     private readonly PhraseGenerator _phrases;
     private readonly ITtsService _tts;
-    private readonly IWebHostEnvironment _env;
+    private readonly IAssetStorage _storage;
 
     public AvatarController(
         ILogger<AvatarController> logger,
         PhraseGenerator phrases,
         ITtsService tts,
-        IWebHostEnvironment env)
+        IAssetStorage storage)
     {
         _logger = logger;
         _phrases = phrases;
         _tts = tts;
-        _env = env;
+        _storage = storage;
     }
 
     /// <summary>
@@ -83,17 +83,11 @@ public class AvatarController : ControllerBase
             return StatusCode(StatusCodes.Status502BadGateway, new { error = "No fue posible generar la locución." });
         }
 
-        // 3) Guardar audio en /Resources/audio
-        var root = Path.Combine(_env.ContentRootPath, "Resources", "audio");
-        Directory.CreateDirectory(root);
-        var fileName = $"{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.mp3";
-        var fullPath = Path.Combine(root, fileName);
+        // 3) Guardar audio en storage (alias "audio" => contenedor tts)
+        var blobPath = BuildAudioPath(request.Empresa, request.Sede);
 
-        // ⬅️ AudioBytes, no Audio
-        await System.IO.File.WriteAllBytesAsync(fullPath, tts.AudioBytes);
-
-        // 4) URL pública
-        var audioUrl = $"/resources/audio/{fileName}";
+        await using var ms = new MemoryStream(tts.AudioBytes);
+        var audioUrl = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", HttpContext.RequestAborted);
 
         var response = new AnnouncementResponse
         {
@@ -105,5 +99,11 @@ public class AvatarController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    private static string BuildAudioPath(string empresa, string sede)
+    {
+        var datePrefix = DateTime.UtcNow.ToString("yyyy/MM/dd");
+        return $"audio/{empresa.ToLowerInvariant()}/{sede.ToLowerInvariant()}/{datePrefix}/{Guid.NewGuid():N}.mp3";
     }
 }

@@ -146,14 +146,18 @@ export async function createViewer(canvas, options) {
   if (options?.logoUrl) await applyLogo(state, options.logoUrl);
   applyOutfit(state, options?.outfit ?? null);
   applyBackground(state, options?.background ?? null);
+  if (options?.hairColor) applyHairColor(state, options.hairColor);
 
   // ===== API expuesta a .NET =====
   return {
     setLogo: (value) => applyLogo(state, value),
     setOutfit: (value) => applyOutfit(state, value),
     setBackground: (value) => applyBackground(state, value),
+    setHairColor: (value) => applyHairColor(state, value),
     setAutoRotate: (on) => { state.controls.autoRotate = !!on; },
     resetCamera: () => { controls.reset(); setCam(camera, CAM_BASE); controls.target.set(0,1.5,0); controls.update(); },
+    frame: () => { setCam(camera, CAM_BASE); controls.target.set(0,1.5,0); controls.update(); },
+    turntable: (ms=3000) => { state.controls.autoRotate = true; setTimeout(()=> state.controls.autoRotate = false, ms); },
     setCameraPreset: (p) => setPreset(state, p),
     toggleGround: () => { state.ground.visible = !state.ground.visible; },
     toggleLight:  () => { state.keyLight.intensity = state.keyLight.intensity > 0.05 ? 0.0 : 1.15; },
@@ -196,6 +200,20 @@ function ensureSingleMaterial(mesh){
     const m = mesh.material[0]; mesh.material = m; return m;
   }
   return mesh.material;
+}
+
+function applyHairColor(state, value){
+  if (!value || !state?.root) return;
+  const color = new THREE.Color(value);
+  state.root.traverse(child => {
+    const n = (child.name || '').toLowerCase();
+    if (child.isMesh && /hair|pelo|cabello/.test(n)){
+      if (child.material?.color){
+        child.material.color.set(color);
+        child.material.needsUpdate = true;
+      }
+    }
+  });
 }
 
 function createLogoPlane(root){
@@ -396,4 +414,42 @@ export function downloadDataUrl(filename, dataUrl){
     a.href = dataUrl; a.download = filename || 'captura.png';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }catch{}
+}
+
+let _viewerInstance = null;
+let _canvas = null;
+let _lastOptions = {};
+
+export async function init(canvas, options){
+  _canvas = canvas;
+  _lastOptions = { ...options };
+  if (_viewerInstance) await _viewerInstance.dispose?.();
+  _viewerInstance = await createViewer(canvas, _lastOptions);
+}
+
+export async function updateAppearance(options){
+  if (!_canvas) return;
+  const prevModel = _lastOptions?.modelUrl;
+  _lastOptions = { ..._lastOptions, ...options };
+
+  if (options?.modelUrl && options.modelUrl !== prevModel){
+    await init(_canvas, _lastOptions);
+    return;
+  }
+
+  if (!_viewerInstance) return;
+  if (options?.logoUrl !== undefined) await _viewerInstance.setLogo(options.logoUrl);
+  if (options?.outfit    !== undefined) _viewerInstance.setOutfit(options.outfit);
+  if (options?.background!== undefined) _viewerInstance.setBackground(options.background);
+  if (options?.hairColor !== undefined) _viewerInstance.setHairColor(options.hairColor);
+}
+
+export function frame(){ _viewerInstance?.frame?.(); }
+export function turntable(ms){ _viewerInstance?.turntable?.(ms ?? 3000); }
+export function screenshot(){ return _viewerInstance?.screenshot?.(1); }
+export function speak(audioUrl, visemas){ _viewerInstance?.speak?.(audioUrl, visemas); }
+
+export async function dispose(){
+  if (_viewerInstance){ await _viewerInstance.dispose?.(); _viewerInstance = null; }
+  _canvas = null; _lastOptions = {};
 }

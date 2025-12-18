@@ -7,15 +7,16 @@ namespace Avatar_3D_Sentry.Services.Storage
 
         public ContainerNames Containers { get; set; } = new();
         public int SasExpiryMinutes { get; set; } = 10;
+        public int AudioRetentionDays { get; set; } = 7;
 
         public LocalPaths Local { get; set; } = new();
 
         public class ContainerNames
         {
-            public string Models { get; set; } = "models";
-            public string Logos { get; set; } = "logos";
-            public string Backgrounds { get; set; } = "backgrounds";
-            public string Audio { get; set; } = "audio";
+            public string Models { get; set; } = "public";
+            public string Logos { get; set; } = "public";
+            public string Backgrounds { get; set; } = "public";
+            public string Audio { get; set; } = "tts";
         }
 
         public class LocalPaths

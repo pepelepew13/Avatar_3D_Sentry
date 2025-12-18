@@ -1,6 +1,7 @@
 @page "/editor"
 @using AvatarAdmin.Services
 @using AvatarAdmin.Models
+@implements IAsyncDisposable
 @using Microsoft.AspNetCore.Components.Forms
 @inject AvatarApiClient Api
 @inject AuthState Auth
@@ -127,6 +128,14 @@
             </div>
 
             <div class="sub-card">
+              <header class="sub-head"><h6>Modelo / vestimenta personalizada</h6></header>
+              <div class="sub-body">
+                <InputFile OnChange="OnModelPicked" accept=".glb" />
+                <small class="muted">Se guarda en tu storage Azure por empresa/sede.</small>
+              </div>
+            </div>
+
+            <div class="sub-card">
               <header class="sub-head"><h6>Color de cabello</h6></header>
               <div class="sub-body">
                 <div class="vg-swatches">
@@ -244,6 +253,7 @@
   private string? fondo;
   private string? colorCabello;
   private string? logoUrl;
+  private string? modelUrl;
 
   private string panel = "identidad";
   private bool saving;
@@ -283,6 +293,19 @@
     var baseUrl = Api.BaseUrl?.TrimEnd('/') ?? "";
     return string.IsNullOrEmpty(baseUrl) ? path : $"{baseUrl}/{path.TrimStart('/')}";
   }
+
+  private async Task<string?> ResolveAssetUrlAsync(string? path)
+  {
+    if (string.IsNullOrWhiteSpace(path)) return null;
+    try { return await Api.GetAssetUrlAsync(path) ?? Abs(path); }
+    catch (Exception ex)
+    {
+      Log.LogWarning(ex, "No se pudo resolver la URL pública para {Path}", path);
+      return Abs(path);
+    }
+  }
+
+  private string DefaultModelUrl => Abs("/models/Avatar.glb");
 
   private async Task OnPanelClick(string key, ElementReference btnRef)
   {
@@ -347,14 +370,15 @@
 
       try
       {
+          modelUrl ??= DefaultModelUrl;
           _viewerModule = await JS.InvokeAsync<IJSObjectReference>("import", "/js/avatarViewer.js");
-          var helpers   = await JS.InvokeAsync<IJSObjectReference>("import", "/js/EditorHelpers.js");
 
           await _viewerModule.InvokeVoidAsync("init", canvasRef, new {
-              modelUrl   = Abs("/models/Avatar.glb"),
+              modelUrl,
+              logoUrl    = logoUrl,
               outfit     = vestimenta,
               background = fondo,
-              hairColor  = 0x2b2b2b,
+              hairColor  = ColorToHex(colorCabello) ?? 0x2b2b2b,
           });
       }
       catch (JSDisconnectedException) { }
@@ -376,20 +400,22 @@
       vestimenta   = cfg.Vestimenta;
       fondo        = cfg.Fondo;
       colorCabello = cfg.ColorCabello;
-      logoUrl      = Abs(cfg.LogoPath);
+      logoUrl      = await ResolveAssetUrlAsync(cfg.LogoPath);
 
-      try
+      if (!string.IsNullOrWhiteSpace(cfg.Vestimenta) && (cfg.Vestimenta.Contains('/') || cfg.Vestimenta.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)))
+        modelUrl = await ResolveAssetUrlAsync(cfg.Vestimenta) ?? DefaultModelUrl;
+      else
+        modelUrl ??= DefaultModelUrl;
+
+      if (_viewerModule is not null)
       {
-        await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new {
-          modelUrl   = Abs("/models/Avatar.glb"),
+        await _viewerModule.InvokeVoidAsync("updateAppearance", new {
+          modelUrl   = modelUrl ?? DefaultModelUrl,
+          logoUrl    = logoUrl,
           outfit     = vestimenta,
           background = fondo,
           hairColor  = ColorToHex(colorCabello)
         });
-      }
-      catch (Exception ex)
-      {
-        Log.LogWarning(ex, "updateAppearance falló (sin impacto crítico)");
       }
     }
     finally { loading = false; StateHasChanged(); }
@@ -414,29 +440,50 @@
     var f = e.File; if (f is null) return;
     await using var s = f.OpenReadStream(2 * 1024 * 1024);
     var saved = await Api.UploadLogoAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
-    logoUrl = Abs(saved.LogoPath);
+    logoUrl = await ResolveAssetUrlAsync(saved.LogoPath);
     StateHasChanged();
+  }
+
+  private async Task OnModelPicked(InputFileChangeEventArgs e)
+  {
+    var f = e.File; if (f is null) return;
+    await using var s = f.OpenReadStream(60 * 1024 * 1024);
+    var saved = await Api.UploadOutfitAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
+
+    vestimenta = saved.Vestimenta;
+    modelUrl = await ResolveAssetUrlAsync(saved.Vestimenta) ?? modelUrl ?? DefaultModelUrl;
+
+    if (_viewerModule is not null)
+    {
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { modelUrl, outfit = vestimenta });
+    }
   }
 
   private async Task SelectOutfit(string v)
   {
     vestimenta = v;
-    try { await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { outfit = vestimenta }); }
-    catch (Exception ex) { Log.LogDebug(ex, "updateAppearance outfit"); }
+    if (_viewerModule is not null)
+    {
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { outfit = vestimenta });
+    }
   }
 
   private async Task SelectBg(string v)
   {
     fondo = v;
-    try { await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { background = fondo }); }
-    catch (Exception ex) { Log.LogDebug(ex, "updateAppearance background"); }
+    if (_viewerModule is not null)
+    {
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { background = fondo });
+    }
   }
 
   private async Task SelectHair(string v)
   {
     colorCabello = v;
-    try { await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { hairColor = ColorToHex(colorCabello) }); }
-    catch (Exception ex) { Log.LogDebug(ex, "updateAppearance hair"); }
+    if (_viewerModule is not null)
+    {
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { hairColor = ColorToHex(colorCabello) });
+    }
   }
 
   private async Task PreviewVozAsync()
@@ -444,24 +491,14 @@
     try
     {
       var req = new AnnouncementRequest {
-        Empresa = empresa, Sede = sede, Modulo = "A1", Turno = "0001", Nombre = textoPreview
+        Empresa = empresa, Sede = sede, Modulo = "A1", Turno = "0001", Nombre = string.IsNullOrWhiteSpace(textoPreview) ? "Invitado" : textoPreview
       };
       var res = await Api.AnnounceAsync(req, idioma, voz);
       var audioUrl = Abs(res.AudioUrl);
 
-      double dur = 2.0;
-      try { dur = await JS.InvokeAsync<double>("AvatarViewer.prepareAudioClip", audioRef, audioUrl); }
-      catch (Exception ex) { Log.LogDebug(ex, "prepareAudioClip"); }
-
-      try
+      if (_viewerModule is not null)
       {
-        await JS.InvokeVoidAsync("AvatarViewer.applyVisemes", res.Visemas);
-        await JS.InvokeVoidAsync("AvatarViewer.playTalking", dur);
-        await JS.InvokeVoidAsync("AvatarViewer.playPreparedAudioClip", audioRef);
-      }
-      catch (Exception ex)
-      {
-        Log.LogWarning(ex, "Reproducción/visemas falló");
+        await _viewerModule.InvokeVoidAsync("speak", audioUrl, res.Visemas);
       }
     }
     catch (Exception ex)
@@ -477,4 +514,17 @@
   private Task TurntableAsync()  => _viewerModule?.InvokeVoidAsync("turntable", 3000).AsTask() ?? Task.CompletedTask;
   private Task FrameAsync()      => _viewerModule?.InvokeVoidAsync("frame").AsTask() ?? Task.CompletedTask;
   private Task ScreenshotAsync() => _viewerModule?.InvokeVoidAsync("screenshot").AsTask() ?? Task.CompletedTask;
+
+  public async ValueTask DisposeAsync()
+  {
+    try
+    {
+      if (_viewerModule is not null)
+      {
+        await _viewerModule.InvokeVoidAsync("dispose");
+        await _viewerModule.DisposeAsync();
+      }
+    }
+    catch (JSDisconnectedException) { }
+  }
 }
