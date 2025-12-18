@@ -201,6 +201,9 @@ builder.Services.Configure<StorageOptions>(opts =>
     if (int.TryParse(ResolveEnv(s["SasExpiryMinutes"]) ?? s["SasExpiryMinutes"], out var sasMin))
         opts.SasExpiryMinutes = sasMin;
 
+    if (int.TryParse(ResolveEnv(s["AudioRetentionDays"]) ?? s["AudioRetentionDays"], out var retention))
+        opts.AudioRetentionDays = retention;
+
     var local = s.GetSection("Local");
     opts.Local.Root           = local["Root"]           ?? "wwwroot";
     opts.Local.ModelsPath     = local["ModelsPath"]     ?? "wwwroot/models";
@@ -229,6 +232,8 @@ builder.Services.AddSingleton<IAssetStorage>(sp =>
     logger.LogInformation("Usando LocalFileStorage.");
     return new LocalFileStorage(env, so);
 });
+
+builder.Services.AddHostedService<TtsCleanupService>();
 
 var app = builder.Build();
 

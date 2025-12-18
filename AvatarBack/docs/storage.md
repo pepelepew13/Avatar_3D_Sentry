@@ -14,6 +14,8 @@
 
 La API sigue usando alias lógicos (`logos`, `backgrounds`, `models`, `audio`) para construir estas rutas; internamente se mapean a los contenedores anteriores.
 
+Los audios TTS se eliminan automáticamente tras `AudioRetentionDays` (valor por defecto: 7 días) tanto en Azure como en el almacenamiento local para mantener los costos bajo control.
+
 ## Acceso
 - Por ahora los clientes obtienen **SAS de lectura** generados por el backend.
 - Cuando el backend se ejecute en **App Service Linux (.NET 8)** se podrá habilitar **Managed Identity** y dar permisos RBAC directos a los contenedores, eliminando la necesidad de keys o SAS generadas manualmente.

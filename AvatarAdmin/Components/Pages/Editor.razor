@@ -127,6 +127,14 @@
             </div>
 
             <div class="sub-card">
+              <header class="sub-head"><h6>Modelo / vestimenta personalizada</h6></header>
+              <div class="sub-body">
+                <InputFile OnChange="OnModelPicked" accept=".glb" />
+                <small class="muted">Se guarda en tu storage Azure por empresa/sede.</small>
+              </div>
+            </div>
+
+            <div class="sub-card">
               <header class="sub-head"><h6>Color de cabello</h6></header>
               <div class="sub-body">
                 <div class="vg-swatches">
@@ -244,6 +252,7 @@
   private string? fondo;
   private string? colorCabello;
   private string? logoUrl;
+  private string? modelUrl;
 
   private string panel = "identidad";
   private bool saving;
@@ -283,6 +292,19 @@
     var baseUrl = Api.BaseUrl?.TrimEnd('/') ?? "";
     return string.IsNullOrEmpty(baseUrl) ? path : $"{baseUrl}/{path.TrimStart('/')}";
   }
+
+  private async Task<string?> ResolveAssetUrlAsync(string? path)
+  {
+    if (string.IsNullOrWhiteSpace(path)) return null;
+    try { return await Api.GetAssetUrlAsync(path) ?? Abs(path); }
+    catch (Exception ex)
+    {
+      Log.LogWarning(ex, "No se pudo resolver la URL pública para {Path}", path);
+      return Abs(path);
+    }
+  }
+
+  private string DefaultModelUrl => Abs("/models/Avatar.glb");
 
   private async Task OnPanelClick(string key, ElementReference btnRef)
   {
@@ -347,11 +369,12 @@
 
       try
       {
+          modelUrl ??= DefaultModelUrl;
           _viewerModule = await JS.InvokeAsync<IJSObjectReference>("import", "/js/avatarViewer.js");
           var helpers   = await JS.InvokeAsync<IJSObjectReference>("import", "/js/EditorHelpers.js");
 
           await _viewerModule.InvokeVoidAsync("init", canvasRef, new {
-              modelUrl   = Abs("/models/Avatar.glb"),
+              modelUrl,
               outfit     = vestimenta,
               background = fondo,
               hairColor  = 0x2b2b2b,
@@ -376,12 +399,17 @@
       vestimenta   = cfg.Vestimenta;
       fondo        = cfg.Fondo;
       colorCabello = cfg.ColorCabello;
-      logoUrl      = Abs(cfg.LogoPath);
+      logoUrl      = await ResolveAssetUrlAsync(cfg.LogoPath);
+
+      if (!string.IsNullOrWhiteSpace(cfg.Vestimenta) && (cfg.Vestimenta.Contains('/') || cfg.Vestimenta.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)))
+        modelUrl = await ResolveAssetUrlAsync(cfg.Vestimenta) ?? DefaultModelUrl;
+      else
+        modelUrl ??= DefaultModelUrl;
 
       try
       {
         await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new {
-          modelUrl   = Abs("/models/Avatar.glb"),
+          modelUrl   = modelUrl ?? DefaultModelUrl,
           outfit     = vestimenta,
           background = fondo,
           hairColor  = ColorToHex(colorCabello)
@@ -414,8 +442,21 @@
     var f = e.File; if (f is null) return;
     await using var s = f.OpenReadStream(2 * 1024 * 1024);
     var saved = await Api.UploadLogoAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
-    logoUrl = Abs(saved.LogoPath);
+    logoUrl = await ResolveAssetUrlAsync(saved.LogoPath);
     StateHasChanged();
+  }
+
+  private async Task OnModelPicked(InputFileChangeEventArgs e)
+  {
+    var f = e.File; if (f is null) return;
+    await using var s = f.OpenReadStream(60 * 1024 * 1024);
+    var saved = await Api.UploadOutfitAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
+
+    vestimenta = saved.Vestimenta;
+    modelUrl = await ResolveAssetUrlAsync(saved.Vestimenta) ?? modelUrl ?? DefaultModelUrl;
+
+    try { await JS.InvokeVoidAsync("AvatarViewer.updateAppearance", new { modelUrl, outfit = vestimenta }); }
+    catch (Exception ex) { Log.LogDebug(ex, "updateAppearance vestimenta personalizada"); }
   }
 
   private async Task SelectOutfit(string v)
