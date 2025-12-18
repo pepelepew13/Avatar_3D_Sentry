@@ -69,7 +69,7 @@ export async function createViewer(canvas, options) {
     logoMaterial: null, logoTexture: null,
     resizeObserver: null, animationHandle: 0,
     root: null, clock: new THREE.Clock(),
-    mouthMeshes: [], audio: null, mouthTimer: 0, currentVisemeTimeout: 0,
+    mouthMeshes: [], audio: null, audioEl: options?.audioEl ?? null, mouthTimer: 0, currentVisemeTimeout: 0,
     dragHandlers: [], _keyHandler: null
   };
 
@@ -295,8 +295,10 @@ function setPreset(state, preset){
 async function speak(state, audioUrl, visemas){
   stopMouth(state);
 
-  const audio = new Audio(audioUrl);
+  const audio = state.audioEl ?? new Audio();
   audio.crossOrigin = 'anonymous';
+  audio.src = audioUrl;
+  audio.load();
   state.audio = audio;
 
   const list = Array.isArray(visemas) ? visemas.slice().sort((a,b)=> (a?.tiempo ?? 0) - (b?.tiempo ?? 0)) : [];
@@ -359,7 +361,14 @@ function stopMouth(state){
       VISEME_KEYS.forEach(k => { if (dict[k] !== undefined) inf[dict[k]] = 0; });
     });
   }
-  if (state.audio){ try{ state.audio.pause(); }catch{} state.audio = null; }
+  if (state.audio){
+    try{
+      state.audio.pause();
+      state.audio.currentTime = 0;
+      if (!state.audioEl) state.audio.src = '';
+    }catch{}
+    state.audio = null;
+  }
 }
 
 // ======= Captura =======
