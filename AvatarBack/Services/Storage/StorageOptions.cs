@@ -12,10 +12,10 @@ namespace Avatar_3D_Sentry.Services.Storage
 
         public class ContainerNames
         {
-            public string Models { get; set; } = "models";
-            public string Logos { get; set; } = "logos";
-            public string Backgrounds { get; set; } = "backgrounds";
-            public string Audio { get; set; } = "audio";
+            public string Models { get; set; } = "public";
+            public string Logos { get; set; } = "public";
+            public string Backgrounds { get; set; } = "public";
+            public string Audio { get; set; } = "tts";
         }
 
         public class LocalPaths

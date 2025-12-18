@@ -39,8 +39,14 @@ public class AssetsController : ControllerBase
         return s.Replace(' ', '-');
     }
 
-    private static string BuildBlobPath(string container, string company, string site, string fileName)
-        => $"{container}/{Sanitize(company)}/{Sanitize(site)}/{Sanitize(fileName)}";
+    private static string BuildBlobPath(string alias, string company, string site, string fileName, string? subfolder = null)
+    {
+        var prefix = $"{alias}/{Sanitize(company)}/{Sanitize(site)}";
+        if (!string.IsNullOrWhiteSpace(subfolder))
+            prefix = $"{prefix}/{subfolder}";
+
+        return $"{prefix}/{Sanitize(fileName)}";
+    }
 
     // =============================
     // POST /api/assets/logo/{company}/{site}
@@ -56,7 +62,7 @@ public class AssetsController : ControllerBase
     {
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
-        var blobPath = BuildBlobPath("logos", company, site, fileName);
+        var blobPath = BuildBlobPath("logos", company, site, fileName, "branding");
 
         await using var stream = file.OpenReadStream();
         var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -78,7 +84,7 @@ public class AssetsController : ControllerBase
     {
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
-        var blobPath = BuildBlobPath("backgrounds", company, site, fileName);
+        var blobPath = BuildBlobPath("backgrounds", company, site, fileName, "branding");
 
         await using var stream = file.OpenReadStream();
         var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -101,7 +107,7 @@ public class AssetsController : ControllerBase
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
         // Guardamos modelos dentro de "models/{company}/{site}/"
-        var blobPath = BuildBlobPath("models", company, site, fileName);
+        var blobPath = BuildBlobPath("models", company, site, fileName, "models");
 
         // Forzar content-type si es .glb
         var contentType = file.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)

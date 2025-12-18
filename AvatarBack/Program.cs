@@ -193,10 +193,10 @@ builder.Services.Configure<StorageOptions>(opts =>
     opts.Mode           = s["Mode"] ?? "Auto";
     opts.AzureConnection = ResolveEnv(s["AzureConnection"]) ?? s["AzureConnection"];
 
-    opts.Containers.Models      = ResolveEnv(s.GetSection("Containers")["Models"])      ?? "models";
-    opts.Containers.Logos       = ResolveEnv(s.GetSection("Containers")["Logos"])       ?? "logos";
-    opts.Containers.Backgrounds = ResolveEnv(s.GetSection("Containers")["Backgrounds"]) ?? "backgrounds";
-    opts.Containers.Audio       = ResolveEnv(s.GetSection("Containers")["Audio"])       ?? "audio";
+    opts.Containers.Models      = ResolveEnv(s.GetSection("Containers")["Models"])      ?? "public";
+    opts.Containers.Logos       = ResolveEnv(s.GetSection("Containers")["Logos"])       ?? "public";
+    opts.Containers.Backgrounds = ResolveEnv(s.GetSection("Containers")["Backgrounds"]) ?? "public";
+    opts.Containers.Audio       = ResolveEnv(s.GetSection("Containers")["Audio"])       ?? "tts";
 
     if (int.TryParse(ResolveEnv(s["SasExpiryMinutes"]) ?? s["SasExpiryMinutes"], out var sasMin))
         opts.SasExpiryMinutes = sasMin;

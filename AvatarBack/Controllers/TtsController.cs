@@ -72,9 +72,9 @@ namespace Avatar_3D_Sentry.Controllers
             var result = await _tts.SynthesizeAsync(text, req.language, req.voice ?? string.Empty);
 
             // 3) Subida al storage
-            //    audio/{company}/{site}/yyyyMMdd/uuid.mp3
-            var fileName = $"{DateTime.UtcNow:yyyyMMdd}/{Guid.NewGuid():N}.mp3";
-            var blobPath = $"audio/{req.company.ToLowerInvariant()}/{req.site.ToLowerInvariant()}/{fileName}";
+            //    tts/{company}/{site}/{yyyy}/{MM}/{dd}/(id).mp3 (contenedor real: tts)
+            var datePrefix = DateTime.UtcNow.ToString("yyyy/MM/dd");
+            var blobPath = $"audio/{req.company.ToLowerInvariant()}/{req.site.ToLowerInvariant()}/{datePrefix}/{Guid.NewGuid():N}.mp3";
 
             await using var ms = new MemoryStream(result.AudioBytes);
             var url = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", ct);
