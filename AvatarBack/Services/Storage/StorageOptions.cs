@@ -16,6 +16,7 @@ namespace Avatar_3D_Sentry.Services.Storage
             public string Models { get; set; } = "public";
             public string Logos { get; set; } = "public";
             public string Backgrounds { get; set; } = "public";
+            public string Videos { get; set; } = "public";
             public string Audio { get; set; } = "tts";
         }
 
@@ -25,6 +26,7 @@ namespace Avatar_3D_Sentry.Services.Storage
             public string ModelsPath { get; set; } = "wwwroot/models";
             public string LogosPath { get; set; } = "wwwroot/logos";
             public string BackgroundsPath { get; set; } = "wwwroot/backgrounds";
+            public string VideosPath { get; set; } = "wwwroot/videos";
             public string AudioPath { get; set; } = "Resources/audio";
         }
     }

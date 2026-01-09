@@ -8,6 +8,7 @@ public class AzureStorageOptions
 
     public string ContainerNamePublic { get; set; } = "public";
     public string ContainerNameTts { get; set; } = "tts";
+    public string ContainerNameVideos { get; set; } = "public";
 
     public string BlobServiceEndpoint { get; set; } = string.Empty;
 

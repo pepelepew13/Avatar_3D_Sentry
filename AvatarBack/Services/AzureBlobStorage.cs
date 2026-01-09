@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -48,6 +49,32 @@ namespace Avatar_3D_Sentry.Services.Storage
             return GetSasUrl(container, objectName, ttl ?? TimeSpan.FromMinutes(_opt.SasExpiryMinutes));
         }
 
+        public async Task<IReadOnlyList<string>> ListAsync(string pathPrefix, string[]? allowedExtensions, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(pathPrefix))
+                throw new ArgumentException("pathPrefix inválido. Debe incluir el alias de contenedor.");
+
+            var (alias, prefix) = SplitPrefix(pathPrefix);
+            var containerName = MapContainer(alias);
+            var container = _svc.GetBlobContainerClient(containerName);
+
+            var results = new List<string>();
+            await foreach (var blob in container.GetBlobsAsync(prefix: string.IsNullOrWhiteSpace(prefix) ? null : prefix, cancellationToken: ct))
+            {
+                if (allowedExtensions is { Length: > 0 })
+                {
+                    var ext = Path.GetExtension(blob.Name);
+                    if (string.IsNullOrWhiteSpace(ext) ||
+                        !allowedExtensions.Any(x => ext.Equals(x, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                }
+
+                results.Add($"{alias}/{blob.Name}");
+            }
+
+            return results.OrderBy(r => r, StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+
         private static (string container, string name) Split(string path)
         {
             var clean = path.Trim().TrimStart('/');
@@ -59,11 +86,20 @@ namespace Avatar_3D_Sentry.Services.Storage
             return (c, n);
         }
 
+        private static (string alias, string prefix) SplitPrefix(string path)
+        {
+            var clean = path.Trim().TrimStart('/');
+            var idx = clean.IndexOf('/');
+            if (idx < 0) return (clean, string.Empty);
+            return (clean.Substring(0, idx), clean.Substring(idx + 1));
+        }
+
         private string MapContainer(string alias) => alias.ToLowerInvariant() switch
         {
             "models"      => _opt.Containers.Models,
             "logos"       => _opt.Containers.Logos,
             "backgrounds" => _opt.Containers.Backgrounds,
+            "videos"      => _opt.Containers.Videos,
             "audio"       => _opt.Containers.Audio,
             _             => alias
         };

@@ -1,56 +1,54 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.StaticFiles;
+using System.Linq;
+using Avatar_3D_Sentry.Services.Storage;
 
 namespace Avatar_3D_Sentry.Controllers;
 
 [ApiController]
 [Route("api/models")]
-[EnableCors("DashboardCorsPolicy")]
+[EnableCors("AllowDashboard")]
 public class ModelsController : ControllerBase
 {
-    private readonly IWebHostEnvironment _env;
-    private readonly FileExtensionContentTypeProvider _ctp = new();
+    private readonly IAssetStorage _storage;
 
-    public ModelsController(IWebHostEnvironment env)
+    public ModelsController(IAssetStorage storage)
     {
-        _env = env;
-        _ctp.Mappings[".glb"]  = "model/gltf-binary";
-        _ctp.Mappings[".gltf"] = "model/gltf+json";
+        _storage = storage;
     }
 
     [HttpGet]
-    public IActionResult List()
+    public async Task<IActionResult> List([FromQuery] string? prefix = null, [FromQuery] int? ttlSeconds = null, CancellationToken ct = default)
     {
-        var dir = Path.Combine(_env.ContentRootPath, "wwwroot", "models");
-        var files = Directory.Exists(dir)
-            ? Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)
-                .Where(f => f.EndsWith(".glb", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".gltf", StringComparison.OrdinalIgnoreCase))
-                .Select(Path.GetFileName)
-                .OrderBy(n => n)
-                .ToArray()
-            : Array.Empty<string>();
+        var allowedExtensions = new[] { ".glb", ".gltf" };
+        var cleanPrefix = string.IsNullOrWhiteSpace(prefix) ? "models" : $"models/{prefix.Trim().TrimStart('/')}";
+        var paths = await _storage.ListAsync(cleanPrefix, allowedExtensions, ct);
+        var ttl = ttlSeconds.HasValue ? TimeSpan.FromSeconds(ttlSeconds.Value) : (TimeSpan?)null;
 
-        var baseUrl = $"{Request.Scheme}://{Request.Host}/models/";
-        return Ok(new { baseUrl, files });
+        var items = paths
+            .Select(path => new
+            {
+                path,
+                fileName = Path.GetFileName(path),
+                url = _storage.GetPublicUrl(path, ttl)
+            })
+            .ToArray();
+
+        return Ok(new { items });
     }
 
-    [HttpGet("{fileName}")]
-    public IActionResult Get(string fileName)
+    [HttpGet("{*path}")]
+    public IActionResult Get(string path)
     {
-        if (string.IsNullOrWhiteSpace(fileName)) return BadRequest();
-        fileName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(path)) return BadRequest();
+        path = path.Trim().TrimStart('/');
+        path = path.StartsWith("models/", StringComparison.OrdinalIgnoreCase) ? path : $"models/{path}";
 
-        var path = Path.Combine(_env.ContentRootPath, "wwwroot", "models", fileName);
-        if (!System.IO.File.Exists(path)) return NotFound();
-
-        if (!_ctp.TryGetContentType(path, out var contentType))
-            contentType = "application/octet-stream";
-
-        return PhysicalFile(path, contentType, enableRangeProcessing: true);
+        var url = _storage.GetPublicUrl(path);
+        return Redirect(url);
     }
 
-    [HttpOptions("{fileName}")]
+    [HttpOptions("{*path}")]
     public IActionResult OptionsModel()
     {
         // ✅ Usa string plano o Append; NO arrays/colecciones.

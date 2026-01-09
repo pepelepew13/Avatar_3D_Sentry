@@ -16,5 +16,10 @@ namespace Avatar_3D_Sentry.Services.Storage
         /// Devuelve una URL pública (SAS si es Azure, o ruta pública local) para leer el recurso.
         /// </summary>
         string GetPublicUrl(string path, TimeSpan? ttl = null);
+
+        /// <summary>
+        /// Lista rutas lógicas bajo un prefijo (por ejemplo: "models/empresa/sede").
+        /// </summary>
+        Task<IReadOnlyList<string>> ListAsync(string pathPrefix, string[]? allowedExtensions, CancellationToken ct);
     }
 }
