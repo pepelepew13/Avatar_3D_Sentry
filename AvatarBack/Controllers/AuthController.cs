@@ -32,8 +32,21 @@ public class AuthController : ControllerBase
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
         if (user is null) return Unauthorized("Credenciales inválidas.");
 
-        var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
-        if (result == PasswordVerificationResult.Failed) return Unauthorized("Credenciales inválidas.");
+        if (!IsAspNetIdentityHash(user.PasswordHash))
+        {
+            if (!string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
+            {
+                return Unauthorized("Credenciales inválidas.");
+            }
+
+            user.PasswordHash = _hasher.HashPassword(user, req.Password);
+            await _db.SaveChangesAsync(ct);
+        }
+        else
+        {
+            var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
+            if (result == PasswordVerificationResult.Failed) return Unauthorized("Credenciales inválidas.");
+        }
 
         var (token, exp) = GenerateJwt(user);
         return Ok(new LoginResponse
@@ -114,5 +127,11 @@ public class AuthController : ControllerBase
             signingCredentials: creds);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), exp);
+    }
+
+    private static bool IsAspNetIdentityHash(string? hash)
+    {
+        return !string.IsNullOrWhiteSpace(hash)
+            && hash.StartsWith("AQAAAA", StringComparison.Ordinal);
     }
 }
