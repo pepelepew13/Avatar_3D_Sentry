@@ -28,6 +28,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "models"      => _opt.Local.ModelsPath,
                 "logos"       => _opt.Local.LogosPath,
                 "backgrounds" => _opt.Local.BackgroundsPath,
+                "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
                 _             => _opt.Local.Root
             };
@@ -73,6 +74,12 @@ namespace Avatar_3D_Sentry.Services.Storage
                 var rel = Path.GetRelativePath(bRoot, fullPath).Replace('\\','/');
                 return $"/backgrounds/{rel}";
             }
+            else if (alias.Equals("videos", StringComparison.OrdinalIgnoreCase))
+            {
+                var vRoot = Path.Combine(_env.ContentRootPath, "wwwroot", "videos");
+                var rel = Path.GetRelativePath(vRoot, fullPath).Replace('\\','/');
+                return $"/videos/{rel}";
+            }
 
             // fallback: /resources
             var resRoot = Path.Combine(_env.ContentRootPath, "Resources");
@@ -93,6 +100,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                     "models"      => $"/models/{TrimFirst(path, 1)}",
                     "logos"       => $"/logos/{TrimFirst(path, 1)}",
                     "backgrounds" => $"/backgrounds/{TrimFirst(path, 1)}",
+                    "videos"      => $"/videos/{TrimFirst(path, 1)}",
                     _             => $"/resources/{path}"
                 };
             }
@@ -111,6 +119,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "models"      => _opt.Local.ModelsPath,
                 "logos"       => _opt.Local.LogosPath,
                 "backgrounds" => _opt.Local.BackgroundsPath,
+                "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
                 _             => _opt.Local.Root
             };

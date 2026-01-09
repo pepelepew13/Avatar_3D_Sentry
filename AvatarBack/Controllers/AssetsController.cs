@@ -121,6 +121,28 @@ public class AssetsController : ControllerBase
     }
 
     // =============================
+    // POST /api/assets/video/{company}/{site}
+    // =============================
+    [HttpPost("video/{company}/{site}")]
+    [Authorize(Policy = "CanEditAvatar")]
+    [RequestSizeLimit(200_000_000)] // 200MB (video)
+    public async Task<ActionResult<AssetUploadResponse>> UploadVideo(
+        [FromRoute] string company,
+        [FromRoute] string site,
+        [FromForm, Required] IFormFile file,
+        CancellationToken ct)
+    {
+        if (file.Length <= 0) return BadRequest("Archivo vacío.");
+        var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
+        var blobPath = BuildBlobPath("videos", company, site, fileName, "videos");
+
+        await using var stream = file.OpenReadStream();
+        var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
+
+        return Ok(new AssetUploadResponse(blobPath, url, file.ContentType, file.Length));
+    }
+
+    // =============================
     // GET /api/assets/url?path=logos/x/y/file.png&ttlSeconds=600
     // =============================
     [HttpGet("url")]

@@ -99,6 +99,7 @@ namespace Avatar_3D_Sentry.Services.Storage
             "models"      => _opt.Containers.Models,
             "logos"       => _opt.Containers.Logos,
             "backgrounds" => _opt.Containers.Backgrounds,
+            "videos"      => _opt.Containers.Videos,
             "audio"       => _opt.Containers.Audio,
             _             => alias
         };

@@ -147,6 +147,7 @@ builder.Services.AddSingleton<IAssetStorage>(sp =>
             Models = az.ContainerNamePublic,
             Logos = az.ContainerNamePublic,
             Backgrounds = az.ContainerNamePublic,
+            Videos = az.ContainerNameVideos,
             Audio = az.ContainerNameTts
         }
         // SasExpiryMinutes / AudioRetentionDays / Local quedan por default
