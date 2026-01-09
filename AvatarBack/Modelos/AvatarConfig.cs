@@ -10,6 +10,8 @@ public class AvatarConfig
 
     public int Id { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     public required string Empresa
     {
         get => _empresa;
