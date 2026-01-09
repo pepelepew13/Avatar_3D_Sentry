@@ -18,11 +18,13 @@ public class AvatarContext : DbContext
 
         modelBuilder.Entity<AvatarConfig>(b =>
         {
+            b.ToTable("AvatarConfig");
             b.HasIndex(a => new { a.NormalizedEmpresa, a.NormalizedSede }).IsUnique(false);
         });
 
         modelBuilder.Entity<ApplicationUser>(b =>
         {
+            b.ToTable("ApplicationUser");
             b.HasIndex(u => u.Email).IsUnique();
         });
 
