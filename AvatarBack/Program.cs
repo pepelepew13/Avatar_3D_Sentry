@@ -45,16 +45,31 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.Configure<InternalApiOptions>(builder.Configuration.GetSection("InternalApi"));
 builder.Services.Configure<PublicApiOptions>(builder.Configuration.GetSection(PublicApiOptions.SectionName));
 
+var internalApiOptions = builder.Configuration.GetSection(InternalApiOptions.SectionName).Get<InternalApiOptions>()
+    ?? new InternalApiOptions();
+var useInternalApi = !string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl);
+
 // ==================================================================
 // 3) BASE DE DATOS
 // ==================================================================
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection (debe venir desde .env o appsettings).");
+if (!useInternalApi)
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString))
+        throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection (debe venir desde .env o appsettings).");
 
-builder.Services.AddDbContext<AvatarContext>(options =>
-    options.UseSqlServer(connectionString));
-builder.Services.AddScoped<IAvatarDataStore, EfAvatarDataStore>();
+    builder.Services.AddDbContext<AvatarContext>(options =>
+        options.UseSqlServer(connectionString));
+    builder.Services.AddScoped<IAvatarDataStore, EfAvatarDataStore>();
+}
+else
+{
+    builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
+    {
+        client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
+    });
+    builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
+}
 
 // ==================================================================
 // 4) JWT AUTH
@@ -100,6 +115,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<IAuthorizationHandler, CompanyAccessHandler>();
 builder.Services.AddScoped<ICompanyAccessService, CompanyAccessService>();
+builder.Services.AddSingleton<PhraseGenerator>();
 
 builder.Services.AddSwaggerGen(c =>
 {
