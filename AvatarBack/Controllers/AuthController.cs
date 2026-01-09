@@ -85,6 +85,86 @@ public class AuthController : ControllerBase
         return CreatedAtAction(nameof(GetMe), new { }, null);
     }
 
+    // ⬇️ Solo SUPERADMIN lista usuarios
+    [Authorize(Roles = "SuperAdmin")]
+    [HttpGet("users")]
+    public async Task<ActionResult<UserListResponse>> ListUsers([FromQuery] int skip = 0, [FromQuery] int take = 10, [FromQuery] string? q = null, [FromQuery] string? role = null, CancellationToken ct = default)
+    {
+        if (skip < 0) skip = 0;
+        if (take <= 0) take = 10;
+        if (take > 100) take = 100;
+
+        var (total, items) = await _dataStore.ListUsersAsync(skip, take, q, role, ct);
+        var response = new UserListResponse
+        {
+            Total = total,
+            Items = items.Select(u => new UserItem
+            {
+                Id = u.Id.ToString(),
+                Email = u.Email,
+                Role = u.Role,
+                Empresa = u.Empresa,
+                Sede = u.Sede
+            }).ToList()
+        };
+
+        return Ok(response);
+    }
+
+    // ⬇️ Solo SUPERADMIN edita usuarios
+    [Authorize(Roles = "SuperAdmin")]
+    [HttpPut("users/{id:int}")]
+    public async Task<ActionResult> UpdateUser([FromRoute] int id, [FromBody] UpdateUserRequest req, CancellationToken ct)
+    {
+        var user = await _dataStore.FindUserByIdAsync(id, ct);
+        if (user is null) return NotFound();
+
+        if (!string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(req.Role, "User", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Role debe ser Admin o User.");
+        }
+
+        if (string.Equals(req.Role, "User", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(req.Empresa))
+        {
+            return BadRequest("Empresa es requerida para usuarios.");
+        }
+
+        user.Role = req.Role.Trim();
+        if (string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            user.Empresa = null;
+            user.Sede = null;
+        }
+        else
+        {
+            user.Empresa = req.Empresa?.Trim();
+            user.Sede = req.Sede?.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(req.NewPassword))
+        {
+            if (req.NewPassword.Length < 6) return BadRequest("Password debe tener al menos 6 caracteres.");
+            user.PasswordHash = _hasher.HashPassword(user, req.NewPassword);
+        }
+
+        await _dataStore.UpdateUserAsync(user, ct);
+        return NoContent();
+    }
+
+    // ⬇️ Solo SUPERADMIN borra usuarios
+    [Authorize(Roles = "SuperAdmin")]
+    [HttpDelete("users/{id:int}")]
+    public async Task<ActionResult> DeleteUser([FromRoute] int id, CancellationToken ct)
+    {
+        var user = await _dataStore.FindUserByIdAsync(id, ct);
+        if (user is null) return NotFound();
+
+        await _dataStore.DeleteUserAsync(user, ct);
+        return NoContent();
+    }
+
     [Authorize]
     [HttpGet("me")]
     public ActionResult<object> GetMe()

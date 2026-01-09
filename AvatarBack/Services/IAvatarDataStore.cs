@@ -6,6 +6,8 @@ namespace Avatar_3D_Sentry.Services;
 public interface IAvatarDataStore
 {
     Task<ApplicationUser?> FindUserByEmailAsync(string email, CancellationToken ct);
+    Task<ApplicationUser?> FindUserByIdAsync(int id, CancellationToken ct);
+    Task<(int total, List<ApplicationUser> items)> ListUsersAsync(int skip, int take, string? q, string? role, CancellationToken ct);
     Task<bool> UserEmailExistsAsync(string email, CancellationToken ct);
     Task<ApplicationUser> CreateUserAsync(ApplicationUser user, CancellationToken ct);
     Task UpdateUserAsync(ApplicationUser user, CancellationToken ct);
