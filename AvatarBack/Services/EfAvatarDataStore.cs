@@ -19,6 +19,39 @@ public class EfAvatarDataStore : IAvatarDataStore
         return _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
     }
 
+    public Task<ApplicationUser?> FindUserByIdAsync(int id, CancellationToken ct)
+    {
+        return _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+    }
+
+    public async Task<(int total, List<ApplicationUser> items)> ListUsersAsync(int skip, int take, string? q, string? role, CancellationToken ct)
+    {
+        var query = _db.Users.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var normalizedRole = role.Trim().ToLowerInvariant();
+            query = query.Where(u => u.Role.ToLower() == normalizedRole);
+        }
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var normalizedQ = q.Trim().ToLowerInvariant();
+            query = query.Where(u =>
+                u.Email.ToLower().Contains(normalizedQ) ||
+                (u.Empresa != null && u.Empresa.ToLower().Contains(normalizedQ)) ||
+                (u.Sede != null && u.Sede.ToLower().Contains(normalizedQ)));
+        }
+
+        var total = await query.CountAsync(ct);
+        var items = await query.OrderBy(u => u.Email)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (total, items);
+    }
+
     public Task<bool> UserEmailExistsAsync(string email, CancellationToken ct)
     {
         return _db.Users.AnyAsync(u => u.Email == email, ct);

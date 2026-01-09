@@ -29,3 +29,26 @@ public class CreateUserRequest
     public string? Empresa { get; set; }
     public string? Sede { get; set; }
 }
+
+public class UserItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = "User";
+    public string? Empresa { get; set; }
+    public string? Sede { get; set; }
+}
+
+public class UserListResponse
+{
+    public int Total { get; set; }
+    public List<UserItem> Items { get; set; } = new();
+}
+
+public class UpdateUserRequest
+{
+    [Required] public string Role { get; set; } = "User";
+    public string? Empresa { get; set; }
+    public string? Sede { get; set; }
+    public string? NewPassword { get; set; }
+}

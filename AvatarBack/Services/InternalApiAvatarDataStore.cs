@@ -20,6 +20,16 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
         throw new NotImplementedException("TODO: reemplazar EF Core por llamadas a la API interna.");
     }
 
+    public Task<ApplicationUser?> FindUserByIdAsync(int id, CancellationToken ct)
+    {
+        throw new NotImplementedException("TODO: reemplazar EF Core por llamadas a la API interna.");
+    }
+
+    public Task<(int total, List<ApplicationUser> items)> ListUsersAsync(int skip, int take, string? q, string? role, CancellationToken ct)
+    {
+        throw new NotImplementedException("TODO: reemplazar EF Core por llamadas a la API interna.");
+    }
+
     public Task<bool> UserEmailExistsAsync(string email, CancellationToken ct)
     {
         throw new NotImplementedException("TODO: reemplazar EF Core por llamadas a la API interna.");
