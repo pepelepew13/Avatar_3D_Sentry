@@ -1,22 +1,32 @@
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Avatar_3D_Sentry.Controllers;
 
 [ApiController]
 [Route("api/avatar")]
+[Authorize(Policy = "CanEditAvatar")]
 public class AvatarEditorController : ControllerBase
 {
     private readonly IAvatarDataStore _dataStore;
     private readonly ILogger<AvatarEditorController> _logger;
     private readonly IAssetStorage _storage;
+    private readonly ICompanyAccessService _companyAccess;
 
-    public AvatarEditorController(IAvatarDataStore dataStore, ILogger<AvatarEditorController> logger, IAssetStorage storage)
+    public AvatarEditorController(
+        IAvatarDataStore dataStore,
+        ILogger<AvatarEditorController> logger,
+        IAssetStorage storage,
+        ICompanyAccessService companyAccess)
     {
-        _dataStore = dataStore; _logger = logger; _storage = storage;
+        _dataStore = dataStore;
+        _logger = logger;
+        _storage = storage;
+        _companyAccess = companyAccess;
     }
 
     // ===================== GET CONFIG (RUTA LARGA) =====================
@@ -25,6 +35,9 @@ public class AvatarEditorController : ControllerBase
     [ProducesResponseType(typeof(AvatarConfigDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<AvatarConfigDto>> GetConfigByPath(string empresa, string sede, CancellationToken ct)
     {
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
+
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
@@ -38,17 +51,21 @@ public class AvatarEditorController : ControllerBase
         if (string.IsNullOrWhiteSpace(empresa) || string.IsNullOrWhiteSpace(sede))
             return BadRequest("Debe enviar empresa y sede.");
 
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
+
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
     // ===================== SUBIR LOGO =====================
     [HttpPost("{empresa}/{sede}/logo")]
-    [Authorize(Policy = "CanEditAvatar")]
     public async Task<ActionResult<AvatarConfigDto>> UploadLogo(
         string empresa, string sede, IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
         var blobPath = BuildBlobPath("logos", empresa, sede, file.FileName, "branding");
@@ -63,11 +80,12 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR FONDO =====================
     [HttpPost("{empresa}/{sede}/background")]
-    [Authorize(Policy = "CanEditAvatar")]
     public async Task<ActionResult<AvatarConfigDto>> UploadBackground(
         string empresa, string sede, IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
         var blobPath = BuildBlobPath("backgrounds", empresa, sede, file.FileName, "branding");
@@ -82,11 +100,12 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR MODELO/VESTIMENTA =====================
     [HttpPost("{empresa}/{sede}/model")]
-    [Authorize(Policy = "CanEditAvatar")]
     public async Task<ActionResult<AvatarConfigDto>> UploadModel(
         string empresa, string sede, IFormFile file, CancellationToken ct)
     {
         if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
         var blobPath = BuildBlobPath("models", empresa, sede, file.FileName, "models");

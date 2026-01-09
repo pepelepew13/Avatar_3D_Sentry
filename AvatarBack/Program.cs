@@ -1,10 +1,12 @@
 using System.Text;
 using Avatar_3D_Sentry.Data;
+using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Settings;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -80,13 +82,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // (Opcional, pero recomendado si tienes [Authorize])
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CanEditAvatar", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole("Admin", "User");
+        policy.AddRequirements(new CompanyAccessRequirement());
+    });
+});
 
 // ==================================================================
 // 5) SERVICIOS (Controllers, Swagger, TTS, Storage)
 // ==================================================================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSingleton<IAuthorizationHandler, CompanyAccessHandler>();
+builder.Services.AddScoped<ICompanyAccessService, CompanyAccessService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
