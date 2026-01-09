@@ -1,39 +1,25 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
-namespace Avatar_3D_Sentry.Modelos;
-
-public class SolicitudAnuncio
+namespace Avatar_3D_Sentry.Modelos
 {
-    private const string Patron = @"^[A-Za-zÀ-ÿ0-9\s]{1,50}$";
+    public class SolicitudAnuncio
+    {
+        [Required]
+        public string Empresa { get; set; } = string.Empty;
+        
+        [Required]
+        public string Sede { get; set; } = string.Empty;
 
-    [JsonPropertyName("empresa")]
-    [Required]
-    [StringLength(50, MinimumLength = 1)]
-    [RegularExpression(Patron)]
-    public string Empresa { get; set; } = string.Empty;
+        public string Modulo { get; set; } = string.Empty;
+        public string Turno { get; set; } = string.Empty;
+        
+        // Texto libre opcional si no se usan plantillas
+        public string Texto { get; set; } = string.Empty; 
+        
+        public string Nombre { get; set; } = string.Empty;
 
-    [JsonPropertyName("sede")]
-    [Required]
-    [StringLength(50, MinimumLength = 1)]
-    [RegularExpression(Patron)]
-    public string Sede { get; set; } = string.Empty;
-
-    [JsonPropertyName("modulo")]
-    [Required]
-    [StringLength(50, MinimumLength = 1)]
-    [RegularExpression(Patron)]
-    public string Modulo { get; set; } = string.Empty;
-
-    [JsonPropertyName("turno")]
-    [Required]
-    [StringLength(50, MinimumLength = 1)]
-    [RegularExpression(Patron)]
-    public string Turno { get; set; } = string.Empty;
-
-    [JsonPropertyName("nombre")]
-    [Required]
-    [StringLength(50, MinimumLength = 1)]
-    [RegularExpression(Patron)]
-    public string Nombre { get; set; } = string.Empty;
+        // NUEVO: Campo para soportar el requerimiento multilenguaje
+        // Valores esperados: "es", "en", "pt"
+        public string Idioma { get; set; } = "es";
+    }
 }

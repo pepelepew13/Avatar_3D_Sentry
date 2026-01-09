@@ -1,41 +1,50 @@
-using AvatarAdmin.Components;    
-using AvatarAdmin.Services;        
+using AvatarAdmin.Components;
+using AvatarAdmin.Services;
 using DotNetEnv;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// (Opcional) Cargar .env local para Admin
-try
+// ==================================================================
+// 1) CARGA DE .env EXTERNO (igual que el backend)
+// ==================================================================
+var envPath =
+    Environment.GetEnvironmentVariable("SENTRY_ENV_PATH")
+    ?? @"C:\Users\USUARIO\OneDrive\Escritorio\Sentry\Credenciales\.env";
+
+if (System.IO.File.Exists(envPath))
 {
-    var externalEnv = @"C:\Users\USUARIO\Documents\GitHub\.env";
-    if (System.IO.File.Exists(externalEnv)) Env.Load(externalEnv);
+    Env.Load(envPath);
+    builder.Configuration.AddEnvironmentVariables();
+    Console.WriteLine($"✅ Admin: .env cargado desde: {envPath}");
 }
-catch { /* ignore */ }
+else
+{
+    Console.WriteLine($"⚠️ Admin: no se encontró .env en: {envPath}");
+}
 
-// Base URL del backend
-var apiBase = Environment.GetEnvironmentVariable("AVATARBACK_BASEURL")
-              ?? builder.Configuration["Api:BaseUrl"]
-              ?? "http://localhost:5216";
+// ==================================================================
+// 2) BASE URL DE LA API (env > appsettings > default)
+// ==================================================================
+var apiBase =
+    builder.Configuration["Api:BaseUrl"]
+    ?? builder.Configuration["AVATARBACK_BASEURL"]
+    ?? "http://localhost:5216";
 
-// Blazor Server (.NET 8)
 builder.Services
     .AddRazorComponents()
-    // ✅ activar errores detallados del circuito para Interactive Server
     .AddInteractiveServerComponents(options =>
     {
         options.DetailedErrors = true;
     });
 
-// Estado de autenticación (JWT, claims)
+// Estado / auth
 builder.Services.AddScoped<AuthState>();
-
-// Persistencia de sesión (localStorage) y handler de Bearer + 401
 builder.Services.AddScoped<AuthPersistence>();
 builder.Services.AddScoped<BearerHandler>();
 
-// HttpClient tipado para la API del backend con handler (auto-Bearer + manejo 401)
+// HttpClient tipado al backend
 builder.Services.AddHttpClient<AvatarApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBase);
@@ -46,7 +55,6 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // ✅ ver detalles de excepciones en desarrollo (además del DetailedErrors del circuito)
     app.UseDeveloperExceptionPage();
 }
 else
