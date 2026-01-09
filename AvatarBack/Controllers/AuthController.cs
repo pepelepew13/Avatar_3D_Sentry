@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Models;
+using Avatar_3D_Sentry.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
