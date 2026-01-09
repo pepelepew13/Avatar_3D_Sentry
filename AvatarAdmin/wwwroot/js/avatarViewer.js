@@ -161,7 +161,7 @@ export async function createViewer(canvas, options) {
     setCameraPreset: (p) => setPreset(state, p),
     toggleGround: () => { state.ground.visible = !state.ground.visible; },
     toggleLight:  () => { state.keyLight.intensity = state.keyLight.intensity > 0.05 ? 0.0 : 1.15; },
-    speak: (audioUrl, visemas) => speak(state, audioUrl, visemas),
+    speak: (audioUrl, visemas) => playSpeech(state, audioUrl, visemas),
     screenshot: (scale=1) => capture(renderer, scale),
     dispose: () => disposeViewer(state)
   };
@@ -292,7 +292,7 @@ function setPreset(state, preset){
 }
 
 // ======= Hablar =======
-async function speak(state, audioUrl, visemas){
+async function playSpeech(state, audioUrl, visemas){
   stopMouth(state);
 
   const audio = state.audioEl ?? new Audio();

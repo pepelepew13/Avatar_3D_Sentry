@@ -100,6 +100,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<IAuthorizationHandler, CompanyAccessHandler>();
 builder.Services.AddScoped<ICompanyAccessService, CompanyAccessService>();
+builder.Services.AddSingleton<PhraseGenerator>();
 
 builder.Services.AddSwaggerGen(c =>
 {
