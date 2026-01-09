@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -95,6 +97,48 @@ namespace Avatar_3D_Sentry.Services.Storage
                 };
             }
             return path;
+        }
+
+        public Task<IReadOnlyList<string>> ListAsync(string pathPrefix, string[]? allowedExtensions, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(pathPrefix))
+                throw new ArgumentException("pathPrefix inválido. Debe incluir el alias de contenedor.");
+
+            var (alias, relativePrefix) = Split(pathPrefix);
+
+            var targetDir = alias.ToLowerInvariant() switch
+            {
+                "models"      => _opt.Local.ModelsPath,
+                "logos"       => _opt.Local.LogosPath,
+                "backgrounds" => _opt.Local.BackgroundsPath,
+                "audio"       => _opt.Local.AudioPath,
+                _             => _opt.Local.Root
+            };
+
+            var root = Path.IsPathRooted(targetDir)
+                ? targetDir
+                : Path.Combine(_env.ContentRootPath, targetDir);
+
+            var searchRoot = string.IsNullOrWhiteSpace(relativePrefix)
+                ? root
+                : Path.Combine(root, relativePrefix);
+
+            if (!Directory.Exists(searchRoot))
+                return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+
+            var files = Directory.EnumerateFiles(searchRoot, "*.*", SearchOption.AllDirectories)
+                .Where(path => allowedExtensions == null ||
+                               allowedExtensions.Length == 0 ||
+                               allowedExtensions.Any(ext => Path.GetExtension(path).Equals(ext, StringComparison.OrdinalIgnoreCase)))
+                .Select(path =>
+                {
+                    var rel = Path.GetRelativePath(root, path).Replace('\\', '/');
+                    return $"{alias}/{rel}";
+                })
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyList<string>>(files);
         }
 
         private static (string alias, string relative) Split(string path)
