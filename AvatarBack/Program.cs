@@ -43,6 +43,7 @@ builder.Services.Configure<AzureSpeechOptions>(builder.Configuration.GetSection(
 builder.Services.Configure<AzureStorageOptions>(builder.Configuration.GetSection("AzureStorage"));
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<InternalApiOptions>(builder.Configuration.GetSection("InternalApi"));
+builder.Services.Configure<PublicApiOptions>(builder.Configuration.GetSection(PublicApiOptions.SectionName));
 
 // ==================================================================
 // 3) BASE DE DATOS

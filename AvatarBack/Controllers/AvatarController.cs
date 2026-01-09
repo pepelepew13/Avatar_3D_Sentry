@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +14,7 @@ namespace Avatar_3D_Sentry.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AvatarController : ControllerBase
 {
     private readonly ILogger<AvatarController> _logger;
@@ -35,6 +38,8 @@ public class AvatarController : ControllerBase
     /// Anuncia un turno y devuelve audio + visemas ARKit.
     /// </summary>
     [HttpPost("announce")]
+    [AllowAnonymous]
+    [RequirePublicApiKey]
     [ProducesResponseType(typeof(AnnouncementResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> AnnounceAsync(
         [FromBody] SolicitudAnuncio request,

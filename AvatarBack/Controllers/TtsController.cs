@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ namespace Avatar_3D_Sentry.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TtsController : ControllerBase
     {
         private readonly PhraseGenerator _phrases;
@@ -53,7 +55,8 @@ namespace Avatar_3D_Sentry.Controllers
 
         // POST /api/tts/announce
         [HttpPost("announce")]
-        [AllowAnonymous] // cámbialo a [Authorize] si tu integración lo requiere
+        [AllowAnonymous]
+        [RequirePublicApiKey]
         public async Task<ActionResult<TtsResponse>> Announce(
             [FromBody] AnuncioRequest req,
             CancellationToken ct)
