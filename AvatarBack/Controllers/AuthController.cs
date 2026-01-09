@@ -78,7 +78,8 @@ public class AuthController : ControllerBase
             Email = req.Email.Trim().ToLowerInvariant(),
             Role  = req.Role.Trim(),
             Empresa = string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase) ? null : req.Empresa?.Trim(),
-            Sede    = string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase) ? null : req.Sede?.Trim()
+            Sede    = string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase) ? null : req.Sede?.Trim(),
+            IsActive = true
         };
         user.PasswordHash = _hasher.HashPassword(user, req.Password);
         await _dataStore.CreateUserAsync(user, ct);
@@ -104,7 +105,8 @@ public class AuthController : ControllerBase
                 Email = u.Email,
                 Role = u.Role,
                 Empresa = u.Empresa,
-                Sede = u.Sede
+                Sede = u.Sede,
+                IsActive = u.IsActive
             }).ToList()
         };
 

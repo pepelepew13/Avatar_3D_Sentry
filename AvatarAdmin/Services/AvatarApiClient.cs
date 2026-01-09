@@ -242,6 +242,7 @@ public sealed class AvatarApiClient
         public string Role { get; set; } = "User";
         public string? Empresa { get; set; }
         public string? Sede { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public sealed class UserListResponse

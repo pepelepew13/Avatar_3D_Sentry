@@ -16,17 +16,17 @@ public class EfAvatarDataStore : IAvatarDataStore
 
     public Task<ApplicationUser?> FindUserByEmailAsync(string email, CancellationToken ct)
     {
-        return _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+        return _db.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive, ct);
     }
 
     public Task<ApplicationUser?> FindUserByIdAsync(int id, CancellationToken ct)
     {
-        return _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+        return _db.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive, ct);
     }
 
     public async Task<(int total, List<ApplicationUser> items)> ListUsersAsync(int skip, int take, string? q, string? role, CancellationToken ct)
     {
-        var query = _db.Users.AsQueryable();
+        var query = _db.Users.Where(u => u.IsActive).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(role))
         {
@@ -89,7 +89,7 @@ public class EfAvatarDataStore : IAvatarDataStore
         var normalizedSede = sede.Trim().ToLowerInvariant();
 
         return _db.AvatarConfigs.FirstOrDefaultAsync(a =>
-            a.NormalizedEmpresa == normalizedEmpresa && a.NormalizedSede == normalizedSede, ct);
+            a.NormalizedEmpresa == normalizedEmpresa && a.NormalizedSede == normalizedSede && a.IsActive, ct);
     }
 
     public async Task<AvatarConfig> CreateAvatarConfigAsync(AvatarConfig config, CancellationToken ct)

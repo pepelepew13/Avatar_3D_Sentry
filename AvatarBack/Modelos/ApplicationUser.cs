@@ -22,4 +22,6 @@ public class ApplicationUser
 
     [MaxLength(64)]
     public string? Sede { get; set; }      // null => todas las sedes de Empresa
+
+    public bool IsActive { get; set; } = true;
 }
