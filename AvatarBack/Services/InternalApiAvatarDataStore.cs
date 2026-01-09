@@ -19,6 +19,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
     {
         PropertyNameCaseInsensitive = true
     };
+    private readonly Uri _baseUri;
     private readonly SemaphoreSlim _authLock = new(1, 1);
     private string? _token;
     private DateTimeOffset _tokenExpiresAtUtc = DateTimeOffset.MinValue;
@@ -27,6 +28,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
     {
         _options = options.Value;
         _httpClient = httpClient;
+        _baseUri = BuildBaseUri(_options.BaseUrl);
     }
 
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email, CancellationToken ct)
@@ -135,7 +137,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string uri, CancellationToken ct, object? body = null)
     {
-        var request = new HttpRequestMessage(method, uri);
+        var request = new HttpRequestMessage(method, BuildAbsoluteUri(uri));
         if (body is not null)
         {
             request.Content = JsonContent.Create(body);
@@ -178,7 +180,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
             }
 
             var payload = new AuthRequest(_options.AuthUser, _options.AuthPassword);
-            var response = await _httpClient.PostAsJsonAsync("api/Token/Authentication", payload, ct);
+            var response = await _httpClient.PostAsJsonAsync(BuildAbsoluteUri("api/Token/Authentication"), payload, ct);
             response.EnsureSuccessStatusCode();
 
             var auth = await response.Content.ReadFromJsonAsync<AuthResponse>(_jsonOptions, ct);
@@ -230,4 +232,30 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
     private sealed record AuthResponse(string Token);
 
     private sealed record UserListResponse(int Page, int PageSize, int Total, List<ApplicationUser>? Items);
+
+    private Uri BuildAbsoluteUri(string relativeOrAbsolute)
+    {
+        if (Uri.TryCreate(relativeOrAbsolute, UriKind.Absolute, out var absolute))
+        {
+            return absolute;
+        }
+
+        return new Uri(_baseUri, relativeOrAbsolute);
+    }
+
+    private static Uri BuildBaseUri(string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException("Falta InternalApi:BaseUrl para consumir la API interna.");
+        }
+
+        var normalized = baseUrl.Trim().TrimEnd('/') + "/";
+        if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"InternalApi:BaseUrl inválido: {baseUrl}");
+        }
+
+        return uri;
+    }
 }
