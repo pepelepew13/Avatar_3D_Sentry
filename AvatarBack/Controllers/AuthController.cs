@@ -1,13 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Models;
+using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,20 +16,20 @@ namespace Avatar_3D_Sentry.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly AvatarContext _db;
+    private readonly IAvatarDataStore _dataStore;
     private readonly PasswordHasher<ApplicationUser> _hasher = new();
     private readonly JwtSettings _jwt;
 
-    public AuthController(AvatarContext db, IOptions<JwtSettings> jwt)
+    public AuthController(IAvatarDataStore dataStore, IOptions<JwtSettings> jwt)
     {
-        _db = db;
+        _dataStore = dataStore;
         _jwt = jwt.Value;
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
+        var user = await _dataStore.FindUserByEmailAsync(req.Email, ct);
         if (user is null) return Unauthorized("Credenciales inválidas.");
 
         if (!IsAspNetIdentityHash(user.PasswordHash))
@@ -41,9 +40,7 @@ public class AuthController : ControllerBase
             }
 
             var hashedPassword = _hasher.HashPassword(user, req.Password);
-            await _db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE [ApplicationUser] SET [PasswordHash] = {hashedPassword} WHERE [Id] = {user.Id}",
-                ct);
+            await _dataStore.UpdateUserPasswordHashAsync(user.Id, hashedPassword, ct);
         }
         else
         {
@@ -73,7 +70,7 @@ public class AuthController : ControllerBase
             return BadRequest("Role debe ser Admin o User.");
         }
 
-        if (await _db.Users.AnyAsync(u => u.Email == req.Email, ct))
+        if (await _dataStore.UserEmailExistsAsync(req.Email, ct))
             return Conflict("Ya existe un usuario con ese email.");
 
         var user = new ApplicationUser
@@ -84,8 +81,7 @@ public class AuthController : ControllerBase
             Sede    = string.Equals(req.Role, "Admin", StringComparison.OrdinalIgnoreCase) ? null : req.Sede?.Trim()
         };
         user.PasswordHash = _hasher.HashPassword(user, req.Password);
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync(ct);
+        await _dataStore.CreateUserAsync(user, ct);
         return CreatedAtAction(nameof(GetMe), new { }, null);
     }
 

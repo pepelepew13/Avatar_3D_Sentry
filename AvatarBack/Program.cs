@@ -51,6 +51,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.Services.AddDbContext<AvatarContext>(options =>
     options.UseSqlServer(connectionString));
+builder.Services.AddScoped<IAvatarDataStore, EfAvatarDataStore>();
 
 // ==================================================================
 // 4) JWT AUTH

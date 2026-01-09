@@ -1,7 +1,6 @@
-using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -10,12 +9,12 @@ namespace Avatar_3D_Sentry.Controllers;
 [Route("api/avatar")]
 public class AvatarConfigController : ControllerBase
 {
-    private readonly AvatarContext _db;
+    private readonly IAvatarDataStore _dataStore;
     private readonly ILogger<AvatarConfigController> _logger;
 
-    public AvatarConfigController(AvatarContext db, ILogger<AvatarConfigController> logger)
+    public AvatarConfigController(IAvatarDataStore dataStore, ILogger<AvatarConfigController> logger)
     {
-        _db = db; _logger = logger;
+        _dataStore = dataStore; _logger = logger;
     }
 
     // GET /api/avatar/{empresa}/{sede}
@@ -56,7 +55,7 @@ public class AvatarConfigController : ControllerBase
         if (!string.IsNullOrWhiteSpace(update.ColorCabello))
             cfg.ColorCabello = update.ColorCabello!.Trim().ToLowerInvariant();
 
-        await _db.SaveChangesAsync(ct);
+        await _dataStore.UpdateAvatarConfigAsync(cfg, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
@@ -65,8 +64,7 @@ public class AvatarConfigController : ControllerBase
     {
         var ne = empresa.Trim().ToLowerInvariant();
         var ns = sede.Trim().ToLowerInvariant();
-        return _db.AvatarConfigs.FirstOrDefaultAsync(a =>
-            a.NormalizedEmpresa == ne && a.NormalizedSede == ns, ct);
+        return _dataStore.FindAvatarConfigAsync(ne, ns, ct);
     }
 
     private async Task<AvatarConfig> CreateConfigAsync(string empresa, string sede, CancellationToken ct)
@@ -82,8 +80,6 @@ public class AvatarConfigController : ControllerBase
             Fondo        = "oficina"
         };
         cfg.Normalize();
-        _db.AvatarConfigs.Add(cfg);
-        await _db.SaveChangesAsync(ct);
-        return cfg;
+        return await _dataStore.CreateAvatarConfigAsync(cfg, ct);
     }
 }
