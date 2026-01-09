@@ -3,6 +3,9 @@ using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Settings;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
+using AvatarSentry.Application.Config;
+using AvatarSentry.Application.InternalApi;
+using AvatarSentry.Application.InternalApi.Clients;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +44,7 @@ builder.Services.Configure<AzureSpeechOptions>(builder.Configuration.GetSection(
 builder.Services.Configure<AzureStorageOptions>(builder.Configuration.GetSection("AzureStorage"));
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<InternalApiOptions>(builder.Configuration.GetSection("InternalApi"));
+builder.Services.Configure<InternalApiSettings>(builder.Configuration.GetSection("InternalApi"));
 builder.Services.Configure<PublicApiOptions>(builder.Configuration.GetSection(PublicApiOptions.SectionName));
 
 var internalApiOptions = builder.Configuration.GetSection(InternalApiOptions.SectionName).Get<InternalApiOptions>()
@@ -57,6 +61,12 @@ builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
     client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
 });
 builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
+builder.Services.AddHttpClient<IInternalApiTokenService, InternalApiTokenService>();
+builder.Services.AddTransient<InternalApiAuthHandler>();
+builder.Services.AddHttpClient<IInternalUserClient, InternalUserClient>()
+    .AddHttpMessageHandler<InternalApiAuthHandler>();
+builder.Services.AddHttpClient<IInternalAvatarConfigClient, InternalAvatarConfigClient>()
+    .AddHttpMessageHandler<InternalApiAuthHandler>();
 
 // ==================================================================
 // 4) JWT AUTH
