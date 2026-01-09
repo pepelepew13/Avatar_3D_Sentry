@@ -1,5 +1,4 @@
 using System.Text;
-using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Settings;
 using Avatar_3D_Sentry.Services;
@@ -7,7 +6,6 @@ using Avatar_3D_Sentry.Services.Storage;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -47,29 +45,18 @@ builder.Services.Configure<PublicApiOptions>(builder.Configuration.GetSection(Pu
 
 var internalApiOptions = builder.Configuration.GetSection(InternalApiOptions.SectionName).Get<InternalApiOptions>()
     ?? new InternalApiOptions();
-var useInternalApi = !string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl);
 
 // ==================================================================
-// 3) BASE DE DATOS
+// 3) CONSUMO API INTERNA (OBLIGATORIO)
 // ==================================================================
-if (!useInternalApi)
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString))
-        throw new InvalidOperationException("Falta ConnectionStrings:DefaultConnection (debe venir desde .env o appsettings).");
+if (string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl))
+    throw new InvalidOperationException("Falta InternalApi:BaseUrl (debe venir desde .env o appsettings).");
 
-    builder.Services.AddDbContext<AvatarContext>(options =>
-        options.UseSqlServer(connectionString));
-    builder.Services.AddScoped<IAvatarDataStore, EfAvatarDataStore>();
-}
-else
+builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
 {
-    builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
-    {
-        client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
-    });
-    builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
-}
+    client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
 
 // ==================================================================
 // 4) JWT AUTH
