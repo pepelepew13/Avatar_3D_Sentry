@@ -1,7 +1,8 @@
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 namespace Avatar_3D_Sentry.Controllers;
 
 [Authorize(Policy = "CanEditAvatar")]
@@ -11,16 +12,25 @@ public class AvatarConfigController : ControllerBase
 {
     private readonly IAvatarDataStore _dataStore;
     private readonly ILogger<AvatarConfigController> _logger;
+    private readonly ICompanyAccessService _companyAccess;
 
-    public AvatarConfigController(IAvatarDataStore dataStore, ILogger<AvatarConfigController> logger)
+    public AvatarConfigController(
+        IAvatarDataStore dataStore,
+        ILogger<AvatarConfigController> logger,
+        ICompanyAccessService companyAccess)
     {
-        _dataStore = dataStore; _logger = logger;
+        _dataStore = dataStore;
+        _logger = logger;
+        _companyAccess = companyAccess;
     }
 
     // GET /api/avatar/{empresa}/{sede}
     [HttpGet("{empresa}/{sede}")]
     public async Task<ActionResult<AvatarConfigDto>> Get(string empresa, string sede, CancellationToken ct)
     {
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
+
         var cfg = await FindConfigAsync(empresa, sede, ct)
                   ?? await CreateConfigAsync(empresa, sede, ct);
 
@@ -33,6 +43,9 @@ public class AvatarConfigController : ControllerBase
     public async Task<ActionResult<AvatarConfigDto>> Update(
         string empresa, string sede, [FromBody] AvatarConfigUpdate update, CancellationToken ct)
     {
+        if (!_companyAccess.CanAccess(User, empresa, sede))
+            return Forbid();
+
         var cfg = await FindConfigAsync(empresa, sede, ct)
                   ?? await CreateConfigAsync(empresa, sede, ct);
 
