@@ -39,8 +39,10 @@ public class AuthController : ControllerBase
                 return Unauthorized("Credenciales inválidas.");
             }
 
-            user.PasswordHash = _hasher.HashPassword(user, req.Password);
-            await _db.SaveChangesAsync(ct);
+            var hashedPassword = _hasher.HashPassword(user, req.Password);
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE [ApplicationUser] SET [PasswordHash] = {hashedPassword} WHERE [Id] = {user.Id}",
+                ct);
         }
         else
         {
