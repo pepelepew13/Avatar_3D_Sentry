@@ -1,8 +1,7 @@
-using Avatar_3D_Sentry.Data;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Avatar_3D_Sentry.Controllers;
@@ -11,13 +10,13 @@ namespace Avatar_3D_Sentry.Controllers;
 [Route("api/avatar")]
 public class AvatarEditorController : ControllerBase
 {
-    private readonly AvatarContext _db;
+    private readonly IAvatarDataStore _dataStore;
     private readonly ILogger<AvatarEditorController> _logger;
     private readonly IAssetStorage _storage;
 
-    public AvatarEditorController(AvatarContext db, ILogger<AvatarEditorController> logger, IAssetStorage storage)
+    public AvatarEditorController(IAvatarDataStore dataStore, ILogger<AvatarEditorController> logger, IAssetStorage storage)
     {
-        _db = db; _logger = logger; _storage = storage;
+        _dataStore = dataStore; _logger = logger; _storage = storage;
     }
 
     // ===================== GET CONFIG (RUTA LARGA) =====================
@@ -58,7 +57,7 @@ public class AvatarEditorController : ControllerBase
         await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
 
         cfg.LogoPath = blobPath;
-        await _db.SaveChangesAsync(ct);
+        await _dataStore.UpdateAvatarConfigAsync(cfg, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
@@ -77,7 +76,7 @@ public class AvatarEditorController : ControllerBase
         await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
 
         cfg.Fondo = blobPath;
-        await _db.SaveChangesAsync(ct);
+        await _dataStore.UpdateAvatarConfigAsync(cfg, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
@@ -99,7 +98,7 @@ public class AvatarEditorController : ControllerBase
         await _storage.UploadAsync(ms, blobPath, contentType, ct);
 
         cfg.Vestimenta = blobPath;
-        await _db.SaveChangesAsync(ct);
+        await _dataStore.UpdateAvatarConfigAsync(cfg, ct);
         return Ok(AvatarConfigDto.FromEntity(cfg));
     }
 
@@ -109,16 +108,13 @@ public class AvatarEditorController : ControllerBase
         var emp = (empresa ?? string.Empty).Trim();
         var sd = (sede ?? string.Empty).Trim();
 
-        var cfg = await _db.AvatarConfigs
-            .FirstOrDefaultAsync(a => a.NormalizedEmpresa == emp.ToLower() &&
-                                      a.NormalizedSede == sd.ToLower(), ct);
+        var cfg = await _dataStore.FindAvatarConfigAsync(emp, sd, ct);
 
         if (cfg is null)
         {
             cfg = new AvatarConfig { Empresa = emp, Sede = sd, Idioma = "es" };
             cfg.Normalize();
-            _db.AvatarConfigs.Add(cfg);
-            await _db.SaveChangesAsync(ct);
+            await _dataStore.CreateAvatarConfigAsync(cfg, ct);
         }
         return cfg;
     }
