@@ -30,16 +30,18 @@ variables de entorno antes de ejecutar la aplicación. No guardes las llaves en
 el repositorio.
 
 ```bash
-export SPEECH_KEY="<tu_speech_key>"
-export SPEECH_REGION="eastus2"                    # o usa SPEECH_ENDPOINT si prefieres
-export SPEECH_ENDPOINT="https://<tu_endpoint>.api.cognitive.microsoft.com/"  # opcional
-export VOICE_NAME="es-CO-SalomeNeural"            # voz por defecto
+export AzureSpeech__SubscriptionKey="<tu_speech_key>"
+export AzureSpeech__Region="eastus2"                    # o usa AzureSpeech__Endpoint si prefieres
+export AzureSpeech__Endpoint="https://<tu_endpoint>.api.cognitive.microsoft.com/"  # opcional
+export AzureSpeech__DefaultLanguage="es"               # idioma por defecto
+export AzureSpeech__Voices__es="es-CO-SalomeNeural"     # voz por idioma
+export AzureSpeech__Voices__en="en-US-AvaNeural"
 dotnet run --project AvatarBack/Avatar_3D_Sentry.csproj
 ```
 
 Si usas un archivo `.env` o `appsettings.Development.json` local (ambos están
-excluidos del control de versiones), la sección `Speech` acepta los mismos
-campos (`Key`, `Region`, `Endpoint`, `DefaultVoice`).
+excluidos del control de versiones), configura la sección `AzureSpeech` con las
+mismas claves (`SubscriptionKey`, `Region`, `Endpoint`, `DefaultLanguage`, `Voices`).
 
 ## Autenticación de la API
 
