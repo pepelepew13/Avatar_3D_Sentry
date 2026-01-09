@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Settings;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.Extensions.Logging;
@@ -11,20 +12,12 @@ using Microsoft.Extensions.Options;
 
 namespace Avatar_3D_Sentry.Services
 {
-    public class SpeechOptions
-    {
-        public string? Key { get; set; }
-        public string? Region { get; set; }
-        public string? Endpoint { get; set; }
-        public string DefaultVoice { get; set; } = "es-CO-SalomeNeural";
-    }
-
     public class AzureTtsService : ITtsService
     {
-        private readonly SpeechOptions _opt;
+        private readonly AzureSpeechOptions _opt;
         private readonly ILogger<AzureTtsService> _logger;
 
-        public AzureTtsService(IOptions<SpeechOptions> opt, ILogger<AzureTtsService> logger)
+        public AzureTtsService(IOptions<AzureSpeechOptions> opt, ILogger<AzureTtsService> logger)
         {
             _opt = opt.Value;
             _logger = logger;
@@ -50,23 +43,48 @@ namespace Avatar_3D_Sentry.Services
         /// </summary>
         public IReadOnlyDictionary<string, List<string>> GetAvailableVoices()
         {
-            var voiceName = string.IsNullOrWhiteSpace(_opt.DefaultVoice)
-                ? "es-CO-SalomeNeural"
-                : _opt.DefaultVoice;
+            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-            // Derivamos claves útiles a partir del nombre de la voz (ej. es-CO-SalomeNeural)
-            var localeKey = ExtractLocale(voiceName) ?? "es-CO";
-            var langKey   = localeKey.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                                     .FirstOrDefault()
-                           ?? "es";
-
-            var voices = new List<string> { voiceName };
-
-            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            if (_opt.Voices.Count == 0)
             {
-                [localeKey] = voices,
-                [langKey]   = voices
-            };
+                var fallback = ResolveVoice(string.Empty, _opt.DefaultLanguage);
+                var localeKey = ExtractLocale(fallback) ?? "es-CO";
+                var langKey = localeKey.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                       .FirstOrDefault()
+                              ?? "es";
+
+                dict[localeKey] = new List<string> { fallback };
+                dict[langKey] = new List<string> { fallback };
+                return dict;
+            }
+
+            foreach (var (langKey, voiceName) in _opt.Voices)
+            {
+                if (string.IsNullOrWhiteSpace(voiceName))
+                    continue;
+
+                if (!dict.TryGetValue(langKey, out var voicesForLang))
+                {
+                    voicesForLang = new List<string>();
+                    dict[langKey] = voicesForLang;
+                }
+
+                if (!voicesForLang.Contains(voiceName, StringComparer.OrdinalIgnoreCase))
+                    voicesForLang.Add(voiceName);
+
+                var localeKey = ExtractLocale(voiceName);
+                if (localeKey is null)
+                    continue;
+
+                if (!dict.TryGetValue(localeKey, out var voicesForLocale))
+                {
+                    voicesForLocale = new List<string>();
+                    dict[localeKey] = voicesForLocale;
+                }
+
+                if (!voicesForLocale.Contains(voiceName, StringComparer.OrdinalIgnoreCase))
+                    voicesForLocale.Add(voiceName);
+            }
 
             return dict;
         }
@@ -84,22 +102,24 @@ namespace Avatar_3D_Sentry.Services
             if (string.IsNullOrWhiteSpace(texto))
                 throw new ArgumentException("El texto para TTS no puede ser vacío.", nameof(texto));
 
-            if (string.IsNullOrWhiteSpace(_opt.Key))
-                throw new InvalidOperationException("Falta la llave SPEECH_KEY para Azure Speech.");
+            if (string.IsNullOrWhiteSpace(_opt.SubscriptionKey))
+                throw new InvalidOperationException("Falta AzureSpeech:SubscriptionKey para Azure Speech.");
 
             if (string.IsNullOrWhiteSpace(_opt.Region) && string.IsNullOrWhiteSpace(_opt.Endpoint))
-                throw new InvalidOperationException("Configura SPEECH_REGION o SPEECH_ENDPOINT para Azure Speech.");
+                throw new InvalidOperationException("Configura AzureSpeech:Region o AzureSpeech:Endpoint para Azure Speech.");
             SpeechConfig config;
 
             if (!string.IsNullOrWhiteSpace(_opt.Endpoint))
             {
-                config = SpeechConfig.FromHost(new Uri(_opt.Endpoint!), _opt.Key);
+                config = SpeechConfig.FromHost(new Uri(_opt.Endpoint), _opt.SubscriptionKey);
             }
             else
             {
-                config = SpeechConfig.FromSubscription(_opt.Key!, _opt.Region!);
+                config = SpeechConfig.FromSubscription(_opt.SubscriptionKey, _opt.Region);
             }
-            config.SpeechSynthesisVoiceName = string.IsNullOrWhiteSpace(voz) ? _opt.DefaultVoice : voz;
+
+            var resolvedVoice = ResolveVoice(voz, idioma);
+            config.SpeechSynthesisVoiceName = resolvedVoice;
             config.SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3);
 
             // Habilitar notificaciones de visemas (eventos)
@@ -198,6 +218,35 @@ namespace Avatar_3D_Sentry.Services
             }
 
             return null;
+        }
+
+        private string ResolveVoice(string voz, string idioma)
+        {
+            if (!string.IsNullOrWhiteSpace(voz))
+                return voz;
+
+            if (!string.IsNullOrWhiteSpace(idioma) &&
+                _opt.Voices.TryGetValue(idioma, out var voiceFromLanguage) &&
+                !string.IsNullOrWhiteSpace(voiceFromLanguage))
+            {
+                return voiceFromLanguage;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_opt.DefaultLanguage) &&
+                _opt.Voices.TryGetValue(_opt.DefaultLanguage, out var defaultVoice) &&
+                !string.IsNullOrWhiteSpace(defaultVoice))
+            {
+                return defaultVoice;
+            }
+
+            if (_opt.Voices.Count > 0)
+            {
+                var firstVoice = _opt.Voices.Values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+                if (!string.IsNullOrWhiteSpace(firstVoice))
+                    return firstVoice;
+            }
+
+            return "es-CO-SalomeNeural";
         }
     }
 }
