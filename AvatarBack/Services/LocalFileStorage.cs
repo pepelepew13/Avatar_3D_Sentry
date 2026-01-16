@@ -150,6 +150,35 @@ namespace Avatar_3D_Sentry.Services.Storage
             return Task.FromResult<IReadOnlyList<string>>(files);
         }
 
+        public Task<bool> DeleteAsync(string path, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("path inválido.");
+
+            var (alias, relative) = Split(path);
+
+            var targetDir = alias.ToLowerInvariant() switch
+            {
+                "models"      => _opt.Local.ModelsPath,
+                "logos"       => _opt.Local.LogosPath,
+                "backgrounds" => _opt.Local.BackgroundsPath,
+                "videos"      => _opt.Local.VideosPath,
+                "audio"       => _opt.Local.AudioPath,
+                _             => _opt.Local.Root
+            };
+
+            var root = Path.IsPathRooted(targetDir)
+                ? targetDir
+                : Path.Combine(_env.ContentRootPath, targetDir);
+
+            var fullPath = Path.Combine(root, relative);
+            if (!File.Exists(fullPath))
+                return Task.FromResult(false);
+
+            File.Delete(fullPath);
+            return Task.FromResult(true);
+        }
+
         private static (string alias, string relative) Split(string path)
         {
             var clean = path.Trim().TrimStart('/');

@@ -68,7 +68,7 @@ public class AvatarEditorController : ControllerBase
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
-        var blobPath = BuildBlobPath("logos", empresa, sede, file.FileName, "branding");
+        var blobPath = BuildBlobPath("logos", empresa, sede, file.FileName, "logos");
 
         await using var ms = file.OpenReadStream();
         await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -88,7 +88,7 @@ public class AvatarEditorController : ControllerBase
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
-        var blobPath = BuildBlobPath("backgrounds", empresa, sede, file.FileName, "branding");
+        var blobPath = BuildBlobPath("backgrounds", empresa, sede, file.FileName, "fondos");
 
         await using var ms = file.OpenReadStream();
         await _storage.UploadAsync(ms, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -108,7 +108,7 @@ public class AvatarEditorController : ControllerBase
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
 
-        var blobPath = BuildBlobPath("models", empresa, sede, file.FileName, "models");
+        var blobPath = BuildBlobPath("models", empresa, sede, file.FileName, "modelos");
         var contentType = file.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
             ? "model/gltf-binary"
             : file.ContentType ?? "application/octet-stream";

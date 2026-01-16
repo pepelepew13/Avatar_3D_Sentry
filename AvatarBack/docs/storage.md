@@ -4,12 +4,13 @@
 - **Cuenta**: `stavatarsentryprod`
 - **Endpoint**: `https://stavatarsentryprod.blob.core.windows.net/`
 - **Contenedores**:
-  - `public`: recursos públicos (branding y modelos)
+  - `public`: recursos públicos (logos, fondos y modelos)
   - `tts`: audios generados por texto a voz
 
 ## Patrones de rutas
-- Branding (logos, fondos): `public/{empresa}/{sede}/branding/<archivo>`
-- Modelos GLB: `public/{empresa}/{sede}/models/<archivo>`
+- Logos: `public/{empresa}/{sede}/logos/<archivo>`
+- Fondos: `public/{empresa}/{sede}/fondos/<archivo>`
+- Modelos GLB: `public/{empresa}/{sede}/modelos/<archivo>`
 - Audio TTS: `tts/{empresa}/{sede}/{yyyy}/{MM}/{dd}/<id>.mp3`
 
 La API sigue usando alias lógicos (`logos`, `backgrounds`, `models`, `audio`) para construir estas rutas; internamente se mapean a los contenedores anteriores.

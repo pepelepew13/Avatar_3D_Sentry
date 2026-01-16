@@ -21,5 +21,10 @@ namespace Avatar_3D_Sentry.Services.Storage
         /// Lista rutas lógicas bajo un prefijo (por ejemplo: "models/empresa/sede").
         /// </summary>
         Task<IReadOnlyList<string>> ListAsync(string pathPrefix, string[]? allowedExtensions, CancellationToken ct);
+
+        /// <summary>
+        /// Elimina un recurso por su ruta lógica.
+        /// </summary>
+        Task<bool> DeleteAsync(string path, CancellationToken ct);
     }
 }
