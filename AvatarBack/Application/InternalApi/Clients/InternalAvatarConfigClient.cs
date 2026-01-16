@@ -33,7 +33,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         var response = await _httpClient.GetAsync(uri, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<PagedResponse<InternalAvatarConfigDto>>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<PagedResponse<InternalAvatarConfigDto>>(response, ct);
         return payload ?? new PagedResponse<InternalAvatarConfigDto>();
     }
 
@@ -46,7 +46,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InternalAvatarConfigDto>(_jsonOptions, ct);
+        return await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
     }
 
     public async Task<InternalAvatarConfigDto?> GetByScopeAsync(string empresa, string sede, CancellationToken ct = default)
@@ -65,7 +65,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InternalAvatarConfigDto>(_jsonOptions, ct);
+        return await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
     }
 
     public async Task<InternalAvatarConfigDto> CreateAsync(InternalAvatarConfigDto config, CancellationToken ct = default)
@@ -73,7 +73,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", config, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<InternalAvatarConfigDto>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
         return payload ?? config;
     }
 
@@ -82,7 +82,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", config, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<InternalAvatarConfigDto>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
         return payload ?? config;
     }
 
@@ -106,5 +106,21 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
 
         return uri;
+    }
+
+    private async Task<T?> ReadJsonOrDefaultAsync<T>(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.Content is null)
+        {
+            return default;
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return default;
+        }
+
+        return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
     }
 }

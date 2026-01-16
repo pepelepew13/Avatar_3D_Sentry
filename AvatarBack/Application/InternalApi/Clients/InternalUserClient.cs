@@ -35,7 +35,7 @@ public class InternalUserClient : IInternalUserClient
         var response = await _httpClient.GetAsync(uri, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<PagedResponse<InternalUserDto>>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<PagedResponse<InternalUserDto>>(response, ct);
         return payload ?? new PagedResponse<InternalUserDto>();
     }
 
@@ -48,7 +48,7 @@ public class InternalUserClient : IInternalUserClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InternalUserDto>(_jsonOptions, ct);
+        return await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
     }
 
     public async Task<InternalUserDto?> GetByEmailAsync(string email, CancellationToken ct = default)
@@ -60,7 +60,7 @@ public class InternalUserClient : IInternalUserClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<InternalUserDto>(_jsonOptions, ct);
+        return await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
     }
 
     public async Task<InternalUserDto> CreateAsync(InternalUserDto user, CancellationToken ct = default)
@@ -68,7 +68,7 @@ public class InternalUserClient : IInternalUserClient
         var response = await _httpClient.PostAsJsonAsync("internal/users", user, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<InternalUserDto>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
         return payload ?? user;
     }
 
@@ -77,7 +77,7 @@ public class InternalUserClient : IInternalUserClient
         var response = await _httpClient.PutAsJsonAsync($"internal/users/{id}", user, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync<InternalUserDto>(_jsonOptions, ct);
+        var payload = await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
         return payload ?? user;
     }
 
@@ -101,5 +101,21 @@ public class InternalUserClient : IInternalUserClient
         }
 
         return uri;
+    }
+
+    private async Task<T?> ReadJsonOrDefaultAsync<T>(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.Content is null)
+        {
+            return default;
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return default;
+        }
+
+        return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
     }
 }
