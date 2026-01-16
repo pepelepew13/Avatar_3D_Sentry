@@ -305,7 +305,20 @@
     }
   }
 
-  private string DefaultModelUrl => Abs("/models/Avatar.glb");
+  private static readonly Dictionary<string, string> OutfitModelPaths = new(StringComparer.OrdinalIgnoreCase)
+  {
+    ["corporativo"] = "/Avatar.glb",
+    ["ejecutivo"] = "/traje.glb",
+    ["casual"] = "/vestido.glb"
+  };
+
+  private string DefaultModelUrl => "/Avatar.glb";
+
+  private static string? OutfitToModel(string? outfit)
+  {
+    if (string.IsNullOrWhiteSpace(outfit)) return null;
+    return OutfitModelPaths.TryGetValue(outfit, out var model) ? model : null;
+  }
 
   private async Task OnPanelClick(string key, ElementReference btnRef)
   {
@@ -406,9 +419,13 @@
       logoUrl      = await ResolveAssetUrlAsync(cfg.LogoPath);
 
       if (!string.IsNullOrWhiteSpace(cfg.Vestimenta) && (cfg.Vestimenta.Contains('/') || cfg.Vestimenta.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)))
+      {
         modelUrl = await ResolveAssetUrlAsync(cfg.Vestimenta) ?? DefaultModelUrl;
+      }
       else
-        modelUrl ??= DefaultModelUrl;
+      {
+        modelUrl = OutfitToModel(cfg.Vestimenta) ?? modelUrl ?? DefaultModelUrl;
+      }
 
       if (_viewerModule is not null)
       {
@@ -467,7 +484,8 @@
     vestimenta = v;
     if (_viewerModule is not null)
     {
-      await _viewerModule.InvokeVoidAsync("updateAppearance", new { outfit = vestimenta });
+      modelUrl = OutfitToModel(vestimenta) ?? modelUrl ?? DefaultModelUrl;
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { outfit = vestimenta, modelUrl });
     }
   }
 
