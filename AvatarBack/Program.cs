@@ -3,6 +3,7 @@ using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Settings;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
+using Avatar_3D_Sentry.Swagger;
 using AvatarSentry.Application.Config;
 using AvatarSentry.Application.InternalApi;
 using AvatarSentry.Application.InternalApi.Clients;
@@ -118,6 +119,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Avatar Sentry API", Version = "v1" });
     c.CustomSchemaIds(type => type.FullName);
+    c.OperationFilter<FileUploadOperationFilter>();
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
