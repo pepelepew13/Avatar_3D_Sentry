@@ -1,4 +1,5 @@
 using Avatar_3D_Sentry.Modelos;
+using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
 using Avatar_3D_Sentry.Services.Storage;
@@ -60,10 +61,13 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR LOGO =====================
     [HttpPost("{empresa}/{sede}/logo")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<AvatarConfigDto>> UploadLogo(
-        string empresa, string sede, IFormFile file, CancellationToken ct)
+        string empresa, string sede, [FromForm] AssetUploadRequest request, CancellationToken ct)
     {
-        if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
+        if (file.Length == 0) return BadRequest("Archivo vacío.");
         if (!_companyAccess.CanAccess(User, empresa, sede))
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
@@ -80,10 +84,13 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR FONDO =====================
     [HttpPost("{empresa}/{sede}/background")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<AvatarConfigDto>> UploadBackground(
-        string empresa, string sede, IFormFile file, CancellationToken ct)
+        string empresa, string sede, [FromForm] AssetUploadRequest request, CancellationToken ct)
     {
-        if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
+        if (file.Length == 0) return BadRequest("Archivo vacío.");
         if (!_companyAccess.CanAccess(User, empresa, sede))
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
@@ -100,10 +107,13 @@ public class AvatarEditorController : ControllerBase
 
     // ===================== SUBIR MODELO/VESTIMENTA =====================
     [HttpPost("{empresa}/{sede}/model")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<AvatarConfigDto>> UploadModel(
-        string empresa, string sede, IFormFile file, CancellationToken ct)
+        string empresa, string sede, [FromForm] AssetUploadRequest request, CancellationToken ct)
     {
-        if (file is null || file.Length == 0) return BadRequest("Archivo vacío.");
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
+        if (file.Length == 0) return BadRequest("Archivo vacío.");
         if (!_companyAccess.CanAccess(User, empresa, sede))
             return Forbid();
         var cfg = await GetOrCreateConfigAsync(empresa, sede, ct);
