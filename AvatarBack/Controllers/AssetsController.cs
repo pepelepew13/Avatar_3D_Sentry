@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -65,13 +66,16 @@ public class AssetsController : ControllerBase
     // =============================
     [HttpPost("logo/{company}/{site}")]
     [Authorize(Policy = "CanEditAvatar")]
+    [Consumes("multipart/form-data")]
     [RequestSizeLimit(20_000_000)] // 20MB
     public async Task<ActionResult<AssetUploadResponse>> UploadLogo(
         [FromRoute] string company,
         [FromRoute] string site,
-        [FromForm, Required] IFormFile file,
+        [FromForm] AssetUploadRequest request,
         CancellationToken ct)
     {
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
         var blobPath = BuildBlobPath("logos", company, site, fileName, "logos");
@@ -87,13 +91,16 @@ public class AssetsController : ControllerBase
     // =============================
     [HttpPost("background/{company}/{site}")]
     [Authorize(Policy = "CanEditAvatar")]
+    [Consumes("multipart/form-data")]
     [RequestSizeLimit(40_000_000)] // 40MB
     public async Task<ActionResult<AssetUploadResponse>> UploadBackground(
         [FromRoute] string company,
         [FromRoute] string site,
-        [FromForm, Required] IFormFile file,
+        [FromForm] AssetUploadRequest request,
         CancellationToken ct)
     {
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
         var blobPath = BuildBlobPath("backgrounds", company, site, fileName, "fondos");
@@ -109,13 +116,16 @@ public class AssetsController : ControllerBase
     // =============================
     [HttpPost("model/{company}/{site}")]
     [Authorize(Policy = "CanEditAvatar")]
+    [Consumes("multipart/form-data")]
     [RequestSizeLimit(60_000_000)] // 60MB (GLB)
     public async Task<ActionResult<AssetUploadResponse>> UploadModel(
         [FromRoute] string company,
         [FromRoute] string site,
-        [FromForm, Required] IFormFile file,
+        [FromForm] AssetUploadRequest request,
         CancellationToken ct)
     {
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
         // Guardamos modelos dentro de "{company}/{site}/modelos"
@@ -137,13 +147,16 @@ public class AssetsController : ControllerBase
     // =============================
     [HttpPost("video/{company}/{site}")]
     [Authorize(Policy = "CanEditAvatar")]
+    [Consumes("multipart/form-data")]
     [RequestSizeLimit(200_000_000)] // 200MB (video)
     public async Task<ActionResult<AssetUploadResponse>> UploadVideo(
         [FromRoute] string company,
         [FromRoute] string site,
-        [FromForm, Required] IFormFile file,
+        [FromForm] AssetUploadRequest request,
         CancellationToken ct)
     {
+        if (request?.File is null) return BadRequest("Archivo requerido.");
+        var file = request.File;
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
         var blobPath = BuildBlobPath("videos", company, site, fileName, "videos");
