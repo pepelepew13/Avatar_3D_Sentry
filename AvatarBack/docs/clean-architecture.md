@@ -57,3 +57,7 @@ Controllers are grouped by module to match the API surface:
 - Migrate remaining namespaces to match the new folder layout.
 - Consolidate endpoints to match the spec in `docs/` and remove deprecated routes.
 - Extract use cases into Application services and keep controllers thin.
+
+## Cleanup
+
+- Removed unused test project and the HTTP scratch file to keep `AvatarBack/` focused on runtime code.
