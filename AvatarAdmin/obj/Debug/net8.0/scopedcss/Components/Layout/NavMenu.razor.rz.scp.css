@@ -111,6 +111,7 @@ a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
 .nav-card-link-icon-logout[b-v1v7zs53k2]::before{ content:"⇦" }
 /* extras ya usados */
 .nav-card-link-icon-edit[b-v1v7zs53k2]::before{ content:"✎" }
+.nav-card-link-icon-configs[b-v1v7zs53k2]::before{ content:"🧩" }
 .nav-card-link-icon-users[b-v1v7zs53k2]::before{ content:"👥" }
 .nav-card-link-icon-user[b-v1v7zs53k2]::before{ content:"👤" }
 

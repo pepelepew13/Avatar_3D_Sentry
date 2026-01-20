@@ -268,6 +268,7 @@ a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
 .nav-card-link-icon-logout[b-v1v7zs53k2]::before{ content:"⇦" }
 /* extras ya usados */
 .nav-card-link-icon-edit[b-v1v7zs53k2]::before{ content:"✎" }
+.nav-card-link-icon-configs[b-v1v7zs53k2]::before{ content:"🧩" }
 .nav-card-link-icon-users[b-v1v7zs53k2]::before{ content:"👥" }
 .nav-card-link-icon-user[b-v1v7zs53k2]::before{ content:"👤" }
 
@@ -408,6 +409,39 @@ a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
 @media (max-height: 700px){
   .auth-card[b-m3ww0deuqv]{ padding: 1rem; gap: 1rem; }
   .auth-logo[b-m3ww0deuqv]{ width:100px;height:100px }
+}
+/* _content/AvatarAdmin/Components/Pages/Configs.razor.rz.scp.css */
+.configs-hero[b-y9ty0dap9k]{
+  display:flex; justify-content:space-between; align-items:center; gap:1rem;
+  padding:1rem 1.2rem; border-radius:18px;
+  background: linear-gradient(135deg, rgba(0,20,137,.08), rgba(255,255,255,.9));
+  border:1px solid var(--line-strong); box-shadow: var(--shadow-sm);
+}
+.configs-hero .hero-tags[b-y9ty0dap9k]{ display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.5rem }
+.configs-hero .tag[b-y9ty0dap9k]{ border-radius:999px; padding:.2rem .55rem; font-weight:700; background:#fff; border:1px solid var(--line) }
+
+.configs-filters[b-y9ty0dap9k]{ margin-top:1rem; padding:1rem }
+.filter-grid[b-y9ty0dap9k]{
+  display:grid; gap:.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  align-items:end;
+}
+.filter-grid .actions[b-y9ty0dap9k]{ display:flex; gap:.6rem }
+.filter-grid .btn[b-y9ty0dap9k]{ width:100% }
+
+.configs-table[b-y9ty0dap9k]{ margin-top:1rem; padding:0 }
+.table-wrap[b-y9ty0dap9k]{ padding:1rem }
+.logo-thumb[b-y9ty0dap9k]{ width:44px; height:32px; object-fit:contain; border-radius:6px; border:1px solid var(--line) }
+
+.empty-row[b-y9ty0dap9k]{
+  display:flex; flex-direction:column; align-items:center; gap:.4rem;
+  padding:2rem; color:var(--muted);
+}
+.empty-ic[b-y9ty0dap9k]{ font-size:1.6rem }
+
+.pager[b-y9ty0dap9k]{
+  display:flex; justify-content:space-between; align-items:center; gap:.6rem;
+  padding:.75rem 1rem; border-top:1px solid var(--line-strong);
 }
 /* _content/AvatarAdmin/Components/Pages/Editor.razor.rz.scp.css */
 /* Editor.razor.css — “Avatar Studio” con submenú lateral, slide in/out y full height */
@@ -580,6 +614,17 @@ a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
   .rail-actions[b-47u8zfyob4]{ position: static; margin-top: .6rem }
 }
 
+/* Aviso inline */
+.vg-alert[b-47u8zfyob4]{
+  background: rgba(0,20,137,.08);
+  border:1px solid rgba(0,20,137,.22);
+  color:#001489;
+  border-radius:12px;
+  padding:.45rem .6rem;
+  font-weight:700;
+  font-size:.82rem;
+}
+
 /* ===== SUBMENÚ (anclado al botón, con slide in/out) ===== */
 .vg-sub[b-47u8zfyob4]{
   position:absolute; /* top inline desde Razor; left fijo */
@@ -620,6 +665,39 @@ a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
 .sub-head h6[b-47u8zfyob4]{ margin:0; font-weight:900; letter-spacing:.02em }
 .sub-body[b-47u8zfyob4]{ padding:1rem 1rem; display: flex; align-items: center; flex-direction: column;}
 .sub-body.grid2[b-47u8zfyob4]{ display:grid; grid-template-columns: 1fr 1fr; gap:.5rem }
+
+.drop-zone[b-47u8zfyob4]{
+  position:relative;
+  width:100%;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  padding:.7rem .8rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.4rem;
+  cursor:pointer;
+  background: #fbfcfe;
+  font-weight:700;
+}
+.drop-zone input[b-47u8zfyob4]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+}
+.drop-zone:hover[b-47u8zfyob4]{ background:#f2f6fb }
+.drop-copy[b-47u8zfyob4]{ font-size:.85rem; color:#374151 }
+
+.bg-preview[b-47u8zfyob4]{
+  width: 220px; height: 92px;
+  display:flex; align-items:center; justify-content:center;
+  background:#fff; border:1px dashed var(--line); border-radius:12px;
+  overflow:hidden; margin-bottom:.45rem;
+}
+.bg-preview img[b-47u8zfyob4]{ width:100%; height:100%; object-fit:cover }
 
 /* ===== STAGE ===== */
 .vg-stage[b-47u8zfyob4]{
