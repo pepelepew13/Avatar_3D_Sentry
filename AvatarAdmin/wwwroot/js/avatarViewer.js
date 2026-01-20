@@ -67,10 +67,12 @@ export async function createViewer(canvas, options) {
     controls,
     outfitMaterials: new Set(),
     logoMaterial: null, logoTexture: null,
+    backgroundTexture: null,
     resizeObserver: null, animationHandle: 0,
     root: null, clock: new THREE.Clock(),
     mouthMeshes: [], audio: null, audioEl: options?.audioEl ?? null, mouthTimer: 0, currentVisemeTimeout: 0,
-    dragHandlers: [], _keyHandler: null
+    dragHandlers: [], _keyHandler: null,
+    mixer: null, talkingAction: null, isTalking: false
   };
 
   // === Cargar modelo ===
@@ -92,6 +94,15 @@ export async function createViewer(canvas, options) {
           if (hits.length > 0) state.mouthMeshes.push(child);
         }
       });
+
+      if (gltf.animations?.length){
+        state.mixer = new THREE.AnimationMixer(root);
+        const talkingClip = gltf.animations.find(a => /talkinganimation/i.test(a.name) || /talk/i.test(a.name));
+        if (talkingClip) {
+          state.talkingAction = state.mixer.clipAction(talkingClip);
+          state.talkingAction.loop = THREE.LoopRepeat;
+        }
+      }
     } catch { /* fallback */ }
   }
   if (!root) root = createFallbackAvatar(state.outfitMaterials);
@@ -131,6 +142,8 @@ export async function createViewer(canvas, options) {
     state.animationHandle = window.requestAnimationFrame(renderLoop);
     const delta = state.clock.getDelta();
 
+    if (state.mixer) state.mixer.update(delta);
+
     if (state.mouthTimer > 0 && !hasMorphTargets(state)) {
       state.root.rotation.x = Math.sin(performance.now() * 0.02) * 0.04;
       state.mouthTimer -= delta;
@@ -145,7 +158,7 @@ export async function createViewer(canvas, options) {
   // Aplicar estado inicial
   if (options?.logoUrl) await applyLogo(state, options.logoUrl);
   applyOutfit(state, options?.outfit ?? null);
-  applyBackground(state, options?.background ?? null);
+  await applyBackground(state, options?.background ?? null);
   if (options?.hairColor) applyHairColor(state, options.hairColor);
 
   // ===== API expuesta a .NET =====
@@ -183,7 +196,7 @@ function ensureLogoPlaneOrFind(root){
     if (material) return;
     if (!child.isMesh) return;
     const lower = (child.name ?? '').toLowerCase();
-    if (/(logo|badge|emblem)/.test(lower)){
+    if (/(logo|badge|emblem|logolabel)/.test(lower)){
       material = ensureSingleMaterial(child);
     }
   });
@@ -266,8 +279,16 @@ function applyOutfit(state, value){
   });
 }
 
-function applyBackground(state, value){
-  const key = (value ?? '').toString().toLowerCase();
+async function applyBackground(state, value){
+  const raw = (value ?? '').toString();
+  const key = raw.toLowerCase();
+
+  if (isImageValue(raw) && !backgroundPalettes[key]) {
+    await setBackgroundImage(state, raw);
+    return;
+  }
+
+  clearBackgroundImage(state);
   const palette = backgroundPalettes[key] ?? backgroundPalettes.default;
   state.keyLight.color.set(palette.light);
   if (state.groundMaterial?.color){ state.groundMaterial.color.set(palette.ground); state.groundMaterial.needsUpdate = true; }
@@ -304,6 +325,7 @@ async function playSpeech(state, audioUrl, visemas){
   const list = Array.isArray(visemas) ? visemas.slice().sort((a,b)=> (a?.tiempo ?? 0) - (b?.tiempo ?? 0)) : [];
 
   audio.addEventListener('play', () => {
+    setTalking(state, true);
     if (hasMorphTargets(state)){
       scheduleMorphs(state, list, audio);
     }else{
@@ -354,6 +376,7 @@ function applyMorph(state, key){
 
 function stopMouth(state){
   state.mouthTimer = 0;
+  setTalking(state, false);
   if (state.mouthMeshes.length){
     state.mouthMeshes.forEach(mesh=>{
       const dict = mesh.morphTargetDictionary;
@@ -404,6 +427,7 @@ async function disposeViewer(state){
   if (state.animationHandle) window.cancelAnimationFrame(state.animationHandle);
   if (state.resizeObserver) state.resizeObserver.disconnect();
   if (state.logoTexture) state.logoTexture.dispose();
+  if (state.backgroundTexture) state.backgroundTexture.dispose();
   stopMouth(state);
 
   if (state.dragHandlers?.length){
@@ -413,7 +437,49 @@ async function disposeViewer(state){
   if (state._keyHandler){ window.removeEventListener('keydown', state._keyHandler); state._keyHandler = null; }
 
   state.controls?.dispose?.();
+  state.mixer?.stopAllAction?.();
   state.renderer.dispose();
+}
+
+function setTalking(state, on){
+  if (!state.talkingAction) return;
+  if (on && !state.isTalking){
+    state.talkingAction.reset();
+    state.talkingAction.fadeIn(0.12);
+    state.talkingAction.play();
+    state.isTalking = true;
+  }else if (!on && state.isTalking){
+    state.talkingAction.fadeOut(0.2);
+    state.isTalking = false;
+  }
+}
+
+function isImageValue(value){
+  if (!value) return false;
+  return /^(https?:)?\/\//i.test(value)
+    || /\.(png|jpe?g|webp|gif)$/i.test(value)
+    || value.includes('/');
+}
+
+function clearBackgroundImage(state){
+  if (state.backgroundTexture){
+    state.backgroundTexture.dispose();
+    state.backgroundTexture = null;
+  }
+  state.scene.background = null;
+}
+
+async function setBackgroundImage(state, url){
+  clearBackgroundImage(state);
+  const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
+  try{
+    const texture = await loader.loadAsync(url);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    state.scene.background = texture;
+    state.backgroundTexture = texture;
+  }catch{
+    state.scene.background = null;
+  }
 }
 
 // ======= Helper para descargar desde .NET =======
@@ -449,7 +515,7 @@ export async function updateAppearance(options){
   if (!_viewerInstance) return;
   if (options?.logoUrl !== undefined) await _viewerInstance.setLogo(options.logoUrl);
   if (options?.outfit    !== undefined) _viewerInstance.setOutfit(options.outfit);
-  if (options?.background!== undefined) _viewerInstance.setBackground(options.background);
+  if (options?.background!== undefined) await _viewerInstance.setBackground(options.background);
   if (options?.hairColor !== undefined) _viewerInstance.setHairColor(options.hairColor);
 }
 

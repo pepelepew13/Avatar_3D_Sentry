@@ -60,31 +60,36 @@
       </button>
     </nav>
 
-    <div class="vg-rail-form">
-      <div class="vg-form">
-        <div class="vg-field">
-          <label for="empresa">Empresa</label>
-          <input id="empresa" class="form-control" @bind="empresa" placeholder="ACME" />
-          <small class="hint">Nombre corto o código interno.</small>
+      <div class="vg-rail-form">
+        <div class="vg-form">
+          <div class="vg-field">
+            <label for="empresa">Empresa</label>
+            <input id="empresa" class="form-control" @bind="empresa" placeholder="ACME" />
+            <small class="hint">Nombre corto o código interno.</small>
+          </div>
+
+          <div class="vg-field">
+            <label for="sede">Sede</label>
+            <input id="sede" class="form-control" @bind="sede" placeholder="CENTRO" />
+            <small class="hint">Ej. Centro, Norte, Sur…</small>
+          </div>
+
+          <button class="btn btn-outline-light w-100 btn-load" @onclick="LoadAsync" disabled="@loading">
+            @(loading ? "Cargando…" : "Cargar configuración")
+          </button>
         </div>
 
-        <div class="vg-field">
-          <label for="sede">Sede</label>
-          <input id="sede" class="form-control" @bind="sede" placeholder="CENTRO" />
-          <small class="hint">Ej. Centro, Norte, Sur…</small>
+        @if (!string.IsNullOrWhiteSpace(loadMessage))
+        {
+          <div class="vg-alert" role="status">@loadMessage</div>
+        }
+
+        <div class="rail-actions">
+          <button class="btn btn-primary w-100" @onclick="SaveAsync" disabled="@saving">
+            @(saving ? "Guardando…" : "Guardar cambios")
+          </button>
         </div>
-
-        <button class="btn btn-outline-light w-100 btn-load" @onclick="LoadAsync" disabled="@loading">
-          @(loading ? "Cargando…" : "Cargar configuración")
-        </button>
       </div>
-
-      <div class="rail-actions">
-        <button class="btn btn-primary w-100" @onclick="SaveAsync" disabled="@saving">
-          @(saving ? "Guardando…" : "Guardar cambios")
-        </button>
-      </div>
-    </div>
 
     @if (showSub)
     {
@@ -130,7 +135,10 @@
             <div class="sub-card">
               <header class="sub-head"><h6>Modelo / vestimenta personalizada</h6></header>
               <div class="sub-body">
-                <InputFile OnChange="OnModelPicked" accept=".glb" />
+                <label class="drop-zone">
+                  <InputFile OnChange="OnModelPicked" accept=".glb" />
+                  <span class="drop-copy">Arrastra tu .glb aquí o haz clic para subir</span>
+                </label>
                 <small class="muted">Se guarda en tu storage Azure por empresa/sede.</small>
               </div>
             </div>
@@ -153,7 +161,7 @@
             <div class="sub-card">
               <header class="sub-head"><h6>Idioma y voz</h6></header>
               <div class="sub-body grid2">
-                <select class="form-select" @bind="idioma" aria-label="Idioma de la voz">
+                <select class="form-select" @bind="idioma" @bind:after="OnIdiomaChanged" aria-label="Idioma de la voz">
                   @foreach (var kv in voiceMap) { <option value="@kv.Key">@LangLabel(kv.Key)</option> }
                 </select>
                 <select class="form-select" @bind="voz" aria-label="Voz">
@@ -188,6 +196,21 @@
                     </button>
                   }
                 </div>
+              </div>
+            </div>
+
+            <div class="sub-card">
+              <header class="sub-head"><h6>Fondo personalizado</h6></header>
+              <div class="sub-body">
+                <div class="bg-preview">
+                  @if (!string.IsNullOrWhiteSpace(fondoPreview) && IsBackgroundUrl(fondoPreview))
+                  { <img src="@fondoPreview" alt="Fondo actual" /> }
+                  else { <span>Sin fondo cargado</span> }
+                </div>
+                <label class="drop-zone">
+                  <InputFile OnChange="OnBackgroundPicked" accept=".png,.jpg,.jpeg,.webp" />
+                  <span class="drop-copy">Arrastra una imagen o haz clic para subir</span>
+                </label>
               </div>
             </div>
             break;
@@ -239,6 +262,9 @@
 
 @inject NavigationManager Nav
 @code {
+  [Parameter, SupplyParameterFromQuery(Name = "empresa")] public string? EmpresaQuery { get; set; }
+  [Parameter, SupplyParameterFromQuery(Name = "sede")] public string? SedeQuery { get; set; }
+
   // ------------ estado ------------
   private ElementReference canvasRef;
   private ElementReference audioRef;
@@ -249,11 +275,15 @@
   private string empresa = "ACME";
   private string sede    = "CENTRO";
 
+  private int? configId;
   private string? vestimenta;
   private string? fondo;
+  private string? fondoPreview;
   private string? colorCabello;
   private string? logoUrl;
+  private string? logoPath;
   private string? modelUrl;
+  private string? loadMessage;
 
   private string panel = "identidad";
   private bool saving;
@@ -269,6 +299,12 @@
   private string voz    = "es-CO-SalomeNeural";
   private string textoPreview = "Hola, soy tu avatar Sentry. Estoy listo para ayudarte.";
   private Dictionary<string, List<string>> voiceMap = new();
+  private static readonly Dictionary<string, List<string>> DefaultVoiceMap = new()
+  {
+    ["es"] = new() { "es-CO-SalomeNeural" },
+    ["en"] = new() { "en-US-AvaNeural" },
+    ["pt"] = new() { "pt-BR-FranciscaNeural" }
+  };
 
   // ------------ catálogo UI ------------
   private readonly (string Value, string Label)[] outfitOptions = new[] {
@@ -353,12 +389,12 @@
 
     if (Auth.IsAuthenticated)
     {
-      try { voiceMap = await Api.GetVoicesAsync(); }
-      catch (Exception ex)
-      {
-        Log.LogWarning(ex, "No se pudo obtener el mapa de voces");
-        voiceMap = new();
-      }
+      if (!string.IsNullOrWhiteSpace(Auth.Empresa)) empresa = Auth.Empresa!;
+      if (!string.IsNullOrWhiteSpace(Auth.Sede)) sede = Auth.Sede!;
+      if (!string.IsNullOrWhiteSpace(EmpresaQuery)) empresa = EmpresaQuery!;
+      if (!string.IsNullOrWhiteSpace(SedeQuery)) sede = SedeQuery!;
+
+      voiceMap = new(DefaultVoiceMap);
 
       NormalizarVoz();
     }
@@ -380,7 +416,7 @@
               audioEl    = audioRef,
               logoUrl    = logoUrl,
               outfit     = vestimenta,
-              background = fondo,
+              background = fondoPreview ?? fondo,
               hairColor  = ColorToHex(colorCabello) ?? 0x2b2b2b,
           });
       }
@@ -396,14 +432,33 @@
   // ------------ acciones ------------
   private async Task LoadAsync()
   {
-    loading = true; StateHasChanged();
+    loading = true;
+    loadMessage = null;
+    StateHasChanged();
     try
     {
       var cfg = await Api.GetConfigAsync(empresa, sede);
-      vestimenta   = cfg.Vestimenta;
-      fondo        = cfg.Fondo;
+      if (cfg is null)
+      {
+        configId = null;
+        vestimenta = null;
+        fondo = null;
+        fondoPreview = null;
+        colorCabello = null;
+        logoUrl = null;
+        logoPath = null;
+        modelUrl ??= DefaultModelUrl;
+        loadMessage = "No se encontró una configuración existente. Puedes crearla con “Guardar cambios”.";
+        return;
+      }
+
+      configId = cfg.Id;
+      vestimenta = cfg.Vestimenta;
+      fondo = cfg.Fondo;
+      fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
       colorCabello = cfg.ColorCabello;
-      logoUrl      = await ResolveAssetUrlAsync(cfg.LogoPath);
+      logoPath = cfg.LogoPath;
+      logoUrl = await ResolveAssetUrlAsync(cfg.LogoPath);
 
       if (!string.IsNullOrWhiteSpace(cfg.Vestimenta) && (cfg.Vestimenta.Contains('/') || cfg.Vestimenta.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)))
         modelUrl = await ResolveAssetUrlAsync(cfg.Vestimenta) ?? DefaultModelUrl;
@@ -416,10 +471,15 @@
           modelUrl   = modelUrl ?? DefaultModelUrl,
           logoUrl    = logoUrl,
           outfit     = vestimenta,
-          background = fondo,
+          background = fondoPreview ?? fondo,
           hairColor  = ColorToHex(colorCabello)
         });
       }
+    }
+    catch (Exception ex)
+    {
+      Log.LogError(ex, "No se pudo cargar la configuración");
+      loadMessage = "No se pudo cargar la configuración. Verifica la conexión con el backend.";
     }
     finally { loading = false; StateHasChanged(); }
   }
@@ -429,11 +489,34 @@
     saving = true;
     try
     {
-      var upd = new AvatarConfigUpdate {
-        Vestimenta = vestimenta, Fondo = fondo, ColorCabello = colorCabello, Idioma = idioma, Voz = voz
+      var req = new AvatarApiClient.AvatarConfigRequest
+      {
+        Empresa = empresa,
+        Sede = sede,
+        Vestimenta = vestimenta,
+        Fondo = fondo,
+        Voz = voz,
+        Idioma = idioma,
+        LogoPath = logoPath
       };
-      var saved = await Api.UpdateConfigAsync(empresa, sede, upd);
-      vestimenta = saved.Vestimenta; fondo = saved.Fondo; colorCabello = saved.ColorCabello; logoUrl = Abs(saved.LogoPath);
+
+      var saved = configId is null
+        ? await Api.CreateConfigAsync(req)
+        : await Api.UpdateConfigAsync(configId.Value, req);
+
+      configId = saved.Id;
+      vestimenta = saved.Vestimenta;
+      fondo = saved.Fondo;
+      fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
+      colorCabello = saved.ColorCabello;
+      logoPath = saved.LogoPath;
+      logoUrl = await ResolveAssetUrlAsync(saved.LogoPath);
+      loadMessage = "Configuración guardada correctamente.";
+    }
+    catch (Exception ex)
+    {
+      Log.LogError(ex, "No se pudo guardar la configuración");
+      loadMessage = "No se pudo guardar la configuración. Revisa los datos e inténtalo de nuevo.";
     }
     finally { saving = false; }
   }
@@ -441,8 +524,14 @@
   private async Task OnLogoPicked(InputFileChangeEventArgs e)
   {
     var f = e.File; if (f is null) return;
+    if (configId is null)
+    {
+      loadMessage = "Guarda la configuración primero para habilitar uploads.";
+      return;
+    }
     await using var s = f.OpenReadStream(2 * 1024 * 1024);
-    var saved = await Api.UploadLogoAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
+    var saved = await Api.UploadLogoAsync(configId.Value, s, f.Name, f.ContentType ?? "application/octet-stream");
+    logoPath = saved.LogoPath;
     logoUrl = await ResolveAssetUrlAsync(saved.LogoPath);
     StateHasChanged();
   }
@@ -450,8 +539,13 @@
   private async Task OnModelPicked(InputFileChangeEventArgs e)
   {
     var f = e.File; if (f is null) return;
+    if (configId is null)
+    {
+      loadMessage = "Guarda la configuración primero para habilitar uploads.";
+      return;
+    }
     await using var s = f.OpenReadStream(60 * 1024 * 1024);
-    var saved = await Api.UploadOutfitAsync(empresa, sede, s, f.Name, f.ContentType ?? "application/octet-stream");
+    var saved = await Api.UploadOutfitAsync(configId.Value, s, f.Name, f.ContentType ?? "application/octet-stream");
 
     vestimenta = saved.Vestimenta;
     modelUrl = await ResolveAssetUrlAsync(saved.Vestimenta) ?? modelUrl ?? DefaultModelUrl;
@@ -476,7 +570,35 @@
     fondo = v;
     if (_viewerModule is not null)
     {
-      await _viewerModule.InvokeVoidAsync("updateAppearance", new { background = fondo });
+      fondoPreview = fondo;
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { background = fondoPreview ?? fondo });
+    }
+  }
+
+  private async Task OnBackgroundPicked(InputFileChangeEventArgs e)
+  {
+    var f = e.File; if (f is null) return;
+    if (configId is null)
+    {
+      loadMessage = "Guarda la configuración primero para habilitar uploads.";
+      return;
+    }
+    await using var s = f.OpenReadStream(6 * 1024 * 1024);
+    var saved = await Api.UploadBackgroundAsync(configId.Value, s, f.Name, f.ContentType ?? "application/octet-stream");
+    fondo = saved.Fondo;
+    fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
+
+    if (_viewerModule is not null)
+    {
+      await _viewerModule.InvokeVoidAsync("updateAppearance", new { background = fondoPreview ?? fondo });
+    }
+  }
+
+  private void OnIdiomaChanged()
+  {
+    if (voiceMap.TryGetValue(idioma, out var list) && list.Count > 0)
+    {
+      voz = list[0];
     }
   }
 
@@ -494,7 +616,12 @@
     try
     {
       var req = new AnnouncementRequest {
-        Empresa = empresa, Sede = sede, Modulo = "A1", Turno = "0001", Nombre = string.IsNullOrWhiteSpace(textoPreview) ? "Invitado" : textoPreview
+        Empresa = empresa,
+        Sede = sede,
+        Modulo = "A1",
+        Turno = "0001",
+        Nombre = "Invitado",
+        Texto = textoPreview
       };
       var res = await Api.AnnounceAsync(req, idioma, voz);
       var audioUrl = Abs(res.AudioUrl);
@@ -529,6 +656,19 @@
   private static int? ColorToHex(string? key) => key?.ToLowerInvariant() switch {
     "negro" => 0x1f1b18, "castano" => 0x4b2e21, "rubio" => 0xd3b26b, _ => 0x2b2b2b
   };
+
+  private bool IsPresetBackground(string? value) =>
+    !string.IsNullOrWhiteSpace(value) &&
+    bgOptions.Any(opt => string.Equals(opt.Value, value, StringComparison.OrdinalIgnoreCase));
+
+  private static bool IsBackgroundUrl(string? value) =>
+    !string.IsNullOrWhiteSpace(value) &&
+    (value.StartsWith("http", StringComparison.OrdinalIgnoreCase) ||
+     value.Contains('/') ||
+     value.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+     value.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+     value.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+     value.EndsWith(".webp", StringComparison.OrdinalIgnoreCase));
 
   private Task TurntableAsync()  => _viewerModule?.InvokeVoidAsync("turntable", 3000).AsTask() ?? Task.CompletedTask;
   private Task FrameAsync()      => _viewerModule?.InvokeVoidAsync("frame").AsTask() ?? Task.CompletedTask;

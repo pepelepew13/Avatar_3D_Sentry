@@ -32,7 +32,7 @@
 
     <div class="hero-stats" aria-label="Estadísticas rápidas">
       <div class="stat">
-        <div class="stat-num">@totalUsers</div>
+      <div class="stat-num">@totalUsers</div>
         <div class="stat-label">Total</div>
       </div>
       <div class="stat">
@@ -126,6 +126,14 @@
             </div>
           </div>
         }
+
+        <div class="field">
+          <label class="form-label">Estado</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="u-active-create" @bind="_vm.IsActive" />
+            <label class="form-check-label" for="u-active-create">Activo</label>
+          </div>
+        </div>
 
         <!-- Password -->
         <div class="field">
@@ -335,7 +343,7 @@
       <div class="info">
         @if (totalUsers > 0)
         {
-          <span>Mostrando @((pageIndex * pageSize) + 1)-@((pageIndex * pageSize) + (users?.Count ?? 0)) de @totalUsers</span>
+          <span>Mostrando @(((pageIndex - 1) * pageSize) + 1)-@(((pageIndex - 1) * pageSize) + (users?.Count ?? 0)) de @totalUsers</span>
         }
       </div>
       <div class="nav">
@@ -367,6 +375,14 @@
             <option>User</option>
             <option>Admin</option>
           </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Estado</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="u-active" @bind="editIsActive" />
+            <label class="form-check-label" for="u-active">Activo</label>
+          </div>
         </div>
 
         @if (string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase))
@@ -435,6 +451,7 @@
 
       public string? Empresa { get; set; }
       public string? Sede { get; set; }
+      public bool IsActive { get; set; } = true;
   }
 
   private bool IsUser => string.Equals(_vm.Role, "User", StringComparison.OrdinalIgnoreCase);
@@ -461,7 +478,8 @@
         Password = _vm.Password!,
         Role = _vm.Role,
         Empresa = IsUser ? _vm.Empresa?.Trim() : null,
-        Sede = IsUser ? _vm.Sede?.Trim() : null
+        Sede = IsUser ? _vm.Sede?.Trim() : null,
+        IsActive = _vm.IsActive
       };
 
       await Api.CreateUserAsync(req);
@@ -587,14 +605,15 @@
   private string sortKey = "Email";
   private bool sortAsc = true;
 
-  private bool CanPrev => pageIndex > 0;
-  private bool CanNext => (pageIndex + 1) * pageSize < totalUsers;
+  private bool CanPrev => pageIndex > 1;
+  private bool CanNext => pageIndex * pageSize < totalUsers;
 
   // Debounce búsqueda
   private System.Timers.Timer? _searchTimer;
 
   protected override async Task OnInitializedAsync()
   {
+    pageIndex = 1;
     await ReloadUsers();
   }
 
@@ -603,7 +622,7 @@
     loadingUsers = true; StateHasChanged();
     try
     {
-      var res = await Api.ListUsersAsync(pageIndex * pageSize, pageSize, q, roleFilter);
+      var res = await Api.ListUsersAsync(pageIndex, pageSize, q, roleFilter);
       totalUsers = res.Total;
       users = res.Items ?? new();
     }
@@ -620,7 +639,7 @@
 
   private async Task ResetAndReload()
   {
-    pageIndex = 0;
+    pageIndex = 1;
     await ReloadUsers();
   }
 
@@ -642,7 +661,7 @@
 
   private async Task ClearFilters()
   {
-    q = ""; roleFilter = ""; sortKey = "Email"; sortAsc = true; pageIndex = 0;
+    q = ""; roleFilter = ""; sortKey = "Email"; sortAsc = true; pageIndex = 1;
     await ReloadUsers();
   }
 
@@ -690,6 +709,7 @@
   private string? editSede;
   private string? editNewPassword;
   private bool _editShowPwd;
+  private bool editIsActive;
   private bool savingEdit;
 
   private void OpenEdit(AvatarApiClient.UserItem u)
@@ -700,6 +720,7 @@
     editSede = u.Sede;
     editNewPassword = null;
     _editShowPwd = false;
+    editIsActive = u.IsActive;
     editOpen = true;
   }
   private void CloseEdit() { editOpen = false; editUser = null; }
@@ -713,10 +734,12 @@
     try
     {
       var req = new AvatarApiClient.UpdateUserRequest {
+        Email = editUser.Email,
+        Password = string.IsNullOrWhiteSpace(editNewPassword) ? null : editNewPassword,
         Role = editRole,
         Empresa = string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase) ? editEmpresa : null,
         Sede = string.Equals(editRole, "User", StringComparison.OrdinalIgnoreCase) ? editSede : null,
-        NewPassword = string.IsNullOrWhiteSpace(editNewPassword) ? null : editNewPassword
+        IsActive = editIsActive
       };
 
       await Api.UpdateUserAsync(editUser.Id, req);
@@ -727,6 +750,7 @@
       editUser.Role = editRole;
       editUser.Empresa = req.Empresa;
       editUser.Sede = req.Sede;
+      editUser.IsActive = req.IsActive;
 
       CloseEdit();
     }
