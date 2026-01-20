@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Security;
 using Avatar_3D_Sentry.Services;
-using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -20,18 +19,15 @@ public class AvatarController : ControllerBase
     private readonly ILogger<AvatarController> _logger;
     private readonly PhraseGenerator _phrases;
     private readonly ITtsService _tts;
-    private readonly IAssetStorage _storage;
 
     public AvatarController(
         ILogger<AvatarController> logger,
         PhraseGenerator phrases,
-        ITtsService tts,
-        IAssetStorage storage)
+        ITtsService tts)
     {
         _logger = logger;
         _phrases = phrases;
         _tts = tts;
-        _storage = storage;
     }
 
     /// <summary>
@@ -88,11 +84,9 @@ public class AvatarController : ControllerBase
             return StatusCode(StatusCodes.Status502BadGateway, new { error = "No fue posible generar la locución." });
         }
 
-        // 3) Guardar audio en storage (alias "audio" => contenedor tts)
-        var blobPath = BuildAudioPath(request.Empresa, request.Sede);
-
-        await using var ms = new MemoryStream(tts.AudioBytes);
-        var audioUrl = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", HttpContext.RequestAborted);
+        // 3) Armar data URL (no persistir audio por ahora)
+        var audioBase64 = Convert.ToBase64String(tts.AudioBytes);
+        var audioUrl = $"data:audio/mpeg;base64,{audioBase64}";
 
         var response = new AnnouncementResponse
         {
@@ -104,11 +98,5 @@ public class AvatarController : ControllerBase
         };
 
         return Ok(response);
-    }
-
-    private static string BuildAudioPath(string empresa, string sede)
-    {
-        var datePrefix = DateTime.UtcNow.ToString("yyyy/MM/dd");
-        return $"audio/{empresa.ToLowerInvariant()}/{sede.ToLowerInvariant()}/{datePrefix}/{Guid.NewGuid():N}.mp3";
     }
 }

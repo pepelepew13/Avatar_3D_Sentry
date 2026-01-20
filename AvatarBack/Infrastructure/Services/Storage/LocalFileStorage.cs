@@ -30,6 +30,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "backgrounds" => _opt.Local.BackgroundsPath,
                 "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
+                "public"      => _opt.Local.Root,
                 _             => _opt.Local.Root
             };
 
@@ -101,6 +102,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                     "logos"       => $"/logos/{TrimFirst(path, 1)}",
                     "backgrounds" => $"/backgrounds/{TrimFirst(path, 1)}",
                     "videos"      => $"/videos/{TrimFirst(path, 1)}",
+                    "public"      => $"/{TrimFirst(path)}",
                     _             => $"/resources/{path}"
                 };
             }
@@ -121,6 +123,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "backgrounds" => _opt.Local.BackgroundsPath,
                 "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
+                "public"      => _opt.Local.Root,
                 _             => _opt.Local.Root
             };
 
@@ -164,6 +167,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "backgrounds" => _opt.Local.BackgroundsPath,
                 "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
+                "public"      => _opt.Local.Root,
                 _             => _opt.Local.Root
             };
 
@@ -183,8 +187,29 @@ namespace Avatar_3D_Sentry.Services.Storage
         {
             var clean = path.Trim().TrimStart('/');
             var idx = clean.IndexOf('/');
-            if (idx < 0) return (clean, "");
-            return (clean.Substring(0, idx), clean.Substring(idx + 1));
+            if (idx < 0)
+            {
+                return (IsKnownAlias(clean) ? clean : "public", string.Empty);
+            }
+
+            var alias = clean.Substring(0, idx);
+            var remainder = clean.Substring(idx + 1);
+            if (IsKnownAlias(alias))
+            {
+                return (alias, remainder);
+            }
+
+            return ("public", clean);
+        }
+
+        private static bool IsKnownAlias(string alias)
+        {
+            return alias.Equals("models", StringComparison.OrdinalIgnoreCase)
+                   || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
+                   || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
+                   || alias.Equals("videos", StringComparison.OrdinalIgnoreCase)
+                   || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
+                   || alias.Equals("public", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string TrimFirst(string p, int segments = 0)

@@ -171,9 +171,12 @@ builder.Services.AddSingleton<IAssetStorage>(sp =>
     };
 
     if (!string.IsNullOrWhiteSpace(storage.AzureConnection))
+    {
         return new AzureBlobStorage(storage);
+    }
 
-    throw new InvalidOperationException("AzureStorage:ConnectionString vacío. Storage local no configurado.");
+    storage.Mode = "Local";
+    return new LocalFileStorage(storage);
 });
 
 // ==================================================================
