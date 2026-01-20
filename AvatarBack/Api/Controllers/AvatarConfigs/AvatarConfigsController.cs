@@ -260,6 +260,43 @@ public class AvatarConfigsController : ControllerBase
         return Ok(MapToDto(updated));
     }
 
+    [HttpPost("{id:int}/model")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadModel(
+        int id,
+        [FromForm] AssetUploadRequest request,
+        CancellationToken ct)
+    {
+        var config = await _internalAvatarConfigClient.GetByIdAsync(id, ct);
+        if (config is null)
+        {
+            return NotFound();
+        }
+
+        if (!CanAccess(config))
+        {
+            return Forbid();
+        }
+
+        if (request?.File is null || request.File.Length == 0)
+        {
+            return BadRequest("Archivo requerido.");
+        }
+
+        var blobPath = BuildModelPath(config.Empresa, config.Sede, request.File.FileName);
+        var contentType = request.File.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
+            ? "model/gltf-binary"
+            : request.File.ContentType ?? "application/octet-stream";
+
+        await using var stream = request.File.OpenReadStream();
+        await _storage.UploadAsync(stream, blobPath, contentType, ct);
+
+        config.Vestimenta = blobPath;
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
+
+        return Ok(MapToDto(updated));
+    }
+
     private (string? Empresa, string? Sede, bool IsGlobalAdmin) GetScope()
     {
         var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
@@ -313,6 +350,16 @@ public class AvatarConfigsController : ControllerBase
         var safeAssetName = SanitizeSegment(assetName);
 
         return $"public/{safeEmpresa}/{safeSede}/branding/{safeAssetName}{extension}";
+    }
+
+    private static string BuildModelPath(string empresa, string sede, string originalFileName)
+    {
+        var extension = Path.GetExtension(originalFileName);
+        var fileName = string.IsNullOrWhiteSpace(extension) ? "model.glb" : $"model{extension}";
+        var safeEmpresa = SanitizeSegment(empresa);
+        var safeSede = SanitizeSegment(sede);
+
+        return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
     }
 
     private static string SanitizeSegment(string value)

@@ -28,14 +28,25 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
-        var user = await _internalUserClient.GetByEmailAsync(req.Email, ct);
+        var normalizedEmail = req.Email?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return BadRequest("Email requerido.");
+        }
+
+        var user = await _internalUserClient.GetByEmailAsync(normalizedEmail.ToUpperInvariant(), ct);
+        if (user is null && !string.Equals(normalizedEmail, normalizedEmail.ToUpperInvariant(), StringComparison.Ordinal))
+        {
+            user = await _internalUserClient.GetByEmailAsync(normalizedEmail, ct);
+        }
+
         if (user is null || !user.IsActive)
         {
             return Unauthorized("Credenciales inválidas.");
         }
 
         // TODO: Migrar PasswordHash a BCrypt u otro esquema de hashing.
-        if (!string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
+        if (!IsPasswordValid(user.PasswordHash, req.Password))
         {
             return Unauthorized("Credenciales inválidas.");
         }
@@ -84,6 +95,24 @@ public class AuthController : ControllerBase
             signingCredentials: creds);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), exp);
+    }
+
+    private static bool IsPasswordValid(string storedPasswordHash, string providedPassword)
+    {
+        if (string.IsNullOrWhiteSpace(storedPasswordHash) || string.IsNullOrWhiteSpace(providedPassword))
+        {
+            return false;
+        }
+
+        if (string.Equals(storedPasswordHash, providedPassword, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var providedBytes = Encoding.UTF8.GetBytes(providedPassword);
+        var providedBase64 = Convert.ToBase64String(providedBytes);
+
+        return string.Equals(storedPasswordHash, providedBase64, StringComparison.Ordinal);
     }
 
 }
