@@ -50,7 +50,7 @@ public sealed class FileUploadOperationFilter : IOperationFilter
                     {
                         Type = "object",
                         Properties = properties,
-                        Required = required.ToList()
+                        Required = required.Count > 0 ? required : null
                     }
                 }
             }
