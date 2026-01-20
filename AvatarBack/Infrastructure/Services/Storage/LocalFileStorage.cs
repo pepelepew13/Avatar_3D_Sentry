@@ -30,12 +30,13 @@ namespace Avatar_3D_Sentry.Services.Storage
                 "backgrounds" => _opt.Local.BackgroundsPath,
                 "videos"      => _opt.Local.VideosPath,
                 "audio"       => _opt.Local.AudioPath,
+                "tts"         => _opt.Local.AudioPath,   // ✅
                 "public"      => _opt.Local.Root,
                 _             => _opt.Local.Root
             };
 
-            // En audio queremos que cuelgue de Resources/audio para servir con /resources
-            var isAudio = alias.Equals("audio", StringComparison.OrdinalIgnoreCase);
+            var isAudio = alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
+                    || alias.Equals("tts", StringComparison.OrdinalIgnoreCase); // ✅
 
             var root = Path.IsPathRooted(targetDir)
                 ? targetDir
@@ -98,6 +99,7 @@ namespace Avatar_3D_Sentry.Services.Storage
                 return alias.ToLowerInvariant() switch
                 {
                     "audio"       => $"/resources/{TrimFirst(path)}",
+                    "tts"         => $"/resources/{TrimFirst(path)}", // ✅
                     "models"      => $"/models/{TrimFirst(path, 1)}",
                     "logos"       => $"/logos/{TrimFirst(path, 1)}",
                     "backgrounds" => $"/backgrounds/{TrimFirst(path, 1)}",
@@ -205,11 +207,12 @@ namespace Avatar_3D_Sentry.Services.Storage
         private static bool IsKnownAlias(string alias)
         {
             return alias.Equals("models", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("videos", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("public", StringComparison.OrdinalIgnoreCase);
+                || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("videos", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("tts", StringComparison.OrdinalIgnoreCase)    // ✅
+                || alias.Equals("public", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string TrimFirst(string p, int segments = 0)

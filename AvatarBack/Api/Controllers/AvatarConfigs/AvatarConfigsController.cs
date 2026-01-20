@@ -349,7 +349,8 @@ public class AvatarConfigsController : ControllerBase
         var safeSede = SanitizeSegment(sede);
         var safeAssetName = SanitizeSegment(assetName);
 
-        return $"{safeEmpresa}/{safeSede}/imagen/{safeAssetName}{extension}";
+        // ✅ public/{empresa}/{sede}/branding/...
+        return $"public/{safeEmpresa}/{safeSede}/branding/{safeAssetName}{extension}";
     }
 
     private static string BuildModelPath(string empresa, string sede, string originalFileName)
@@ -359,7 +360,8 @@ public class AvatarConfigsController : ControllerBase
         var safeEmpresa = SanitizeSegment(empresa);
         var safeSede = SanitizeSegment(sede);
 
-        return $"{safeEmpresa}/{safeSede}/modelo3d/{fileName}";
+        // ✅ public/{empresa}/{sede}/models/...
+        return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
     }
 
     private static string SanitizeSegment(string value)

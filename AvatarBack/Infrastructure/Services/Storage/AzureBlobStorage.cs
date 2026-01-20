@@ -124,23 +124,33 @@ namespace Avatar_3D_Sentry.Services.Storage
 
         private string MapContainer(string alias) => alias.ToLowerInvariant() switch
         {
+            // ✅ nuevo alias oficial
+            "tts"        => _opt.Containers.Audio,
+
+            // compat hacia atrás
+            "audio"      => _opt.Containers.Audio,
+
+            // ✅ oficial
+            "public"     => _opt.Containers.Logos,
+
+            // compat hacia atrás (si alguna parte vieja usa estos aliases)
             "models"      => _opt.Containers.Models,
             "logos"       => _opt.Containers.Logos,
             "backgrounds" => _opt.Containers.Backgrounds,
             "videos"      => _opt.Containers.Videos,
-            "audio"       => _opt.Containers.Audio,
-            "public"      => _opt.Containers.Logos,
-            _             => alias
+
+            _ => alias
         };
 
         private static bool IsKnownAlias(string alias)
         {
-            return alias.Equals("models", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("videos", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
-                   || alias.Equals("public", StringComparison.OrdinalIgnoreCase);
+            return alias.Equals("public", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("tts", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("models", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("videos", StringComparison.OrdinalIgnoreCase);
         }
 
         private string GetSasUrl(BlobContainerClient container, string objectName, TimeSpan ttl)

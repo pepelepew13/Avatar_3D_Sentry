@@ -62,7 +62,8 @@ builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
     client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
 });
 builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
-builder.Services.AddHttpClient<IInternalApiTokenService, InternalApiTokenService>();
+builder.Services.AddHttpClient<IInternalApiTokenService, InternalApiTokenService>()
+    .AddHttpMessageHandler<InternalApiApiKeyHandler>();
 builder.Services.AddTransient<InternalApiAuthHandler>();
 builder.Services.AddHttpClient<IInternalUserClient, InternalUserClient>()
     .AddHttpMessageHandler<InternalApiAuthHandler>();
@@ -114,6 +115,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<IAuthorizationHandler, CompanyAccessHandler>();
 builder.Services.AddScoped<ICompanyAccessService, CompanyAccessService>();
 builder.Services.AddSingleton<PhraseGenerator>();
+builder.Services.AddTransient<InternalApiApiKeyHandler>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -159,24 +161,24 @@ builder.Services.AddSingleton<IAssetStorage>(sp =>
         AzureConnection = az.ConnectionString,
         Containers = new StorageOptions.ContainerNames
         {
-            // Tu AzureStorageOptions solo tiene public y tts,
-            // así que mapeamos varios a public y audio a tts:
             Models = az.ContainerNamePublic,
             Logos = az.ContainerNamePublic,
             Backgrounds = az.ContainerNamePublic,
             Videos = az.ContainerNameVideos,
             Audio = az.ContainerNameTts
         }
-        // SasExpiryMinutes / AudioRetentionDays / Local quedan por default
     };
 
+    // Si hay connection string, usa Azure
     if (!string.IsNullOrWhiteSpace(storage.AzureConnection))
     {
         return new AzureBlobStorage(storage);
     }
 
+    // Si no hay connection string, usa Local
     storage.Mode = "Local";
-    return new LocalFileStorage(storage);
+    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    return new LocalFileStorage(env, storage); // ✅ ahora sí
 });
 
 // ==================================================================

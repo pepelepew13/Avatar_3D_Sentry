@@ -84,7 +84,18 @@ public class InternalUserClient : IInternalUserClient
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"internal/users/{id}", ct);
-        response.EnsureSuccessStatusCode();
+
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var body = response.Content is null ? "" : await response.Content.ReadAsStringAsync(ct);
+
+        // Para que el controller pueda mapear status code sin perder info
+        throw new HttpRequestException(
+            $"Internal API DELETE internal/users/{id} failed: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}",
+            inner: null,
+            statusCode: response.StatusCode
+        );
     }
 
     private static Uri BuildBaseUri(string baseUrl)

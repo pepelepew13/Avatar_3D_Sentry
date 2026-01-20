@@ -39,14 +39,40 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
 
     public async Task<InternalAvatarConfigDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync($"internal/avatar-config/{id}", ct);
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
+        const int pageSize = 50;
+        var page = 1;
 
-        response.EnsureSuccessStatusCode();
-        return await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
+        while (true)
+        {
+            var query = new Dictionary<string, string?>
+            {
+                ["page"] = page.ToString(),
+                ["pageSize"] = pageSize.ToString(),
+            };
+
+            var uri = QueryHelpers.AddQueryString("internal/avatar-config", query);
+
+            var response = await _httpClient.GetAsync(uri, ct);
+            response.EnsureSuccessStatusCode();
+
+            var payload = await ReadJsonOrDefaultAsync<PagedResponse<InternalAvatarConfigDto>>(response, ct)
+                        ?? new PagedResponse<InternalAvatarConfigDto>();
+
+            var items = payload.Items ?? new List<InternalAvatarConfigDto>();
+            var match = items.FirstOrDefault(x => x.Id == id);
+            if (match is not null)
+                return match;
+
+            // cortar si no hay más items
+            if (items.Count == 0)
+                return null;
+
+            // cortar si ya leímos todo el total
+            if (payload.Total > 0 && page * pageSize >= payload.Total)
+                return null;
+
+            page++;
+        }
     }
 
     public async Task<InternalAvatarConfigDto?> GetByScopeAsync(string empresa, string sede, CancellationToken ct = default)

@@ -68,8 +68,11 @@ public class AssetsController : ControllerBase
             return BadRequest("Archivo requerido.");
         }
 
-        var fileName = SanitizeFileName(request.File.FileName);
-        var blobPath = $"{SanitizeSegment(empresa)}/{SanitizeSegment(sede)}/{SanitizeSegment(categoria)}/{fileName}";
+        var safeEmpresa = SanitizeSegment(empresa);
+        var safeSede = SanitizeSegment(sede);
+        var safeFileName = SanitizeFileName(request.File.FileName);
+
+        var blobPath = BuildBlobPath(safeEmpresa, safeSede, categoria, safeFileName);
         var contentType = GetContentType(request.File, categoria);
 
         await using var stream = request.File.OpenReadStream();
@@ -78,9 +81,29 @@ public class AssetsController : ControllerBase
         return Ok(new AssetUploadResponse(blobPath, url, contentType, request.File.Length));
     }
 
+    private static string BuildBlobPath(string empresa, string sede, string categoria, string fileName)
+    {
+        var cat = (categoria ?? "").Trim().ToLowerInvariant();
+
+        return cat switch
+        {
+            // ✅ Alineado con patrón: public/{empresa}/{sede}/branding/...
+            "imagen" => $"public/{empresa}/{sede}/branding/assets/{fileName}",
+
+            // ✅ Videos también quedan dentro de branding (por coherencia con tu módulo media)
+            "video" => $"public/{empresa}/{sede}/branding/videos/{fileName}",
+
+            // ✅ Alineado con patrón: public/{empresa}/{sede}/models/...
+            "modelo3d" => $"public/{empresa}/{sede}/models/{fileName}",
+
+            // fallback
+            _ => $"public/{empresa}/{sede}/{SanitizeSegment(cat)}/{fileName}"
+        };
+    }
+
     private static string SanitizeSegment(string value)
     {
-        var sanitized = value.Trim().ToLowerInvariant();
+        var sanitized = (value ?? "").Trim().ToLowerInvariant();
         foreach (var c in Path.GetInvalidFileNameChars())
         {
             sanitized = sanitized.Replace(c, '-');
@@ -91,7 +114,7 @@ public class AssetsController : ControllerBase
 
     private static string SanitizeFileName(string value)
     {
-        var sanitized = value.Trim().Replace(' ', '-');
+        var sanitized = (value ?? "").Trim().Replace(' ', '-');
         foreach (var c in Path.GetInvalidFileNameChars())
         {
             sanitized = sanitized.Replace(c, '-');
