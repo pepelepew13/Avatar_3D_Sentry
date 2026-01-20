@@ -107,8 +107,20 @@ public class UsersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        await _internalUserClient.DeleteAsync(id, ct);
-        return NoContent();
+        try
+        {
+            await _internalUserClient.DeleteAsync(id, ct);
+            return NoContent();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.NotFound)
+        {
+            return NotFound();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.BadRequest)
+        {
+            // Devuelve el mensaje con el body real de la API interna (clave para debug)
+            return BadRequest(new { error = "La API interna rechazó la solicitud.", details = ex.Message });
+        }
     }
 
     private static UserDto MapToUserDto(InternalUserDto user) => new()

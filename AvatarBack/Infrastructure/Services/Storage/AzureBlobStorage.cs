@@ -23,10 +23,7 @@ namespace Avatar_3D_Sentry.Services.Storage
 
         public async Task<string> UploadAsync(Stream data, string blobPath, string contentType, CancellationToken ct)
         {
-            var (containerName, objectName) = Split(blobPath);
-
-            // Permite mapear alias "logos|backgrounds|models|audio" a nombres reales
-            containerName = MapContainer(containerName);
+            var (containerName, objectName) = ResolvePath(blobPath);
 
             var container = _svc.GetBlobContainerClient(containerName);
             await container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
@@ -42,8 +39,7 @@ namespace Avatar_3D_Sentry.Services.Storage
 
         public string GetPublicUrl(string path, TimeSpan? ttl = null)
         {
-            var (containerName, objectName) = Split(path);
-            containerName = MapContainer(containerName);
+            var (containerName, objectName) = ResolvePath(path);
 
             var container = _svc.GetBlobContainerClient(containerName);
             return GetSasUrl(container, objectName, ttl ?? TimeSpan.FromMinutes(_opt.SasExpiryMinutes));
@@ -54,8 +50,7 @@ namespace Avatar_3D_Sentry.Services.Storage
             if (string.IsNullOrWhiteSpace(pathPrefix))
                 throw new ArgumentException("pathPrefix inválido. Debe incluir el alias de contenedor.");
 
-            var (alias, prefix) = SplitPrefix(pathPrefix);
-            var containerName = MapContainer(alias);
+            var (alias, prefix, containerName) = ResolvePrefix(pathPrefix);
             var container = _svc.GetBlobContainerClient(containerName);
 
             var results = new List<string>();
@@ -80,8 +75,7 @@ namespace Avatar_3D_Sentry.Services.Storage
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("path inválido.");
 
-            var (containerName, objectName) = Split(path);
-            containerName = MapContainer(containerName);
+            var (containerName, objectName) = ResolvePath(path);
 
             var container = _svc.GetBlobContainerClient(containerName);
             var blob = container.GetBlobClient(objectName);
@@ -89,34 +83,75 @@ namespace Avatar_3D_Sentry.Services.Storage
             return result.Value;
         }
 
-        private static (string container, string name) Split(string path)
+        private (string container, string name) ResolvePath(string path)
         {
             var clean = path.Trim().TrimStart('/');
             var idx = clean.IndexOf('/');
-            if (idx < 0) throw new ArgumentException("blobPath inválido. Debe ser 'container/objeto/...'");
+            if (idx < 0)
+            {
+                return (MapContainer("public"), clean);
+            }
 
-            var c = clean.Substring(0, idx);
-            var n = clean.Substring(idx + 1);
-            return (c, n);
+            var alias = clean.Substring(0, idx);
+            var remainder = clean.Substring(idx + 1);
+            if (IsKnownAlias(alias))
+            {
+                return (MapContainer(alias), remainder);
+            }
+
+            return (MapContainer("public"), clean);
         }
 
-        private static (string alias, string prefix) SplitPrefix(string path)
+        private (string alias, string prefix, string container) ResolvePrefix(string path)
         {
             var clean = path.Trim().TrimStart('/');
             var idx = clean.IndexOf('/');
-            if (idx < 0) return (clean, string.Empty);
-            return (clean.Substring(0, idx), clean.Substring(idx + 1));
+            if (idx < 0)
+            {
+                var container = MapContainer(IsKnownAlias(clean) ? clean : "public");
+                return (IsKnownAlias(clean) ? clean : "public", string.Empty, container);
+            }
+
+            var alias = clean.Substring(0, idx);
+            var remainder = clean.Substring(idx + 1);
+            if (IsKnownAlias(alias))
+            {
+                return (alias, remainder, MapContainer(alias));
+            }
+
+            return ("public", clean, MapContainer("public"));
         }
 
         private string MapContainer(string alias) => alias.ToLowerInvariant() switch
         {
+            // ✅ nuevo alias oficial
+            "tts"        => _opt.Containers.Audio,
+
+            // compat hacia atrás
+            "audio"      => _opt.Containers.Audio,
+
+            // ✅ oficial
+            "public"     => _opt.Containers.Logos,
+
+            // compat hacia atrás (si alguna parte vieja usa estos aliases)
             "models"      => _opt.Containers.Models,
             "logos"       => _opt.Containers.Logos,
             "backgrounds" => _opt.Containers.Backgrounds,
             "videos"      => _opt.Containers.Videos,
-            "audio"       => _opt.Containers.Audio,
-            _             => alias
+
+            _ => alias
         };
+
+        private static bool IsKnownAlias(string alias)
+        {
+            return alias.Equals("public", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("tts", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("audio", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("models", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("logos", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("backgrounds", StringComparison.OrdinalIgnoreCase)
+                || alias.Equals("videos", StringComparison.OrdinalIgnoreCase);
+        }
 
         private string GetSasUrl(BlobContainerClient container, string objectName, TimeSpan ttl)
         {

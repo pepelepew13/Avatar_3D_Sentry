@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using System.IO;
+using Avatar_3D_Sentry.Models;
+using Avatar_3D_Sentry.Services.Storage;
 using AvatarSentry.Application.AvatarConfigs;
 using AvatarSentry.Application.InternalApi.Clients;
 using AvatarSentry.Application.InternalApi.Models;
@@ -13,10 +16,14 @@ namespace Avatar_3D_Sentry.Controllers;
 public class AvatarConfigsController : ControllerBase
 {
     private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
+    private readonly IAssetStorage _storage;
 
-    public AvatarConfigsController(IInternalAvatarConfigClient internalAvatarConfigClient)
+    public AvatarConfigsController(
+        IInternalAvatarConfigClient internalAvatarConfigClient,
+        IAssetStorage storage)
     {
         _internalAvatarConfigClient = internalAvatarConfigClient;
+        _storage = storage;
     }
 
     [HttpGet]
@@ -185,6 +192,111 @@ public class AvatarConfigsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:int}/logo")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadLogo(
+        int id,
+        [FromForm] AssetUploadRequest request,
+        CancellationToken ct)
+    {
+        var config = await _internalAvatarConfigClient.GetByIdAsync(id, ct);
+        if (config is null)
+        {
+            return NotFound();
+        }
+
+        if (!CanAccess(config))
+        {
+            return Forbid();
+        }
+
+        if (request?.File is null || request.File.Length == 0)
+        {
+            return BadRequest("Archivo requerido.");
+        }
+
+        var blobPath = BuildBrandingPath(config.Empresa, config.Sede, "logo", request.File.FileName);
+
+        await using var stream = request.File.OpenReadStream();
+        await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
+
+        config.LogoPath = blobPath;
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
+
+        return Ok(MapToDto(updated));
+    }
+
+    [HttpPost("{id:int}/fondo")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadFondo(
+        int id,
+        [FromForm] AssetUploadRequest request,
+        CancellationToken ct)
+    {
+        var config = await _internalAvatarConfigClient.GetByIdAsync(id, ct);
+        if (config is null)
+        {
+            return NotFound();
+        }
+
+        if (!CanAccess(config))
+        {
+            return Forbid();
+        }
+
+        if (request?.File is null || request.File.Length == 0)
+        {
+            return BadRequest("Archivo requerido.");
+        }
+
+        var blobPath = BuildBrandingPath(config.Empresa, config.Sede, "fondo", request.File.FileName);
+
+        await using var stream = request.File.OpenReadStream();
+        await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
+
+        config.Fondo = blobPath;
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
+
+        return Ok(MapToDto(updated));
+    }
+
+    [HttpPost("{id:int}/model")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<AvatarConfigDto>> UploadModel(
+        int id,
+        [FromForm] AssetUploadRequest request,
+        CancellationToken ct)
+    {
+        var config = await _internalAvatarConfigClient.GetByIdAsync(id, ct);
+        if (config is null)
+        {
+            return NotFound();
+        }
+
+        if (!CanAccess(config))
+        {
+            return Forbid();
+        }
+
+        if (request?.File is null || request.File.Length == 0)
+        {
+            return BadRequest("Archivo requerido.");
+        }
+
+        var blobPath = BuildModelPath(config.Empresa, config.Sede, request.File.FileName);
+        var contentType = request.File.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
+            ? "model/gltf-binary"
+            : request.File.ContentType ?? "application/octet-stream";
+
+        await using var stream = request.File.OpenReadStream();
+        await _storage.UploadAsync(stream, blobPath, contentType, ct);
+
+        config.Vestimenta = blobPath;
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
+
+        return Ok(MapToDto(updated));
+    }
+
     private (string? Empresa, string? Sede, bool IsGlobalAdmin) GetScope()
     {
         var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
@@ -229,4 +341,37 @@ public class AvatarConfigsController : ControllerBase
         Idioma = config.Idioma,
         LogoPath = config.LogoPath
     };
+
+    private static string BuildBrandingPath(string empresa, string sede, string assetName, string originalFileName)
+    {
+        var extension = Path.GetExtension(originalFileName);
+        var safeEmpresa = SanitizeSegment(empresa);
+        var safeSede = SanitizeSegment(sede);
+        var safeAssetName = SanitizeSegment(assetName);
+
+        // ✅ public/{empresa}/{sede}/branding/...
+        return $"public/{safeEmpresa}/{safeSede}/branding/{safeAssetName}{extension}";
+    }
+
+    private static string BuildModelPath(string empresa, string sede, string originalFileName)
+    {
+        var extension = Path.GetExtension(originalFileName);
+        var fileName = string.IsNullOrWhiteSpace(extension) ? "model.glb" : $"model{extension}";
+        var safeEmpresa = SanitizeSegment(empresa);
+        var safeSede = SanitizeSegment(sede);
+
+        // ✅ public/{empresa}/{sede}/models/...
+        return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
+    }
+
+    private static string SanitizeSegment(string value)
+    {
+        var sanitized = value.Trim().ToLowerInvariant();
+        foreach (var c in Path.GetInvalidFileNameChars())
+        {
+            sanitized = sanitized.Replace(c, '-');
+        }
+
+        return sanitized.Replace(' ', '-');
+    }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Security;
@@ -9,6 +10,7 @@ using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -35,7 +37,8 @@ public class AvatarController : ControllerBase
     }
 
     /// <summary>
-    /// Anuncia un turno y devuelve audio + visemas ARKit.
+    /// Anuncia un turno y devuelve audio + visemas.
+    /// Audio se persiste en Blob (contenedor tts) y se retorna URL SAS.
     /// </summary>
     [HttpPost("announce")]
     [AllowAnonymous]
@@ -44,7 +47,8 @@ public class AvatarController : ControllerBase
     public async Task<IActionResult> AnnounceAsync(
         [FromBody] SolicitudAnuncio request,
         [FromQuery] string? idioma = null,
-        [FromQuery] string? voz = null)
+        [FromQuery] string? voz = null,
+        CancellationToken ct = default)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
@@ -88,27 +92,46 @@ public class AvatarController : ControllerBase
             return StatusCode(StatusCodes.Status502BadGateway, new { error = "No fue posible generar la locución." });
         }
 
-        // 3) Guardar audio en storage (alias "audio" => contenedor tts)
-        var blobPath = BuildAudioPath(request.Empresa, request.Sede);
+        // 3) Persistir audio en Blob: tts/{empresa}/{sede}/{yyyy}/{MM}/{dd}/.../audio.mp3
+        string audioUrl;
+        try
+        {
+            var safeEmpresa = SanitizeSegment(request.Empresa);
+            var safeSede = SanitizeSegment(request.Sede);
+            var now = DateTime.UtcNow;
 
-        await using var ms = new MemoryStream(tts.AudioBytes);
-        var audioUrl = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", HttpContext.RequestAborted);
+            // subcarpeta por hora para evitar sobrescritura dentro del día
+            var blobPath = $"tts/{safeEmpresa}/{safeSede}/{now:yyyy}/{now:MM}/{now:dd}/{now:HHmmssfff}/audio.mp3";
+
+            await using var ms = new MemoryStream(tts.AudioBytes, writable: false);
+            audioUrl = await _storage.UploadAsync(ms, blobPath, "audio/mpeg", ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudo persistir el audio en Blob Storage");
+            return StatusCode(StatusCodes.Status502BadGateway, new { error = "No fue posible almacenar el audio." });
+        }
 
         var response = new AnnouncementResponse
         {
             Empresa  = request.Empresa,
             Sede     = request.Sede,
             Texto    = texto,
-            AudioUrl = audioUrl,
-            Visemas  = tts.Visemes  // modelo de salida ya es List<Visema>
+            AudioUrl = audioUrl,     // ✅ URL SAS
+            Visemas  = tts.Visemes
         };
 
         return Ok(response);
     }
 
-    private static string BuildAudioPath(string empresa, string sede)
+    private static string SanitizeSegment(string value)
     {
-        var datePrefix = DateTime.UtcNow.ToString("yyyy/MM/dd");
-        return $"audio/{empresa.ToLowerInvariant()}/{sede.ToLowerInvariant()}/{datePrefix}/{Guid.NewGuid():N}.mp3";
+        var sanitized = (value ?? "").Trim().ToLowerInvariant();
+        foreach (var c in Path.GetInvalidFileNameChars())
+        {
+            sanitized = sanitized.Replace(c, '-');
+        }
+
+        return sanitized.Replace(' ', '-');
     }
 }
