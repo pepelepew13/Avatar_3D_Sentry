@@ -28,6 +28,10 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
+        return StatusCode(
+            StatusCodes.Status503ServiceUnavailable,
+            "Login desactivado temporalmente: esperando endpoint de autenticación compatible en UserAvatarApi.");
+
         var normalizedEmail = req.Email?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
