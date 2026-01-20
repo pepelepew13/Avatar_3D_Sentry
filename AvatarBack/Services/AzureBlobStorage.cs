@@ -75,6 +75,20 @@ namespace Avatar_3D_Sentry.Services.Storage
             return results.OrderBy(r => r, StringComparer.OrdinalIgnoreCase).ToArray();
         }
 
+        public async Task<bool> DeleteAsync(string path, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("path inválido.");
+
+            var (containerName, objectName) = Split(path);
+            containerName = MapContainer(containerName);
+
+            var container = _svc.GetBlobContainerClient(containerName);
+            var blob = container.GetBlobClient(objectName);
+            var result = await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
+            return result.Value;
+        }
+
         private static (string container, string name) Split(string path)
         {
             var clean = path.Trim().TrimStart('/');

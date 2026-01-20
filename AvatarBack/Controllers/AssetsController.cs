@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Avatar_3D_Sentry.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +49,17 @@ public class AssetsController : ControllerBase
         return $"{prefix}/{Sanitize(fileName)}";
     }
 
+    private static (string alias, string folder, string[]? allowedExtensions) ResolveAssetType(string type)
+    {
+        return type.Trim().ToLowerInvariant() switch
+        {
+            "logos" => ("logos", "logos", new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" }),
+            "fondos" => ("backgrounds", "fondos", new[] { ".png", ".jpg", ".jpeg", ".webp" }),
+            "modelos" => ("models", "modelos", new[] { ".glb", ".gltf" }),
+            _ => throw new ArgumentException("Tipo inválido. Usa: logos, fondos o modelos.")
+        };
+    }
+
     // =============================
     // POST /api/assets/logo/{company}/{site}
     // =============================
@@ -62,7 +74,7 @@ public class AssetsController : ControllerBase
     {
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
-        var blobPath = BuildBlobPath("logos", company, site, fileName, "branding");
+        var blobPath = BuildBlobPath("logos", company, site, fileName, "logos");
 
         await using var stream = file.OpenReadStream();
         var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -84,7 +96,7 @@ public class AssetsController : ControllerBase
     {
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
-        var blobPath = BuildBlobPath("backgrounds", company, site, fileName, "branding");
+        var blobPath = BuildBlobPath("backgrounds", company, site, fileName, "fondos");
 
         await using var stream = file.OpenReadStream();
         var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
@@ -106,8 +118,8 @@ public class AssetsController : ControllerBase
     {
         if (file.Length <= 0) return BadRequest("Archivo vacío.");
         var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Sanitize(file.FileName)}";
-        // Guardamos modelos dentro de "models/{company}/{site}/"
-        var blobPath = BuildBlobPath("models", company, site, fileName, "models");
+        // Guardamos modelos dentro de "{company}/{site}/modelos"
+        var blobPath = BuildBlobPath("models", company, site, fileName, "modelos");
 
         // Forzar content-type si es .glb
         var contentType = file.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
@@ -140,6 +152,54 @@ public class AssetsController : ControllerBase
         var url = await _storage.UploadAsync(stream, blobPath, file.ContentType ?? "application/octet-stream", ct);
 
         return Ok(new AssetUploadResponse(blobPath, url, file.ContentType, file.Length));
+    }
+
+    // =============================
+    // GET /api/assets/library/{type}/{company}/{site}
+    // =============================
+    [HttpGet("library/{type}/{company}/{site}")]
+    [Authorize(Policy = "CanEditAvatar")]
+    public async Task<ActionResult<object>> GetLibrary(
+        [FromRoute] string type,
+        [FromRoute] string company,
+        [FromRoute] string site,
+        CancellationToken ct)
+    {
+        var (alias, folder, allowedExtensions) = ResolveAssetType(type);
+        var prefix = $"{alias}/{Sanitize(company)}/{Sanitize(site)}/{folder}";
+
+        var items = await _storage.ListAsync(prefix, allowedExtensions, ct);
+        var response = items
+            .Select(path => new
+            {
+                path,
+                url = _storage.GetPublicUrl(path)
+            })
+            .ToArray();
+
+        return Ok(new { type, company, site, items = response });
+    }
+
+    // =============================
+    // DELETE /api/assets/{type}/{company}/{site}/{fileName}
+    // =============================
+    [HttpDelete("{type}/{company}/{site}/{fileName}")]
+    [Authorize(Policy = "CanEditAvatar")]
+    public async Task<ActionResult<object>> DeleteAsset(
+        [FromRoute] string type,
+        [FromRoute] string company,
+        [FromRoute] string site,
+        [FromRoute] string fileName,
+        CancellationToken ct)
+    {
+        var (alias, folder, _) = ResolveAssetType(type);
+        var blobPath = BuildBlobPath(alias, company, site, fileName, folder);
+
+        var deleted = await _storage.DeleteAsync(blobPath, ct);
+        if (!deleted)
+            return NotFound(new { path = blobPath });
+
+        return Ok(new { path = blobPath, deleted = true });
     }
 
     // =============================
