@@ -52,17 +52,6 @@ public class AuthController : ControllerBase
     }
 
 
-    [Authorize]
-    [HttpGet("me")]
-    public ActionResult<object> GetMe()
-    {
-        var email   = User.FindFirstValue(ClaimTypes.Email);
-        var role    = User.FindFirstValue(ClaimTypes.Role) ?? "User";
-        var empresa = User.FindFirst("empresa")?.Value;
-        var sede    = User.FindFirst("sede")?.Value;
-        return Ok(new { email, role, empresa, sede });
-    }
-
     private (string token, DateTime expiresUtc) GenerateJwt(AvatarSentry.Application.InternalApi.Models.InternalUserDto user)
     {
         var now = DateTime.UtcNow;
