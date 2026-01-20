@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Services.Storage;
@@ -19,16 +18,6 @@ public class AssetsController : ControllerBase
         _storage = storage;
         _logger = logger;
     }
-
-    // -----------------------------
-    // DTOs de respuesta
-    // -----------------------------
-    public record AssetUploadResponse(
-        string BlobPath,
-        string Url,
-        string? ContentType,
-        long SizeBytes
-    );
 
     // -----------------------------
     // Helpers
