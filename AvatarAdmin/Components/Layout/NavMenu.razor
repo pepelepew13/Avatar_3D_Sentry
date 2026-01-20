@@ -28,6 +28,11 @@
             <span>Editor de Avatar</span>
         </NavLink>
 
+        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/configs">
+            <span class="nav-card-link-icon nav-card-link-icon-configs" aria-hidden="true"></span>
+            <span>Avatar Configs</span>
+        </NavLink>
+
         @* Mostrar Usuarios solo si el rol es Admin *@
         @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
         {

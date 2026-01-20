@@ -1,0 +1,32 @@
+.configs-hero{
+  display:flex; justify-content:space-between; align-items:center; gap:1rem;
+  padding:1rem 1.2rem; border-radius:18px;
+  background: linear-gradient(135deg, rgba(0,20,137,.08), rgba(255,255,255,.9));
+  border:1px solid var(--line-strong); box-shadow: var(--shadow-sm);
+}
+.configs-hero .hero-tags{ display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.5rem }
+.configs-hero .tag{ border-radius:999px; padding:.2rem .55rem; font-weight:700; background:#fff; border:1px solid var(--line) }
+
+.configs-filters{ margin-top:1rem; padding:1rem }
+.filter-grid{
+  display:grid; gap:.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  align-items:end;
+}
+.filter-grid .actions{ display:flex; gap:.6rem }
+.filter-grid .btn{ width:100% }
+
+.configs-table{ margin-top:1rem; padding:0 }
+.table-wrap{ padding:1rem }
+.logo-thumb{ width:44px; height:32px; object-fit:contain; border-radius:6px; border:1px solid var(--line) }
+
+.empty-row{
+  display:flex; flex-direction:column; align-items:center; gap:.4rem;
+  padding:2rem; color:var(--muted);
+}
+.empty-ic{ font-size:1.6rem }
+
+.pager{
+  display:flex; justify-content:space-between; align-items:center; gap:.6rem;
+  padding:.75rem 1rem; border-top:1px solid var(--line-strong);
+}

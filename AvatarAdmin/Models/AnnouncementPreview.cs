@@ -17,6 +17,9 @@ public sealed class AnnouncementRequest
     [JsonPropertyName("turno")]
     public string Turno { get; set; } = string.Empty;
 
+    [JsonPropertyName("texto")]
+    public string Texto { get; set; } = string.Empty;
+
     [JsonPropertyName("nombre")]
     public string Nombre { get; set; } = string.Empty;
 }
