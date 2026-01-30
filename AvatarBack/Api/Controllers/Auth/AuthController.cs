@@ -65,6 +65,8 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Credenciales inválidas." });
         }
 
+        user.Role = NormalizeRole(user.Role);
+
         if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
         {
             if (string.IsNullOrWhiteSpace(user.Empresa) || string.IsNullOrWhiteSpace(user.Sede))
@@ -135,6 +137,21 @@ public class AuthController : ControllerBase
             signingCredentials: creds);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), exp);
+    }
+
+    private static string NormalizeRole(string? role)
+    {
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Admin";
+        }
+
+        if (string.Equals(role, "User", StringComparison.OrdinalIgnoreCase))
+        {
+            return "User";
+        }
+
+        return role?.Trim() ?? string.Empty;
     }
 
 }
