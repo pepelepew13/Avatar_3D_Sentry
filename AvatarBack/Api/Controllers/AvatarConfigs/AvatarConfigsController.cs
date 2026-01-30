@@ -5,8 +5,10 @@ using AvatarSentry.Application.AvatarConfigs;
 using AvatarSentry.Application.Exceptions;
 using AvatarSentry.Application.InternalApi.Clients;
 using AvatarSentry.Application.InternalApi.Models;
+using Avatar_3D_Sentry.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -17,13 +19,16 @@ public class AvatarConfigsController : ControllerBase
 {
     private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
     private readonly IAssetStorage _storage;
+    private readonly AzureStorageOptions _storageOptions;
 
     public AvatarConfigsController(
         IInternalAvatarConfigClient internalAvatarConfigClient,
-        IAssetStorage storage)
+        IAssetStorage storage,
+        IOptions<AzureStorageOptions> storageOptions)
     {
         _internalAvatarConfigClient = internalAvatarConfigClient;
         _storage = storage;
+        _storageOptions = storageOptions.Value;
     }
 
     [HttpGet]
@@ -50,7 +55,7 @@ public class AvatarConfigsController : ControllerBase
                 Page = result.Page,
                 PageSize = result.PageSize,
                 Total = result.Total,
-                Items = result.Items.Select(MapToListItem).ToList()
+                Items = result.Items.Select(MapToListItemWithUrls).ToList()
             };
 
             return Ok(response);
@@ -73,7 +78,7 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(MapToDto(config));
+        return Ok(MapToDtoWithUrls(config));
     }
 
     [HttpPost]
@@ -94,7 +99,7 @@ public class AvatarConfigsController : ControllerBase
         };
 
         var created = await _internalAvatarConfigClient.CreateAsync(payload, ct);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDto(created));
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDtoWithUrls(created));
     }
 
     [HttpPut("{id:int}")]
@@ -122,7 +127,7 @@ public class AvatarConfigsController : ControllerBase
         };
 
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, payload, ct);
-        return Ok(MapToDto(updated));
+        return Ok(MapToDtoWithUrls(updated));
     }
 
     [HttpPatch("{id:int}")]
@@ -143,7 +148,7 @@ public class AvatarConfigsController : ControllerBase
         existing.BackgroundPath = request.BackgroundPath ?? existing.BackgroundPath;
 
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, existing, ct);
-        return Ok(MapToDto(updated));
+        return Ok(MapToDtoWithUrls(updated));
     }
 
     [HttpDelete("{id:int}")]
@@ -185,7 +190,7 @@ public class AvatarConfigsController : ControllerBase
         config.LogoPath = blobPath;
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
 
-        return Ok(MapToDto(updated));
+        return Ok(MapToDtoWithUrls(updated));
     }
 
     [HttpPost("{id:int}/fondo")]
@@ -214,7 +219,7 @@ public class AvatarConfigsController : ControllerBase
         config.BackgroundPath = blobPath;
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
 
-        return Ok(MapToDto(updated));
+        return Ok(MapToDtoWithUrls(updated));
     }
 
     [HttpPost("{id:int}/model")]
@@ -246,45 +251,62 @@ public class AvatarConfigsController : ControllerBase
         config.Vestimenta = blobPath;
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
 
-        return Ok(MapToDto(updated));
+        return Ok(MapToDtoWithUrls(updated));
     }
 
-    private static AvatarConfigDto MapToDto(InternalAvatarConfigDto config) => new()
+    private AvatarConfigDto MapToDtoWithUrls(InternalAvatarConfigDto config)
     {
-        Id = config.Id,
-        Empresa = config.Empresa,
-        Sede = config.Sede,
-        Vestimenta = config.Vestimenta,
-        Fondo = config.Fondo,
-        Voz = config.Voz,
-        Idioma = config.Idioma,
-        LogoPath = config.LogoPath,
-        ColorCabello = config.ColorCabello,
-        BackgroundPath = config.BackgroundPath,
-        IsActive = config.IsActive
-    };
+        var dto = new AvatarConfigDto
+        {
+            Id = config.Id,
+            Empresa = config.Empresa,
+            Sede = config.Sede,
+            Vestimenta = config.Vestimenta,
+            Fondo = config.Fondo,
+            Voz = config.Voz,
+            Idioma = config.Idioma,
+            LogoPath = config.LogoPath,
+            ColorCabello = config.ColorCabello,
+            BackgroundPath = config.BackgroundPath,
+            IsActive = config.IsActive
+        };
 
-    private static AvatarConfigListItemDto MapToListItem(InternalAvatarConfigDto config) => new()
+        dto.LogoUrl = BuildPublicUrl(config.LogoPath);
+        dto.BackgroundUrl = BuildPublicUrl(config.BackgroundPath);
+
+        return dto;
+    }
+
+    private AvatarConfigListItemDto MapToListItemWithUrls(InternalAvatarConfigDto config)
     {
-        Id = config.Id,
-        Empresa = config.Empresa,
-        Sede = config.Sede,
-        Vestimenta = config.Vestimenta,
-        Fondo = config.Fondo,
-        Voz = config.Voz,
-        Idioma = config.Idioma,
-        LogoPath = config.LogoPath,
-        ColorCabello = config.ColorCabello,
-        BackgroundPath = config.BackgroundPath,
-        IsActive = config.IsActive
-    };
+        var dto = new AvatarConfigListItemDto
+        {
+            Id = config.Id,
+            Empresa = config.Empresa,
+            Sede = config.Sede,
+            Vestimenta = config.Vestimenta,
+            Fondo = config.Fondo,
+            Voz = config.Voz,
+            Idioma = config.Idioma,
+            LogoPath = config.LogoPath,
+            ColorCabello = config.ColorCabello,
+            BackgroundPath = config.BackgroundPath,
+            IsActive = config.IsActive
+        };
+
+        dto.LogoUrl = BuildPublicUrl(config.LogoPath);
+        dto.BackgroundUrl = BuildPublicUrl(config.BackgroundPath);
+
+        return dto;
+    }
 
     private static string BuildLogoPath(string empresa, string sede, string originalFileName)
     {
         var extension = Path.GetExtension(originalFileName);
         var safeEmpresa = SanitizeSegment(empresa);
 
-        return $"public/archivo/{safeEmpresa}/logo{extension}";
+        // Usamos /archivo/... para mantener el patrón esperado por la API interna y el endpoint público.
+        return $"/archivo/{safeEmpresa}/logo{extension}";
     }
 
     private static string BuildBackgroundPath(string empresa, string sede, string originalFileName)
@@ -293,7 +315,8 @@ public class AvatarConfigsController : ControllerBase
         var safeEmpresa = SanitizeSegment(empresa);
         var safeSede = SanitizeSegment(sede);
 
-        return $"public/archivo/{safeEmpresa}/{safeSede}/fondo{extension}";
+        // Usamos /archivo/... para mantener el patrón esperado por la API interna y el endpoint público.
+        return $"/archivo/{safeEmpresa}/{safeSede}/background{extension}";
     }
 
     private static string BuildModelPath(string empresa, string sede, string originalFileName)
@@ -304,6 +327,31 @@ public class AvatarConfigsController : ControllerBase
         var safeSede = SanitizeSegment(sede);
 
         return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
+    }
+
+    private string? BuildPublicUrl(string? blobPath)
+    {
+        if (string.IsNullOrWhiteSpace(blobPath))
+        {
+            return null;
+        }
+
+        var trimmed = blobPath.Trim();
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        var baseUrl = _storageOptions.BlobServiceEndpoint?.TrimEnd('/') ?? string.Empty;
+        var container = _storageOptions.ContainerNamePublic?.Trim('/') ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(container))
+        {
+            return trimmed;
+        }
+
+        return $"{baseUrl}/{container}/{trimmed.TrimStart('/')}";
     }
 
     private static string SanitizeSegment(string value)
