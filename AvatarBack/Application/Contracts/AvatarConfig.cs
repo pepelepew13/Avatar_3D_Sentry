@@ -37,6 +37,7 @@ public class AvatarConfig
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
     public string? ColorCabello { get; set; }
+    public string? BackgroundPath { get; set; }
 
     // === Identidad
     public string? LogoPath { get; set; }           // igual: guardamos "/assets/{id}"

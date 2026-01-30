@@ -14,6 +14,7 @@ public class AvatarConfigDto
     public string? Idioma { get; set; }
     public string? ColorCabello { get; set; }
     public string? LogoPath { get; set; }            // URL (p. ej. /assets/45)
+    public string? BackgroundPath { get; set; }
 
     public static AvatarConfigDto FromEntity(AvatarConfig e) => new()
     {
@@ -27,6 +28,7 @@ public class AvatarConfigDto
         Voz           = e.Voz,
         Idioma        = e.Idioma,
         ColorCabello  = e.ColorCabello,
-        LogoPath      = e.LogoPath
+        LogoPath      = e.LogoPath,
+        BackgroundPath = e.BackgroundPath
     };
 }

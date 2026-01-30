@@ -142,6 +142,8 @@ public sealed class AvatarApiClient
         public string? Voz { get; set; }
         public string? Idioma { get; set; }
         public string? LogoPath { get; set; }
+        public string? ColorCabello { get; set; }
+        public string? BackgroundPath { get; set; }
     }
 
     public async Task<AvatarConfigDto?> GetConfigAsync(string empresa, string sede, CancellationToken ct = default)

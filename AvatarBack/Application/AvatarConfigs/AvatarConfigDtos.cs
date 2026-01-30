@@ -12,6 +12,9 @@ public class AvatarConfigDto
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
     public string? LogoPath { get; set; }
+    public string? ColorCabello { get; set; }
+    public string? BackgroundPath { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class AvatarConfigPatchRequest
@@ -21,6 +24,8 @@ public class AvatarConfigPatchRequest
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
     public string? LogoPath { get; set; }
+    public string? ColorCabello { get; set; }
+    public string? BackgroundPath { get; set; }
 }
 
 public class CreateAvatarConfigRequest
@@ -36,6 +41,8 @@ public class CreateAvatarConfigRequest
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
     public string? LogoPath { get; set; }
+    public string? ColorCabello { get; set; }
+    public string? BackgroundPath { get; set; }
 }
 
 public class UpdateAvatarConfigRequest
@@ -51,4 +58,6 @@ public class UpdateAvatarConfigRequest
     public string? Voz { get; set; }
     public string? Idioma { get; set; }
     public string? LogoPath { get; set; }
+    public string? ColorCabello { get; set; }
+    public string? BackgroundPath { get; set; }
 }

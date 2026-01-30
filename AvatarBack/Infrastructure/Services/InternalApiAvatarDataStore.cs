@@ -51,7 +51,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
         {
             ["page"] = page.ToString(),
             ["pageSize"] = pageSize.ToString(),
-            ["q"] = string.IsNullOrWhiteSpace(q) ? null : q,
+            ["email"] = string.IsNullOrWhiteSpace(q) ? null : q,
             ["role"] = string.IsNullOrWhiteSpace(role) ? null : role
         };
 
@@ -76,7 +76,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
         var response = await SendAsync(HttpMethod.Post, "internal/users", ct, user);
         response.EnsureSuccessStatusCode();
 
-        var created = await response.Content.ReadFromJsonAsync<ApplicationUser>(_jsonOptions, ct);
+        var created = await FindUserByEmailAsync(user.Email, ct);
         return created ?? user;
     }
 
@@ -119,7 +119,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
         var response = await SendAsync(HttpMethod.Post, "internal/avatar-config", ct, config);
         response.EnsureSuccessStatusCode();
 
-        var created = await response.Content.ReadFromJsonAsync<AvatarConfig>(_jsonOptions, ct);
+        var created = await FindAvatarConfigAsync(config.Empresa, config.Sede, ct);
         return created ?? config;
     }
 

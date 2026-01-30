@@ -99,8 +99,8 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", config, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
-        return payload ?? config;
+        var fetched = await GetByScopeAsync(config.Empresa, config.Sede, ct);
+        return fetched ?? config;
     }
 
     public async Task<InternalAvatarConfigDto> UpdateAsync(int id, InternalAvatarConfigDto config, CancellationToken ct = default)
@@ -108,8 +108,8 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", config, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
-        return payload ?? config;
+        var refreshed = await GetByIdAsync(id, ct);
+        return refreshed ?? config;
     }
 
     public async Task DeleteAsync(int id, CancellationToken ct = default)

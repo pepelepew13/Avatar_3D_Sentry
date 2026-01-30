@@ -10,4 +10,5 @@ public class AvatarConfigUpdate
     [MaxLength(64)] public string? Voz { get; set; }            // "Lucia", "Joanna"…
     [MaxLength(8)]  public string? Idioma { get; set; }         // "es" | "en" | "pt"
     [MaxLength(32)] public string? ColorCabello { get; set; }   // "negro" | "castano" | "rubio" | "predeterminado"
+    [MaxLength(512)] public string? BackgroundPath { get; set; }
 }

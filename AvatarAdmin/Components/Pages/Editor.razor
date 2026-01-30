@@ -279,6 +279,7 @@
   private string? vestimenta;
   private string? fondo;
   private string? fondoPreview;
+  private string? backgroundPath;
   private string? colorCabello;
   private string? logoUrl;
   private string? logoPath;
@@ -444,6 +445,7 @@
         vestimenta = null;
         fondo = null;
         fondoPreview = null;
+        backgroundPath = null;
         colorCabello = null;
         logoUrl = null;
         logoPath = null;
@@ -455,7 +457,11 @@
       configId = cfg.Id;
       vestimenta = cfg.Vestimenta;
       fondo = cfg.Fondo;
-      fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
+      backgroundPath = cfg.BackgroundPath;
+      if (!string.IsNullOrWhiteSpace(backgroundPath))
+        fondoPreview = await ResolveAssetUrlAsync(backgroundPath) ?? backgroundPath;
+      else
+        fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
       colorCabello = cfg.ColorCabello;
       logoPath = cfg.LogoPath;
       logoUrl = await ResolveAssetUrlAsync(cfg.LogoPath);
@@ -497,7 +503,9 @@
         Fondo = fondo,
         Voz = voz,
         Idioma = idioma,
-        LogoPath = logoPath
+        LogoPath = logoPath,
+        ColorCabello = colorCabello,
+        BackgroundPath = backgroundPath
       };
 
       var saved = configId is null
@@ -507,7 +515,11 @@
       configId = saved.Id;
       vestimenta = saved.Vestimenta;
       fondo = saved.Fondo;
-      fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
+      backgroundPath = saved.BackgroundPath;
+      if (!string.IsNullOrWhiteSpace(backgroundPath))
+        fondoPreview = await ResolveAssetUrlAsync(backgroundPath) ?? backgroundPath;
+      else
+        fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
       colorCabello = saved.ColorCabello;
       logoPath = saved.LogoPath;
       logoUrl = await ResolveAssetUrlAsync(saved.LogoPath);
@@ -568,6 +580,7 @@
   private async Task SelectBg(string v)
   {
     fondo = v;
+    backgroundPath = null;
     if (_viewerModule is not null)
     {
       fondoPreview = fondo;
@@ -586,7 +599,11 @@
     await using var s = f.OpenReadStream(6 * 1024 * 1024);
     var saved = await Api.UploadBackgroundAsync(configId.Value, s, f.Name, f.ContentType ?? "application/octet-stream");
     fondo = saved.Fondo;
-    fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
+    backgroundPath = saved.BackgroundPath;
+    if (!string.IsNullOrWhiteSpace(backgroundPath))
+      fondoPreview = await ResolveAssetUrlAsync(backgroundPath) ?? backgroundPath;
+    else
+      fondoPreview = IsPresetBackground(fondo) ? fondo : await ResolveAssetUrlAsync(fondo) ?? fondo;
 
     if (_viewerModule is not null)
     {

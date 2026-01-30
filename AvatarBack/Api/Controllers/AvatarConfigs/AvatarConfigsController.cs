@@ -107,6 +107,8 @@ public class AvatarConfigsController : ControllerBase
             Voz = request.Voz,
             Idioma = request.Idioma,
             LogoPath = request.LogoPath,
+            ColorCabello = request.ColorCabello,
+            BackgroundPath = request.BackgroundPath,
             IsActive = true
         };
 
@@ -143,6 +145,8 @@ public class AvatarConfigsController : ControllerBase
             Voz = request.Voz,
             Idioma = request.Idioma,
             LogoPath = request.LogoPath,
+            ColorCabello = request.ColorCabello,
+            BackgroundPath = request.BackgroundPath,
             IsActive = existing.IsActive
         };
 
@@ -169,6 +173,8 @@ public class AvatarConfigsController : ControllerBase
         existing.Voz = request.Voz ?? existing.Voz;
         existing.Idioma = request.Idioma ?? existing.Idioma;
         existing.LogoPath = request.LogoPath ?? existing.LogoPath;
+        existing.ColorCabello = request.ColorCabello ?? existing.ColorCabello;
+        existing.BackgroundPath = request.BackgroundPath ?? existing.BackgroundPath;
 
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, existing, ct);
         return Ok(MapToDto(updated));
@@ -254,7 +260,7 @@ public class AvatarConfigsController : ControllerBase
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
 
-        config.Fondo = blobPath;
+        config.BackgroundPath = blobPath;
         var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
 
         return Ok(MapToDto(updated));
@@ -339,7 +345,10 @@ public class AvatarConfigsController : ControllerBase
         Fondo = config.Fondo,
         Voz = config.Voz,
         Idioma = config.Idioma,
-        LogoPath = config.LogoPath
+        LogoPath = config.LogoPath,
+        ColorCabello = config.ColorCabello,
+        BackgroundPath = config.BackgroundPath,
+        IsActive = config.IsActive
     };
 
     private static string BuildBrandingPath(string empresa, string sede, string assetName, string originalFileName)

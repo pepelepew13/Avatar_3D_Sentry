@@ -26,7 +26,7 @@ public class InternalUserClient : IInternalUserClient
             ["empresa"] = string.IsNullOrWhiteSpace(filter.Empresa) ? null : filter.Empresa,
             ["sede"] = string.IsNullOrWhiteSpace(filter.Sede) ? null : filter.Sede,
             ["role"] = string.IsNullOrWhiteSpace(filter.Role) ? null : filter.Role,
-            ["q"] = string.IsNullOrWhiteSpace(filter.Q) ? null : filter.Q,
+            ["email"] = string.IsNullOrWhiteSpace(filter.Q) ? null : filter.Q,
             ["page"] = filter.Page.ToString(),
             ["pageSize"] = filter.PageSize.ToString()
         };
@@ -68,8 +68,8 @@ public class InternalUserClient : IInternalUserClient
         var response = await _httpClient.PostAsJsonAsync("internal/users", user, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
-        return payload ?? user;
+        var created = await GetByEmailAsync(user.Email, ct);
+        return created ?? user;
     }
 
     public async Task<InternalUserDto> UpdateAsync(int id, InternalUserDto user, CancellationToken ct = default)
@@ -77,8 +77,8 @@ public class InternalUserClient : IInternalUserClient
         var response = await _httpClient.PutAsJsonAsync($"internal/users/{id}", user, ct);
         response.EnsureSuccessStatusCode();
 
-        var payload = await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
-        return payload ?? user;
+        var refreshed = await GetByIdAsync(id, ct);
+        return refreshed ?? user;
     }
 
     public async Task DeleteAsync(int id, CancellationToken ct = default)
