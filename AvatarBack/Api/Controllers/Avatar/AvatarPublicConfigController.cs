@@ -46,7 +46,9 @@ public class AvatarPublicConfigController : ControllerBase
             Voz = config.Voz,
             Idioma = config.Idioma,
             LogoPath = ResolveAssetUrl(config.LogoPath),
+            LogoUrl = ResolveAssetUrl(config.LogoPath),
             BackgroundPath = ResolveAssetUrl(config.BackgroundPath),
+            BackgroundUrl = ResolveAssetUrl(config.BackgroundPath),
             ColorCabello = config.ColorCabello,
             IsActive = config.IsActive
         });

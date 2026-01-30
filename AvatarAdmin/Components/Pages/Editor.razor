@@ -446,7 +446,9 @@
     StateHasChanged();
     try
     {
-      var cfg = await Api.GetConfigAsync(empresa, sede);
+      var cfg = Auth.IsAdmin
+        ? await Api.GetConfigAsync(empresa, sede)
+        : await Api.GetPublicConfigAsync(empresa, sede);
       if (cfg is null)
       {
         configId = null;
