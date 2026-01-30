@@ -9,14 +9,29 @@
     .wrap {display:grid;grid-template-rows:auto 1fr auto; height:100%;}
     header, footer {padding:8px 12px; background:#fff; border-bottom:1px solid #e7e9ef;}
     footer {border-top:1px solid #e7e9ef;border-bottom:none;}
-    #stage {position:relative;}
-    #avatarCanvas {width:100%; height: calc(100vh - 130px); display:block;}
+    #stage {display:grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap:16px; padding:16px; height:100%; box-sizing:border-box;}
+    #avatarCanvas {width:100%; height:100%; display:block; border-radius:16px; background:#fff; box-shadow:0 10px 24px rgba(15, 23, 42, 0.08);}
+    .preview-panel {display:flex; flex-direction:column; gap:16px;}
+    .preview-card {background:#fff; border-radius:16px; padding:20px; box-shadow:0 10px 24px rgba(15, 23, 42, 0.08); display:flex; flex-direction:column; gap:12px;}
+    .preview-title {font-size:12px; text-transform:uppercase; letter-spacing:0.12em; color:#6b7280; font-weight:600;}
+    .preview-turno {font-size:42px; font-weight:700; color:#0f172a; line-height:1;}
+    .preview-subtitle {font-size:16px; color:#334155;}
+    .preview-meta {display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px;}
+    .preview-meta div {background:#f8fafc; border-radius:12px; padding:10px 12px; font-size:13px; color:#475569;}
+    .preview-meta span {display:block; font-weight:600; color:#0f172a; margin-top:4px;}
+    .preview-status {display:flex; align-items:center; gap:8px; font-size:13px; color:#64748b;}
+    .preview-dot {width:10px; height:10px; border-radius:999px; background:#22c55e;}
+    .stage-audio {position:absolute; width:0; height:0; overflow:hidden;}
     .controls {display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;}
     button {padding:8px 12px; border:1px solid #cfd3df; border-radius:8px; background:#fff; cursor:pointer;}
     button:hover {background:#f0f2f7;}
     input,select {padding:6px 8px; border:1px solid #cfd3df; border-radius:6px;}
     label {font-size:12px; color:#555;}
     .field{display:flex;flex-direction:column}
+    @media (max-width: 1024px) {
+      #stage {grid-template-columns:1fr; grid-template-rows:auto auto;}
+      #avatarCanvas {height:360px;}
+    }
   </style>
 </head>
 <body>
@@ -65,7 +80,28 @@
 
   <div id="stage">
     <canvas id="avatarCanvas"></canvas>
-    <audio id="voice" preload="auto"></audio>
+    <div class="preview-panel">
+      <div class="preview-card">
+        <div class="preview-title">Llamado en curso</div>
+        <div class="preview-turno" id="previewTurno">A-042</div>
+        <div class="preview-subtitle" id="previewNombre">Carlos</div>
+        <div class="preview-meta">
+          <div>Empresa<span id="previewEmpresa">Sentry</span></div>
+          <div>Sede<span id="previewSede">Bogotá</span></div>
+          <div>Módulo<span id="previewModulo">3</span></div>
+          <div>Idioma<span id="previewIdioma">Español</span></div>
+        </div>
+        <div class="preview-status">
+          <span class="preview-dot"></span>
+          Anuncio activo
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="preview-title">Indicaciones</div>
+        <div class="preview-subtitle">Esta pantalla simula el llamado de turno mientras el avatar realiza el anuncio.</div>
+      </div>
+    </div>
+    <audio id="voice" class="stage-audio" preload="auto"></audio>
   </div>
 
   <footer>
@@ -101,6 +137,14 @@
     const voz    = document.getElementById("voz").value.trim();
 
     try {
+      document.getElementById("previewEmpresa").textContent = payload.empresa || "—";
+      document.getElementById("previewSede").textContent = payload.sede || "—";
+      document.getElementById("previewModulo").textContent = payload.modulo || "—";
+      document.getElementById("previewTurno").textContent = payload.turno || "—";
+      document.getElementById("previewNombre").textContent = payload.nombre || "—";
+      document.getElementById("previewIdioma").textContent =
+        document.querySelector("#idioma option:checked")?.textContent || idioma || "—";
+
       await AvatarViewer.announceAndPlay(audioEl, payload, {
         idioma,
         voz: voz || undefined,
