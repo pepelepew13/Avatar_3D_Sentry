@@ -42,7 +42,7 @@ public class InternalUserClient : IInternalUserClient
     public async Task<InternalUserDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync($"internal/users/{id}", ct);
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError)
         {
             return null;
         }
@@ -54,7 +54,7 @@ public class InternalUserClient : IInternalUserClient
     public async Task<InternalUserDto?> GetByEmailAsync(string email, CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync($"internal/users/by-email/{Uri.EscapeDataString(email)}", ct);
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError)
         {
             return null;
         }

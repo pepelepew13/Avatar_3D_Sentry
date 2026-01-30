@@ -29,11 +29,11 @@
     <button class="btn btn-primary u-anim" @onclick="GoEditor" aria-label="Ir al editor de avatar">
       Ir al editor
     </button>
-    <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver configuraciones">
-      Ver configuraciones
-    </button>
     @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
     {
+      <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver configuraciones">
+        Ver configuraciones
+      </button>
       <button class="btn btn-outline-light u-anim" @onclick="GoUsers" aria-label="Ir a gestión de usuarios">
         Gestión de usuarios
       </button>
@@ -53,7 +53,7 @@
       <label class="form-label" for="empresa-input">Empresa</label>
       <div class="input-icon">
         <span class="ii" aria-hidden="true">🏢</span>
-        <input id="empresa-input" class="form-control" @bind="empresa" autocomplete="organization" />
+        <input id="empresa-input" class="form-control" @bind="empresa" autocomplete="organization" disabled="@(!Auth.IsAdmin)" />
       </div>
     </div>
 
@@ -61,7 +61,7 @@
       <label class="form-label" for="sede-input">Sede</label>
       <div class="input-icon">
         <span class="ii" aria-hidden="true">📍</span>
-        <input id="sede-input" class="form-control" @bind="sede" autocomplete="section" />
+        <input id="sede-input" class="form-control" @bind="sede" autocomplete="section" disabled="@(!Auth.IsAdmin)" />
       </div>
     </div>
 

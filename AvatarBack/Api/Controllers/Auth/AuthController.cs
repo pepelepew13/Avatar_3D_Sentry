@@ -17,11 +17,16 @@ namespace Avatar_3D_Sentry.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IInternalUserClient _internalUserClient;
+    private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
     private readonly JwtSettings _jwt;
 
-    public AuthController(IInternalUserClient internalUserClient, IOptions<JwtSettings> jwt)
+    public AuthController(
+        IInternalUserClient internalUserClient,
+        IInternalAvatarConfigClient internalAvatarConfigClient,
+        IOptions<JwtSettings> jwt)
     {
         _internalUserClient = internalUserClient;
+        _internalAvatarConfigClient = internalAvatarConfigClient;
         _jwt = jwt.Value;
     }
 
@@ -58,6 +63,32 @@ public class AuthController : ControllerBase
         if (!string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
         {
             return Unauthorized(new { error = "Credenciales inválidas." });
+        }
+
+        if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(user.Empresa) || string.IsNullOrWhiteSpace(user.Sede))
+            {
+                return Unauthorized(new { error = "Usuario sin empresa/sede asignada." });
+            }
+
+            AvatarSentry.Application.InternalApi.Models.AvatarConfigDto? config;
+            try
+            {
+                config = await _internalAvatarConfigClient.GetByScopeAsync(user.Empresa, user.Sede, ct);
+            }
+            catch (HttpRequestException)
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { error = "No se pudo validar la configuración de avatar en la API interna." });
+            }
+            if (config is null)
+            {
+                return Unauthorized(new { error = "No se encontró configuración de avatar para este usuario." });
+            }
+
+            user.Empresa = config.Empresa;
+            user.Sede = config.Sede;
         }
 
         var (token, exp) = GenerateJwt(user);

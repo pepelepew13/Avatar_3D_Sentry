@@ -64,17 +64,17 @@
         <div class="vg-form">
           <div class="vg-field">
             <label for="empresa">Empresa</label>
-            <input id="empresa" class="form-control" @bind="empresa" placeholder="ACME" />
+            <input id="empresa" class="form-control" @bind="empresa" placeholder="ACME" disabled="@(!Auth.IsAdmin)" />
             <small class="hint">Nombre corto o código interno.</small>
           </div>
 
           <div class="vg-field">
             <label for="sede">Sede</label>
-            <input id="sede" class="form-control" @bind="sede" placeholder="CENTRO" />
+            <input id="sede" class="form-control" @bind="sede" placeholder="CENTRO" disabled="@(!Auth.IsAdmin)" />
             <small class="hint">Ej. Centro, Norte, Sur…</small>
           </div>
 
-          <button class="btn btn-outline-light w-100 btn-load" @onclick="LoadAsync" disabled="@loading">
+          <button class="btn btn-outline-light w-100 btn-load" @onclick="LoadAsync" disabled="@loading || !Auth.IsAdmin">
             @(loading ? "Cargando…" : "Cargar configuración")
           </button>
         </div>
@@ -392,8 +392,11 @@
     {
       if (!string.IsNullOrWhiteSpace(Auth.Empresa)) empresa = Auth.Empresa!;
       if (!string.IsNullOrWhiteSpace(Auth.Sede)) sede = Auth.Sede!;
-      if (!string.IsNullOrWhiteSpace(EmpresaQuery)) empresa = EmpresaQuery!;
-      if (!string.IsNullOrWhiteSpace(SedeQuery)) sede = SedeQuery!;
+      if (Auth.IsAdmin)
+      {
+        if (!string.IsNullOrWhiteSpace(EmpresaQuery)) empresa = EmpresaQuery!;
+        if (!string.IsNullOrWhiteSpace(SedeQuery)) sede = SedeQuery!;
+      }
 
       voiceMap = new(DefaultVoiceMap);
 
@@ -420,6 +423,11 @@
               background = fondoPreview ?? fondo,
               hairColor  = ColorToHex(colorCabello) ?? 0x2b2b2b,
           });
+
+          if (Auth.IsAuthenticated && !Auth.IsAdmin)
+          {
+              await LoadAsync();
+          }
       }
       catch (JSDisconnectedException) { }
       catch (Exception ex)

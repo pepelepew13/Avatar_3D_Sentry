@@ -85,7 +85,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
 
         var uri = QueryHelpers.AddQueryString("internal/avatar-config/by-scope", query);
         var response = await _httpClient.GetAsync(uri, ct);
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError)
         {
             return null;
         }
