@@ -98,6 +98,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     {
         var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", config, ct);
         response.EnsureSuccessStatusCode();
+        await EnsureInternalSuccessAsync(response, ct);
 
         var fetched = await GetByScopeAsync(config.Empresa, config.Sede, ct);
         return fetched ?? config;
@@ -107,6 +108,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     {
         var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", config, ct);
         response.EnsureSuccessStatusCode();
+        await EnsureInternalSuccessAsync(response, ct);
 
         var refreshed = await GetByIdAsync(id, ct);
         return refreshed ?? config;
@@ -116,6 +118,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     {
         var response = await _httpClient.DeleteAsync($"internal/avatar-config/{id}", ct);
         response.EnsureSuccessStatusCode();
+        await EnsureInternalSuccessAsync(response, ct);
     }
 
     private static Uri BuildBaseUri(string baseUrl)
@@ -164,5 +167,72 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
 
         return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
+    }
+
+    private static async Task EnsureInternalSuccessAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.Content is null)
+        {
+            return;
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(raw);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            if (!TryGetBoolean(doc.RootElement, "success", out var success) &&
+                !TryGetBoolean(doc.RootElement, "Success", out success))
+            {
+                return;
+            }
+
+            if (success)
+            {
+                return;
+            }
+
+            var message = TryGetString(doc.RootElement, "message")
+                          ?? TryGetString(doc.RootElement, "Message")
+                          ?? "La API interna reportó Success=false.";
+
+            throw new InvalidOperationException(message);
+        }
+        catch (JsonException)
+        {
+            // Si no es JSON válido, asumimos que no es el wrapper de Success/Message.
+        }
+    }
+
+    private static bool TryGetBoolean(JsonElement element, string property, out bool value)
+    {
+        if (element.TryGetProperty(property, out var prop) &&
+            (prop.ValueKind == JsonValueKind.True || prop.ValueKind == JsonValueKind.False))
+        {
+            value = prop.GetBoolean();
+            return true;
+        }
+
+        value = false;
+        return false;
+    }
+
+    private static string? TryGetString(JsonElement element, string property)
+    {
+        if (element.TryGetProperty(property, out var prop) && prop.ValueKind == JsonValueKind.String)
+        {
+            return prop.GetString();
+        }
+
+        return null;
     }
 }

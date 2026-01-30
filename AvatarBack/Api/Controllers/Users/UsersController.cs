@@ -3,6 +3,7 @@ using AvatarSentry.Application.InternalApi.Models;
 using AvatarSentry.Application.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Avatar_3D_Sentry.Controllers;
 
@@ -22,17 +23,37 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<PagedResponse<UserDto>>> GetUsers(
         [FromQuery] string? q,
         [FromQuery] string? role,
+        [FromQuery] string? empresa,
+        [FromQuery] string? sede,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var empresa = User.FindFirst("empresa")?.Value;
-        var sede = User.FindFirst("sede")?.Value;
+        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
+        if (!isGlobalAdmin)
+        {
+            if (string.IsNullOrWhiteSpace(scopeEmpresa) || string.IsNullOrWhiteSpace(scopeSede))
+            {
+                return Forbid();
+            }
+
+            if (!string.IsNullOrWhiteSpace(empresa) &&
+                !string.Equals(empresa, scopeEmpresa, StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+
+            if (!string.IsNullOrWhiteSpace(sede) &&
+                !string.Equals(sede, scopeSede, StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+        }
 
         var filter = new UserFilter
         {
-            Empresa = empresa,
-            Sede = sede,
+            Empresa = isGlobalAdmin ? empresa : scopeEmpresa,
+            Sede = isGlobalAdmin ? sede : scopeSede,
             Q = q,
             Role = role,
             Page = page,
@@ -60,19 +81,30 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
+        if (!CanAccess(user.Empresa, user.Sede))
+        {
+            return Forbid();
+        }
+
         return Ok(MapToUserDto(user));
     }
 
     [HttpPost]
     public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserRequest request, CancellationToken ct)
     {
+        if (!CanAccess(request.Empresa, request.Sede))
+        {
+            return Forbid();
+        }
+
+        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
         var payload = new InternalUserDto
         {
             Email = request.Email,
             PasswordHash = request.Password,
             Role = request.Role,
-            Empresa = request.Empresa,
-            Sede = request.Sede,
+            Empresa = isGlobalAdmin ? request.Empresa : scopeEmpresa,
+            Sede = isGlobalAdmin ? request.Sede : scopeSede,
             IsActive = request.IsActive
         };
 
@@ -89,14 +121,20 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
+        if (!CanAccess(existing.Empresa, existing.Sede) || !CanAccess(request.Empresa, request.Sede))
+        {
+            return Forbid();
+        }
+
+        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
         var updated = new InternalUserDto
         {
             Id = existing.Id,
             Email = request.Email,
             PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? existing.PasswordHash : request.Password,
             Role = request.Role,
-            Empresa = request.Empresa,
-            Sede = request.Sede,
+            Empresa = isGlobalAdmin ? request.Empresa : scopeEmpresa,
+            Sede = isGlobalAdmin ? request.Sede : scopeSede,
             IsActive = request.IsActive
         };
 
@@ -109,6 +147,17 @@ public class UsersController : ControllerBase
     {
         try
         {
+            var existing = await _internalUserClient.GetByIdAsync(id, ct);
+            if (existing is null)
+            {
+                return NotFound();
+            }
+
+            if (!CanAccess(existing.Empresa, existing.Sede))
+            {
+                return Forbid();
+            }
+
             await _internalUserClient.DeleteAsync(id, ct);
             return NoContent();
         }
@@ -132,4 +181,32 @@ public class UsersController : ControllerBase
         Sede = user.Sede,
         IsActive = user.IsActive
     };
+
+    private (string? Empresa, string? Sede, bool IsGlobalAdmin) GetScope()
+    {
+        var role = User.FindFirst("role")?.Value ?? User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var empresa = User.FindFirst("empresa")?.Value;
+        var sede = User.FindFirst("sede")?.Value;
+        var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+        var isGlobalAdmin = isAdmin && string.IsNullOrWhiteSpace(empresa) && string.IsNullOrWhiteSpace(sede);
+
+        return (empresa, sede, isGlobalAdmin);
+    }
+
+    private bool CanAccess(string? empresa, string? sede)
+    {
+        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
+        if (isGlobalAdmin)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(scopeEmpresa) || string.IsNullOrWhiteSpace(scopeSede))
+        {
+            return false;
+        }
+
+        return string.Equals(scopeEmpresa, empresa, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(scopeSede, sede, StringComparison.OrdinalIgnoreCase);
+    }
 }
