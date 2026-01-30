@@ -72,7 +72,7 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { error = "Usuario sin empresa/sede asignada." });
             }
 
-            AvatarSentry.Application.InternalApi.Models.AvatarConfigDto? config;
+            AvatarSentry.Application.InternalApi.Models.InternalAvatarConfigDto? config;
             try
             {
                 config = await _internalAvatarConfigClient.GetByScopeAsync(user.Empresa, user.Sede, ct);
