@@ -1,0 +1,212 @@
+@page "/configs"
+@using AvatarAdmin.Services
+@using AvatarAdmin.Models
+@inject AvatarApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@inject ILogger<Configs> Log
+
+<PageTitle>Configuraciones de Avatar</PageTitle>
+
+<AuthGuard>
+  <section class="configs-hero" role="region" aria-label="Configuraciones de avatar">
+    <div class="hero-copy">
+      <h1>Configuraciones de Avatar</h1>
+      <p>Consulta todas las configuraciones registradas por empresa y sede.</p>
+      <div class="hero-tags">
+        <span class="tag">@Auth.Email</span>
+        <span class="tag">Rol: @Auth.Role</span>
+        <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-outline-light" @onclick="ReloadAsync" disabled="@loading">Recargar</button>
+    </div>
+  </section>
+
+  <section class="card configs-filters">
+    <div class="filter-grid">
+      <div class="field">
+        <label class="form-label" for="cfg-empresa">Empresa</label>
+        <input id="cfg-empresa" class="form-control" @bind="empresaFilter" placeholder="EPM" />
+      </div>
+      <div class="field">
+        <label class="form-label" for="cfg-sede">Sede</label>
+        <input id="cfg-sede" class="form-control" @bind="sedeFilter" placeholder="Medellín" />
+      </div>
+      <div class="field">
+        <label class="form-label">Tamaño página</label>
+        <select class="form-select" @bind="pageSize" @bind:after="@(async ()=> await ResetAsync())">
+          <option>10</option>
+          <option>20</option>
+          <option>50</option>
+        </select>
+      </div>
+      <div class="field actions">
+        <button class="btn btn-primary" @onclick="ReloadAsync" disabled="@loading">Buscar</button>
+        <button class="btn btn-outline-light" @onclick="ClearFilters" disabled="@loading">Limpiar</button>
+      </div>
+    </div>
+  </section>
+
+  @if (!string.IsNullOrWhiteSpace(error))
+  {
+    <div class="alert alert-danger" role="alert">@error</div>
+  }
+
+  <section class="card configs-table">
+    <div class="table-wrap">
+      @if (loading)
+      {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      }
+      else if (items.Count == 0)
+      {
+        <div class="empty-row">
+          <div class="empty-ic">📂</div>
+          <div>No hay configuraciones con estos filtros.</div>
+        </div>
+      }
+      else
+      {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Sede</th>
+              <th>Vestimenta</th>
+              <th>Fondo</th>
+              <th>Voz</th>
+              <th>Idioma</th>
+              <th>Logo</th>
+              <th style="width:130px">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+          @foreach (var cfg in items)
+          {
+            <tr>
+              <td>@cfg.Empresa</td>
+              <td>@cfg.Sede</td>
+              <td><code>@cfg.Vestimenta</code></td>
+              <td><code>@cfg.Fondo</code></td>
+              <td><code>@cfg.Voz</code></td>
+              <td><code>@cfg.Idioma</code></td>
+              <td>
+                @if (!string.IsNullOrWhiteSpace(cfg.LogoPath))
+                {
+                  <img src="@Abs(cfg.LogoPath)" alt="Logo" class="logo-thumb" />
+                }
+                else
+                {
+                  <span>—</span>
+                }
+              </td>
+              <td>
+                <button class="btn btn-xs" @onclick="@(()=>GoEditor(cfg))">Editar</button>
+              </td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <footer class="pager">
+      <div class="info">
+        @if (total > 0)
+        {
+          <span>Mostrando @(((page - 1) * pageSize) + 1)-@(((page - 1) * pageSize) + items.Count) de @total</span>
+        }
+      </div>
+      <div class="nav">
+        <button class="btn btn-outline-light" @onclick="PrevPage" disabled="@(!CanPrev)">← Anterior</button>
+        <button class="btn btn-outline-light" @onclick="NextPage" disabled="@(!CanNext)">Siguiente →</button>
+      </div>
+    </footer>
+  </section>
+</AuthGuard>
+
+@code {
+  private string? empresaFilter;
+  private string? sedeFilter;
+  private int page = 1;
+  private int pageSize = 10;
+  private int total;
+  private bool loading;
+  private string? error;
+  private List<AvatarConfigDto> items = new();
+
+  private bool CanPrev => page > 1;
+  private bool CanNext => page * pageSize < total;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await ReloadAsync();
+  }
+
+  private async Task ReloadAsync()
+  {
+    loading = true;
+    error = null;
+    try
+    {
+      var res = await Api.ListConfigsAsync(empresaFilter, sedeFilter, page, pageSize);
+      items = res.Items ?? new();
+      total = res.Total;
+    }
+    catch (Exception ex)
+    {
+      Log.LogError(ex, "No se pudo cargar configuraciones");
+      error = ex.Message;
+    }
+    finally
+    {
+      loading = false;
+    }
+  }
+
+  private async Task ResetAsync()
+  {
+    page = 1;
+    await ReloadAsync();
+  }
+
+  private async Task ClearFilters()
+  {
+    empresaFilter = null;
+    sedeFilter = null;
+    await ResetAsync();
+  }
+
+  private async Task NextPage()
+  {
+    if (!CanNext) return;
+    page++;
+    await ReloadAsync();
+  }
+
+  private async Task PrevPage()
+  {
+    if (!CanPrev) return;
+    page--;
+    await ReloadAsync();
+  }
+
+  private void GoEditor(AvatarConfigDto cfg)
+  {
+    var empresa = Uri.EscapeDataString(cfg.Empresa ?? string.Empty);
+    var sede = Uri.EscapeDataString(cfg.Sede ?? string.Empty);
+    Nav.NavigateTo($"/editor?empresa={empresa}&sede={sede}");
+  }
+
+  private string Abs(string? path)
+  {
+    if (string.IsNullOrWhiteSpace(path)) return "";
+    if (Uri.TryCreate(path, UriKind.Absolute, out var abs)) return abs.ToString();
+    var baseUrl = Api.BaseUrl?.TrimEnd('/') ?? "";
+    return string.IsNullOrEmpty(baseUrl) ? path : $"{baseUrl}/{path.TrimStart('/')}";
+  }
+}

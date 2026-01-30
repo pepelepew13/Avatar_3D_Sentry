@@ -29,4 +29,5 @@ public sealed class CreateUserRequest
     [JsonPropertyName("role")]     public string Role { get; set; } = "User";
     [JsonPropertyName("empresa")]  public string? Empresa { get; set; }
     [JsonPropertyName("sede")]     public string? Sede { get; set; }
+    [JsonPropertyName("isActive")] public bool IsActive { get; set; } = true;
 }

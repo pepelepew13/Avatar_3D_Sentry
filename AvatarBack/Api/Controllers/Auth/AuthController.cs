@@ -29,20 +29,26 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
         var normalizedEmail = req.Email?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        if (string.IsNullOrWhiteSpace(normalizedEmail) || string.IsNullOrWhiteSpace(req.Password))
         {
-            normalizedEmail = "anonymous@local";
+            return Unauthorized(new { error = "Credenciales inválidas." });
         }
 
-        var user = new AvatarSentry.Application.InternalApi.Models.InternalUserDto
+        var user = await _internalUserClient.GetByEmailAsync(normalizedEmail, ct);
+        if (user is null)
         {
-            Id = 0,
-            Email = normalizedEmail,
-            Role = "Admin",
-            Empresa = null,
-            Sede = null,
-            IsActive = true
-        };
+            return Unauthorized(new { error = "Credenciales inválidas." });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new { error = "Usuario inactivo." });
+        }
+
+        if (!string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
+        {
+            return Unauthorized(new { error = "Credenciales inválidas." });
+        }
 
         var (token, exp) = GenerateJwt(user);
         return Ok(new LoginResponse

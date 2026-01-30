@@ -119,30 +119,79 @@ public sealed class AvatarApiClient
     public async Task CreateUserAsync(CreateUserRequest req, CancellationToken ct = default)
     {
         AttachBearerIfAny();
-        var resp = await _http.PostAsJsonAsync("/api/auth/users", req, _json, ct);
+        var resp = await _http.PostAsJsonAsync("/api/users", req, _json, ct);
         await EnsureSuccessAsync(resp, ct);
     }
 
     // ========= Avatar Config =========
 
-    public async Task<AvatarConfigDto> GetConfigAsync(string empresa, string sede, CancellationToken ct = default)
+    public sealed class AvatarConfigListResponse
     {
-        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/config";
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int Total { get; set; }
+        public List<AvatarConfigDto> Items { get; set; } = new();
+    }
+
+    public sealed class AvatarConfigRequest
+    {
+        public string Empresa { get; set; } = string.Empty;
+        public string Sede { get; set; } = string.Empty;
+        public string? Vestimenta { get; set; }
+        public string? Fondo { get; set; }
+        public string? Voz { get; set; }
+        public string? Idioma { get; set; }
+        public string? LogoPath { get; set; }
+    }
+
+    public async Task<AvatarConfigDto?> GetConfigAsync(string empresa, string sede, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var qs = new List<string>
+        {
+            "empresa=" + Uri.EscapeDataString(empresa),
+            "sede=" + Uri.EscapeDataString(sede),
+            "page=1",
+            "pageSize=1"
+        };
+        var url = "/api/avatar-configs?" + string.Join("&", qs);
         var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+
+        var payload = await resp.Content.ReadFromJsonAsync<AvatarConfigListResponse>(_json, ct);
+        return payload?.Items?.FirstOrDefault();
+    }
+
+    public async Task<AvatarConfigListResponse> ListConfigsAsync(string? empresa = null, string? sede = null, int page = 1, int pageSize = 10, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var qs = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(empresa)) qs.Add("empresa=" + Uri.EscapeDataString(empresa));
+        if (!string.IsNullOrWhiteSpace(sede)) qs.Add("sede=" + Uri.EscapeDataString(sede));
+        var url = "/api/avatar-configs" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<AvatarConfigListResponse>(_json, ct))!;
+    }
+
+    public async Task<AvatarConfigDto> CreateConfigAsync(AvatarConfigRequest req, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.PostAsJsonAsync("/api/avatar-configs", req, _json, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    public async Task<AvatarConfigDto> UpdateConfigAsync(string empresa, string sede, AvatarConfigUpdate update, CancellationToken ct = default)
+    public async Task<AvatarConfigDto> UpdateConfigAsync(int id, AvatarConfigRequest update, CancellationToken ct = default)
     {
         AttachBearerIfAny();
-        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}";
+        var url = $"/api/avatar-configs/{id}";
         var resp = await _http.PutAsJsonAsync(url, update, _json, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    public async Task<AvatarConfigDto> UploadLogoAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AvatarConfigDto> UploadLogoAsync(int id, Stream file, string fileName, string contentType, CancellationToken ct = default)
     {
         AttachBearerIfAny();
         using var content = new MultipartFormDataContent();
@@ -150,13 +199,13 @@ public sealed class AvatarApiClient
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         content.Add(fileContent, "file", fileName);
 
-        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/logo";
+        var url = $"/api/avatar-configs/{id}/logo";
         var resp = await _http.PostAsync(url, content, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
     }
 
-    public async Task<AvatarConfigDto> UploadBackgroundAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AvatarConfigDto> UploadBackgroundAsync(int id, Stream file, string fileName, string contentType, CancellationToken ct = default)
     {
         AttachBearerIfAny();
         using var content = new MultipartFormDataContent();
@@ -164,7 +213,7 @@ public sealed class AvatarApiClient
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         content.Add(fileContent, "file", fileName);
 
-        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/background";
+        var url = $"/api/avatar-configs/{id}/fondo";
         var resp = await _http.PostAsync(url, content, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
@@ -217,7 +266,7 @@ public sealed class AvatarApiClient
         return (await resp.Content.ReadFromJsonAsync<AnnouncementResponse>(_json, ct))!;
     }
 
-    public async Task<AvatarConfigDto> UploadOutfitAsync(string empresa, string sede, Stream file, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AvatarConfigDto> UploadOutfitAsync(int id, Stream file, string fileName, string contentType, CancellationToken ct = default)
     {
         AttachBearerIfAny();
         using var content = new MultipartFormDataContent();
@@ -225,7 +274,7 @@ public sealed class AvatarApiClient
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
         content.Add(fileContent, "file", fileName);
 
-        var url = $"/api/avatar/{Uri.EscapeDataString(empresa)}/{Uri.EscapeDataString(sede)}/model";
+        var url = $"/api/avatar-configs/{id}/model";
         var resp = await _http.PostAsync(url, content, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct))!;
@@ -237,7 +286,7 @@ public sealed class AvatarApiClient
 
     public sealed class UserItem
     {
-        public string Id { get; set; } = string.Empty;
+        public int Id { get; set; }
         public string Email { get; set; } = string.Empty;
         public string Role { get; set; } = "User";
         public string? Empresa { get; set; }
@@ -247,45 +296,49 @@ public sealed class AvatarApiClient
 
     public sealed class UserListResponse
     {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
         public int Total { get; set; }
         public List<UserItem> Items { get; set; } = new();
     }
 
     public sealed class UpdateUserRequest
     {
+        public string Email { get; set; } = string.Empty;
+        public string? Password { get; set; }
         public string Role { get; set; } = "User";
         public string? Empresa { get; set; }
         public string? Sede { get; set; }
-        public string? NewPassword { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 
-    /// <summary>GET /api/auth/users?skip=0&take=10&q=...&role=User|Admin</summary>
-    public async Task<UserListResponse> ListUsersAsync(int skip = 0, int take = 10, string? q = null, string? role = null, CancellationToken ct = default)
+    /// <summary>GET /api/users?page=1&pageSize=10&q=...&role=User|Admin</summary>
+    public async Task<UserListResponse> ListUsersAsync(int page = 1, int pageSize = 10, string? q = null, string? role = null, CancellationToken ct = default)
     {
         AttachBearerIfAny();
-        var qs = new List<string> { $"skip={skip}", $"take={take}" };
+        var qs = new List<string> { $"page={page}", $"pageSize={pageSize}" };
         if (!string.IsNullOrWhiteSpace(q)) qs.Add("q=" + Uri.EscapeDataString(q));
         if (!string.IsNullOrWhiteSpace(role)) qs.Add("role=" + Uri.EscapeDataString(role));
-        var url = "/api/auth/users" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+        var url = "/api/users" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<UserListResponse>(_json, ct))!;
     }
 
-    /// <summary>PUT /api/auth/users/{id}</summary>
-    public async Task UpdateUserAsync(string id, UpdateUserRequest req, CancellationToken ct = default)
+    /// <summary>PUT /api/users/{id}</summary>
+    public async Task UpdateUserAsync(int id, UpdateUserRequest req, CancellationToken ct = default)
     {
         AttachBearerIfAny();
-        var url = "/api/auth/users/" + Uri.EscapeDataString(id);
+        var url = "/api/users/" + Uri.EscapeDataString(id.ToString());
         var resp = await _http.PutAsJsonAsync(url, req, _json, ct);
         await EnsureSuccessAsync(resp, ct);
     }
 
-    /// <summary>DELETE /api/auth/users/{id}</summary>
-    public async Task DeleteUserAsync(string id, CancellationToken ct = default)
+    /// <summary>DELETE /api/users/{id}</summary>
+    public async Task DeleteUserAsync(int id, CancellationToken ct = default)
     {
         AttachBearerIfAny();
-        var url = "/api/auth/users/" + Uri.EscapeDataString(id);
+        var url = "/api/users/" + Uri.EscapeDataString(id.ToString());
         var resp = await _http.DeleteAsync(url, ct);
         await EnsureSuccessAsync(resp, ct);
     }
