@@ -168,6 +168,17 @@
   .rail-actions[b-47u8zfyob4]{ position: static; margin-top: .6rem }
 }
 
+/* Aviso inline */
+.vg-alert[b-47u8zfyob4]{
+  background: rgba(0,20,137,.08);
+  border:1px solid rgba(0,20,137,.22);
+  color:#001489;
+  border-radius:12px;
+  padding:.45rem .6rem;
+  font-weight:700;
+  font-size:.82rem;
+}
+
 /* ===== SUBMENÚ (anclado al botón, con slide in/out) ===== */
 .vg-sub[b-47u8zfyob4]{
   position:absolute; /* top inline desde Razor; left fijo */
@@ -208,6 +219,39 @@
 .sub-head h6[b-47u8zfyob4]{ margin:0; font-weight:900; letter-spacing:.02em }
 .sub-body[b-47u8zfyob4]{ padding:1rem 1rem; display: flex; align-items: center; flex-direction: column;}
 .sub-body.grid2[b-47u8zfyob4]{ display:grid; grid-template-columns: 1fr 1fr; gap:.5rem }
+
+.drop-zone[b-47u8zfyob4]{
+  position:relative;
+  width:100%;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  padding:.7rem .8rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.4rem;
+  cursor:pointer;
+  background: #fbfcfe;
+  font-weight:700;
+}
+.drop-zone input[b-47u8zfyob4]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+}
+.drop-zone:hover[b-47u8zfyob4]{ background:#f2f6fb }
+.drop-copy[b-47u8zfyob4]{ font-size:.85rem; color:#374151 }
+
+.bg-preview[b-47u8zfyob4]{
+  width: 220px; height: 92px;
+  display:flex; align-items:center; justify-content:center;
+  background:#fff; border:1px dashed var(--line); border-radius:12px;
+  overflow:hidden; margin-bottom:.45rem;
+}
+.bg-preview img[b-47u8zfyob4]{ width:100%; height:100%; object-fit:cover }
 
 /* ===== STAGE ===== */
 .vg-stage[b-47u8zfyob4]{
