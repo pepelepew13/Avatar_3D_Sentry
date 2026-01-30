@@ -98,8 +98,18 @@ public class AvatarConfigsController : ControllerBase
             IsActive = true
         };
 
-        var created = await _internalAvatarConfigClient.CreateAsync(payload, ct);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDtoWithUrls(created));
+        try
+        {
+            var created = await _internalAvatarConfigClient.CreateAsync(payload, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDtoWithUrls(created));
+        }
+        catch (AvatarSentryException ex)
+        {
+            return Problem(
+                detail: ex.Details,
+                title: ex.Message,
+                statusCode: ex.StatusCode);
+        }
     }
 
     [HttpPut("{id:int}")]
@@ -126,8 +136,18 @@ public class AvatarConfigsController : ControllerBase
             IsActive = existing.IsActive
         };
 
-        var updated = await _internalAvatarConfigClient.UpdateAsync(id, payload, ct);
-        return Ok(MapToDtoWithUrls(updated));
+        try
+        {
+            var updated = await _internalAvatarConfigClient.UpdateAsync(id, payload, ct);
+            return Ok(MapToDtoWithUrls(updated));
+        }
+        catch (AvatarSentryException ex)
+        {
+            return Problem(
+                detail: ex.Details,
+                title: ex.Message,
+                statusCode: ex.StatusCode);
+        }
     }
 
     [HttpPatch("{id:int}")]
