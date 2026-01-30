@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using System.IO;
 using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Services.Storage;
 using AvatarSentry.Application.AvatarConfigs;
+using AvatarSentry.Application.Exceptions;
 using AvatarSentry.Application.InternalApi.Clients;
 using AvatarSentry.Application.InternalApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +12,7 @@ namespace Avatar_3D_Sentry.Controllers;
 
 [ApiController]
 [Route("api/avatar-configs")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class AvatarConfigsController : ControllerBase
 {
     private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
@@ -27,50 +27,41 @@ public class AvatarConfigsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<AvatarConfigDto>>> GetConfigs(
+    public async Task<ActionResult<PagedResult<AvatarConfigListItemDto>>> GetConfigs(
         [FromQuery] string? empresa,
         [FromQuery] string? sede,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
-        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
-        if (!isGlobalAdmin)
-        {
-            if (string.IsNullOrWhiteSpace(scopeEmpresa) || string.IsNullOrWhiteSpace(scopeSede))
-            {
-                return Forbid();
-            }
-
-            if (!string.IsNullOrWhiteSpace(empresa) && !string.Equals(empresa, scopeEmpresa, StringComparison.OrdinalIgnoreCase))
-            {
-                return Forbid();
-            }
-
-            if (!string.IsNullOrWhiteSpace(sede) && !string.Equals(sede, scopeSede, StringComparison.OrdinalIgnoreCase))
-            {
-                return Forbid();
-            }
-        }
-
         var filter = new AvatarConfigFilter
         {
-            Empresa = isGlobalAdmin ? empresa : scopeEmpresa,
-            Sede = isGlobalAdmin ? sede : scopeSede,
+            Empresa = string.IsNullOrWhiteSpace(empresa) ? null : empresa,
+            Sede = string.IsNullOrWhiteSpace(sede) ? null : sede,
             Page = page,
             PageSize = pageSize
         };
 
-        var result = await _internalAvatarConfigClient.GetConfigsAsync(filter, ct);
-        var response = new PagedResponse<AvatarConfigDto>
+        try
         {
-            Page = result.Page,
-            PageSize = result.PageSize,
-            Total = result.Total,
-            Items = result.Items.Select(MapToDto).ToList()
-        };
+            var result = await _internalAvatarConfigClient.GetConfigsAsync(filter, ct);
+            var response = new PagedResult<AvatarConfigListItemDto>
+            {
+                Page = result.Page,
+                PageSize = result.PageSize,
+                Total = result.Total,
+                Items = result.Items.Select(MapToListItem).ToList()
+            };
 
-        return Ok(response);
+            return Ok(response);
+        }
+        catch (AvatarSentryException ex)
+        {
+            return Problem(
+                detail: ex.Details,
+                title: ex.Message,
+                statusCode: ex.StatusCode);
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -82,22 +73,12 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(config))
-        {
-            return Forbid();
-        }
-
         return Ok(MapToDto(config));
     }
 
     [HttpPost]
     public async Task<ActionResult<AvatarConfigDto>> Create([FromBody] CreateAvatarConfigRequest request, CancellationToken ct)
     {
-        if (!CanAccess(request.Empresa, request.Sede))
-        {
-            return Forbid();
-        }
-
         var payload = new InternalAvatarConfigDto
         {
             Empresa = request.Empresa,
@@ -119,20 +100,10 @@ public class AvatarConfigsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<AvatarConfigDto>> Update(int id, [FromBody] UpdateAvatarConfigRequest request, CancellationToken ct)
     {
-        if (!CanAccess(request.Empresa, request.Sede))
-        {
-            return Forbid();
-        }
-
         var existing = await _internalAvatarConfigClient.GetByIdAsync(id, ct);
         if (existing is null)
         {
             return NotFound();
-        }
-
-        if (!CanAccess(existing))
-        {
-            return Forbid();
         }
 
         var payload = new InternalAvatarConfigDto
@@ -163,11 +134,6 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(existing))
-        {
-            return Forbid();
-        }
-
         existing.Vestimenta = request.Vestimenta ?? existing.Vestimenta;
         existing.Fondo = request.Fondo ?? existing.Fondo;
         existing.Voz = request.Voz ?? existing.Voz;
@@ -189,11 +155,6 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(existing))
-        {
-            return Forbid();
-        }
-
         await _internalAvatarConfigClient.DeleteAsync(id, ct);
         return NoContent();
     }
@@ -211,17 +172,12 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(config))
-        {
-            return Forbid();
-        }
-
         if (request?.File is null || request.File.Length == 0)
         {
             return BadRequest("Archivo requerido.");
         }
 
-        var blobPath = BuildBrandingPath(config.Empresa, config.Sede, "logo", request.File.FileName);
+        var blobPath = BuildLogoPath(config.Empresa, config.Sede, request.File.FileName);
 
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
@@ -245,17 +201,12 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(config))
-        {
-            return Forbid();
-        }
-
         if (request?.File is null || request.File.Length == 0)
         {
             return BadRequest("Archivo requerido.");
         }
 
-        var blobPath = BuildBrandingPath(config.Empresa, config.Sede, "fondo", request.File.FileName);
+        var blobPath = BuildBackgroundPath(config.Empresa, config.Sede, request.File.FileName);
 
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
@@ -279,11 +230,6 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(config))
-        {
-            return Forbid();
-        }
-
         if (request?.File is null || request.File.Length == 0)
         {
             return BadRequest("Archivo requerido.");
@@ -303,39 +249,6 @@ public class AvatarConfigsController : ControllerBase
         return Ok(MapToDto(updated));
     }
 
-    private (string? Empresa, string? Sede, bool IsGlobalAdmin) GetScope()
-    {
-        var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
-        var empresa = User.FindFirst("empresa")?.Value;
-        var sede = User.FindFirst("sede")?.Value;
-        var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
-        var isGlobalAdmin = isAdmin && string.IsNullOrWhiteSpace(empresa) && string.IsNullOrWhiteSpace(sede);
-
-        return (empresa, sede, isGlobalAdmin);
-    }
-
-    private bool CanAccess(InternalAvatarConfigDto config)
-    {
-        return CanAccess(config.Empresa, config.Sede);
-    }
-
-    private bool CanAccess(string empresa, string sede)
-    {
-        var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
-        if (isGlobalAdmin)
-        {
-            return true;
-        }
-
-        if (string.IsNullOrWhiteSpace(scopeEmpresa) || string.IsNullOrWhiteSpace(scopeSede))
-        {
-            return false;
-        }
-
-        return string.Equals(scopeEmpresa, empresa, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(scopeSede, sede, StringComparison.OrdinalIgnoreCase);
-    }
-
     private static AvatarConfigDto MapToDto(InternalAvatarConfigDto config) => new()
     {
         Id = config.Id,
@@ -351,15 +264,36 @@ public class AvatarConfigsController : ControllerBase
         IsActive = config.IsActive
     };
 
-    private static string BuildBrandingPath(string empresa, string sede, string assetName, string originalFileName)
+    private static AvatarConfigListItemDto MapToListItem(InternalAvatarConfigDto config) => new()
+    {
+        Id = config.Id,
+        Empresa = config.Empresa,
+        Sede = config.Sede,
+        Vestimenta = config.Vestimenta,
+        Fondo = config.Fondo,
+        Voz = config.Voz,
+        Idioma = config.Idioma,
+        LogoPath = config.LogoPath,
+        ColorCabello = config.ColorCabello,
+        BackgroundPath = config.BackgroundPath,
+        IsActive = config.IsActive
+    };
+
+    private static string BuildLogoPath(string empresa, string sede, string originalFileName)
+    {
+        var extension = Path.GetExtension(originalFileName);
+        var safeEmpresa = SanitizeSegment(empresa);
+
+        return $"public/archivo/{safeEmpresa}/logo{extension}";
+    }
+
+    private static string BuildBackgroundPath(string empresa, string sede, string originalFileName)
     {
         var extension = Path.GetExtension(originalFileName);
         var safeEmpresa = SanitizeSegment(empresa);
         var safeSede = SanitizeSegment(sede);
-        var safeAssetName = SanitizeSegment(assetName);
 
-        // ✅ public/{empresa}/{sede}/branding/...
-        return $"public/{safeEmpresa}/{safeSede}/branding/{safeAssetName}{extension}";
+        return $"public/archivo/{safeEmpresa}/{safeSede}/fondo{extension}";
     }
 
     private static string BuildModelPath(string empresa, string sede, string originalFileName)
@@ -369,7 +303,6 @@ public class AvatarConfigsController : ControllerBase
         var safeEmpresa = SanitizeSegment(empresa);
         var safeSede = SanitizeSegment(sede);
 
-        // ✅ public/{empresa}/{sede}/models/...
         return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
     }
 

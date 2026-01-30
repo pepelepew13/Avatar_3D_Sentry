@@ -15,6 +15,14 @@ public class InternalAvatarConfigDto
     public bool IsActive { get; set; }
 }
 
+public class InternalAvatarConfigPagedResponse
+{
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int Total { get; set; }
+    public List<InternalAvatarConfigDto> Items { get; set; } = new();
+}
+
 public class AvatarConfigFilter
 {
     public string? Empresa { get; set; }

@@ -1,7 +1,9 @@
+using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using AvatarSentry.Application.Config;
+using AvatarSentry.Application.Exceptions;
 using AvatarSentry.Application.InternalApi.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
@@ -25,16 +27,31 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         {
             ["empresa"] = string.IsNullOrWhiteSpace(filter.Empresa) ? null : filter.Empresa,
             ["sede"] = string.IsNullOrWhiteSpace(filter.Sede) ? null : filter.Sede,
-            ["page"] = filter.Page.ToString(),
-            ["pageSize"] = filter.PageSize.ToString()
+            ["page"] = Math.Max(filter.Page, 1).ToString(),
+            ["pageSize"] = Math.Max(filter.PageSize, 1).ToString()
         };
 
         var uri = QueryHelpers.AddQueryString("internal/avatar-config", query);
         var response = await _httpClient.GetAsync(uri, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await ReadBodyAsync(response, ct);
+            throw CreateInternalApiException(response.StatusCode, body, "Error consultando avatar-config en API interna.");
+        }
 
-        var payload = await ReadJsonOrDefaultAsync<PagedResponse<InternalAvatarConfigDto>>(response, ct);
-        return payload ?? new PagedResponse<InternalAvatarConfigDto>();
+        var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigPagedResponse>(response, ct);
+        if (payload is null)
+        {
+            throw new AvatarSentryException("La API interna devolvió una respuesta vacía para avatar-config.", 502);
+        }
+
+        return new PagedResponse<InternalAvatarConfigDto>
+        {
+            Page = payload.Page,
+            PageSize = payload.PageSize,
+            Total = payload.Total,
+            Items = payload.Items ?? new List<InternalAvatarConfigDto>()
+        };
     }
 
     public async Task<InternalAvatarConfigDto?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -97,7 +114,11 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     public async Task<InternalAvatarConfigDto> CreateAsync(InternalAvatarConfigDto config, CancellationToken ct = default)
     {
         var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", config, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await ReadBodyAsync(response, ct);
+            throw CreateInternalApiException(response.StatusCode, body, "Error creando avatar-config en API interna.");
+        }
         await EnsureInternalSuccessAsync(response, ct);
 
         var fetched = await GetByScopeAsync(config.Empresa, config.Sede, ct);
@@ -107,7 +128,11 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     public async Task<InternalAvatarConfigDto> UpdateAsync(int id, InternalAvatarConfigDto config, CancellationToken ct = default)
     {
         var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", config, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await ReadBodyAsync(response, ct);
+            throw CreateInternalApiException(response.StatusCode, body, "Error actualizando avatar-config en API interna.");
+        }
         await EnsureInternalSuccessAsync(response, ct);
 
         var refreshed = await GetByIdAsync(id, ct);
@@ -117,7 +142,11 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         var response = await _httpClient.DeleteAsync($"internal/avatar-config/{id}", ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await ReadBodyAsync(response, ct);
+            throw CreateInternalApiException(response.StatusCode, body, "Error eliminando avatar-config en API interna.");
+        }
         await EnsureInternalSuccessAsync(response, ct);
     }
 
@@ -167,6 +196,33 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
 
         return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
+    }
+
+    private static async Task<string?> ReadBodyAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        if (response.Content is null)
+        {
+            return null;
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        return string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+
+    private static AvatarSentryException CreateInternalApiException(HttpStatusCode statusCode, string? body, string message)
+    {
+        var status = statusCode switch
+        {
+            HttpStatusCode.BadRequest => 502,
+            HttpStatusCode.NotFound => 404,
+            HttpStatusCode.InternalServerError => 502,
+            HttpStatusCode.Unauthorized => 502,
+            HttpStatusCode.Forbidden => 502,
+            _ => 502
+        };
+
+        var detail = string.IsNullOrWhiteSpace(body) ? null : body;
+        return new AvatarSentryException(message, status, detail);
     }
 
     private static async Task EnsureInternalSuccessAsync(HttpResponseMessage response, CancellationToken ct)
