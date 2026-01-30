@@ -4,6 +4,7 @@ using System.Text;
 using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Settings;
 using AvatarSentry.Application.InternalApi.Clients;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,16 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Credenciales inválidas." });
         }
 
-        var user = await _internalUserClient.GetByEmailAsync(normalizedEmail, ct);
+        AvatarSentry.Application.InternalApi.Models.InternalUserDto? user;
+        try
+        {
+            user = await _internalUserClient.GetByEmailAsync(normalizedEmail, ct);
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { error = "No se pudo validar el usuario en la API interna." });
+        }
         if (user is null)
         {
             return Unauthorized(new { error = "Credenciales inválidas." });
