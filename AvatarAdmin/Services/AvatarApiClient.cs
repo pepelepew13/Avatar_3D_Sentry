@@ -164,6 +164,19 @@ public sealed class AvatarApiClient
         return payload?.Items?.FirstOrDefault();
     }
 
+    public async Task<AvatarConfigDto?> GetPublicConfigAsync(string empresa, string sede, CancellationToken ct = default)
+    {
+        var qs = new List<string>
+        {
+            "empresa=" + Uri.EscapeDataString(empresa),
+            "sede=" + Uri.EscapeDataString(sede)
+        };
+        var url = "/api/avatar/config?" + string.Join("&", qs);
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadFromJsonAsync<AvatarConfigDto>(_json, ct);
+    }
+
     public async Task<AvatarConfigListResponse> ListConfigsAsync(string? empresa = null, string? sede = null, int page = 1, int pageSize = 10, CancellationToken ct = default)
     {
         AttachBearerIfAny();
