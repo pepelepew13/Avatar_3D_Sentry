@@ -28,6 +28,16 @@
             <span>Editor de Avatar</span>
         </NavLink>
 
+        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/gallery">
+            <span class="nav-card-link-icon nav-card-link-icon-edit" aria-hidden="true"></span>
+            <span>Galería por Sede</span>
+        </NavLink>
+
+        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/profile/avatar">
+            <span class="nav-card-link-icon nav-card-link-icon-user" aria-hidden="true"></span>
+            <span>Perfil de Avatar</span>
+        </NavLink>
+
         @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
         {
             <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/configs">

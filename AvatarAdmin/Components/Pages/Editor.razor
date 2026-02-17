@@ -8,25 +8,25 @@
 @inject IJSRuntime JS
 @inject ILogger<Editor> Log
 
-<PageTitle>Editor de Avatar</PageTitle>
+<PageTitle>Personalizador de Avatar · Sentry</PageTitle>
 
 <AuthGuard>
-<div class="vg-shell" aria-busy="@loading" aria-live="polite">
+<div class="vg-shell editor-stitch-shell" aria-busy="@loading" aria-live="polite">
 
-  <!-- ===== RIEL IZQUIERDO ===== -->
+  <!-- ===== RIEL IZQUIERDO (Stitch: Personalizador) ===== -->
   <aside class="vg-rail" aria-label="Panel de configuración" @ref="railRef">
-    <header class="vg-rail-head">
+    <header class="vg-rail-head editor-stitch-head">
       <div class="brand">
         <img src="/img/Logo_Sentry.png" alt="Sentry" class="brand-logo"/>
         <div class="brand-copy">
-          <strong>Avatar Studio</strong>
-          <small>@(empresa ?? "—") / @(sede ?? "—")</small>
+          <strong>Sistemas Sentry</strong>
+          <small>Personalizador de Avatar · @(empresa ?? "—") / @(sede ?? "—")</small>
         </div>
       </div>
       <div class="rail-badge" aria-hidden="true"><span class="dot"></span> ONLINE</div>
     </header>
 
-    <nav class="vg-rail-nav" role="tablist" aria-label="Secciones">
+    <nav class="vg-rail-nav editor-stitch-tabs" role="tablist" aria-label="Secciones">
       <button @ref="btnIdentidadRef"
               class="@RailBtn("identidad")"
               role="tab"
@@ -40,7 +40,7 @@
               role="tab"
               aria-selected="@(panel=="vestimenta")"
               @onclick="@(()=>OnPanelClick("vestimenta", btnVestimentaRef))">
-        <span class="ic">🧥</span><b>Vestimenta</b>
+        <span class="ic">🧥</span><b>Modelo y Ropa</b>
       </button>
 
       <button @ref="btnVozRef"
@@ -56,7 +56,7 @@
               role="tab"
               aria-selected="@(panel=="fondo")"
               @onclick="@(()=>OnPanelClick("fondo", btnFondoRef))">
-        <span class="ic">🌆</span><b>Escena</b>
+        <span class="ic">🌆</span><b>Entorno</b>
       </button>
     </nav>
 

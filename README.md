@@ -59,17 +59,20 @@ autenticación estableciendo `"RequerirToken": false` en
 tiempo de ejecución para recordarte que esta configuración solo debe usarse en
 entornos locales.
 
+## API interna (documento MetaFusion→Sentry)
+
+Según el documento técnico de normalización SaaS, la **API que conecta la DB con el sistema** (endpoints `/internal/companies`, `/internal/sites`, `/internal/users`, `/internal/avatar-config`, `/internal/voices`) y la base de datos son responsabilidad del equipo Sentry; **no están en este repositorio**. Este proyecto (BFF + panel Admin) solo **consume** esa API.
+
+- **Si `InternalApi:BaseUrl` está vacío:** la aplicación arranca igual; el login y la gestión de usuarios/avatar-config fallarán con un mensaje claro indicando que la API interna no está configurada.
+- **Cuando Sentry despliegue la API:** configura `InternalApi:BaseUrl`, `InternalApi:ApiKey` y, si aplica, `InternalApi:AuthUser` / `InternalApi:AuthPassword` en `.env` o `appsettings` para que el BFF consuma `/internal/*`.
+
+Contrato y ejemplos de payload en `AvatarBack/docs/internal-api-contract.md`.
+
 ## Persistencia de configuraciones del avatar
 
-Las preferencias (logo, fondo, voz, idioma, etc.) se guardan en SQLite. Por
-defecto el archivo se crea en `Data/avatar.db` dentro del directorio raíz del
-proyecto. Si deseas almacenar la base en otra ubicación o usar un proveedor
-diferente, edita la cadena de conexión `ConnectionStrings:AvatarDb` en
-`appsettings.json` o sobrescribe el valor mediante variables de entorno.
+Las preferencias (logo, fondo, voz, idioma, etc.) se guardan en la API interna (cuando esté desplegada) o, en modo legacy, en SQLite. Por defecto el archivo se crea en `Data/avatar.db` dentro del directorio raíz del proyecto. Si deseas almacenar la base en otra ubicación o usar un proveedor diferente, edita la cadena de conexión `ConnectionStrings:AvatarDb` en `appsettings.json` o sobrescribe el valor mediante variables de entorno.
 
-En entornos de desarrollo se recomienda utilizar un archivo distinto (por
-ejemplo, `Data/avatar-dev.db`). El archivo está excluido del control de
-versiones, por lo que cada entorno mantiene su propia base.
+En entornos de desarrollo se recomienda utilizar un archivo distinto (por ejemplo, `Data/avatar-dev.db`). El archivo está excluido del control de versiones, por lo que cada entorno mantiene su propia base.
 
 ## Logo de Sentry en el panel AvatarAdmin
 
@@ -91,6 +94,10 @@ principal:
 
 Al cambiar las prendas desde el panel, el visor 3D recargará automáticamente el
 modelo correspondiente siempre que los archivos existan en esa ruta.
+
+Documentación técnica del avatar 3D (visemas/lip-sync, mallas y materiales para
+cabello y logo, fondo por imagen): `AvatarBack/docs/visemas-y-mallas.md` y
+`AvatarBack/docs/shape-keys.md`.
 
 ## Configuración del panel web
 

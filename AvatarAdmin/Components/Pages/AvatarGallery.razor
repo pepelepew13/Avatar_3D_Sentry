@@ -1,0 +1,80 @@
+@page "/gallery"
+@using AvatarAdmin.Services
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Galería de Avatares · Sentry</PageTitle>
+<AuthGuard>
+
+<header class="gallery-stitch-header">
+  <div class="gallery-stitch-brand">
+    <div class="gallery-stitch-logo" aria-hidden="true">S</div>
+    <h2 class="gallery-stitch-title">Sistemas Sentry</h2>
+  </div>
+  <nav class="gallery-stitch-nav" aria-label="Navegación principal">
+    <a href="/">Dashboard</a>
+    <a href="/users">Usuarios</a>
+    <a href="/configs">Configuración</a>
+  </nav>
+  <div class="gallery-stitch-user">
+    <span class="gallery-stitch-user-email">@Auth.Email</span>
+  </div>
+</header>
+
+<main class="gallery-stitch-main">
+  <nav class="gallery-breadcrumb" aria-label="Navegación">
+    <a href="/">Inicio</a>
+    <span class="gallery-breadcrumb-sep">›</span>
+    <a href="/">Sedes</a>
+    <span class="gallery-breadcrumb-sep">›</span>
+    <span class="gallery-breadcrumb-current">@(Auth.Sede ?? "Sede Central")</span>
+  </nav>
+
+  <div class="gallery-stitch-head">
+    <div>
+      <h1 class="gallery-stitch-h1">Galería de Avatares - @(Auth.Sede ?? "Sede Central")</h1>
+      <p class="gallery-stitch-sub">Gestión de avatares 3D para @(Auth.Empresa ?? "tu empresa").</p>
+    </div>
+    <button type="button" class="btn btn-outline-sentry" aria-label="Exportar">Exportar Configuraciones</button>
+  </div>
+
+  <div class="gallery-search-wrap">
+    <label class="visually-hidden" for="gallery-search">Buscar usuario</label>
+    <input id="gallery-search" type="text" class="gallery-search-input" placeholder="Buscar usuario por nombre o cargo..." @bind="_search" />
+  </div>
+
+  <div class="gallery-grid">
+    <div class="gallery-card">
+      <div class="gallery-card-preview">
+        <img src="/assets/sentry/gallery/screenshot-42b99985c4b74ebd94a873e2c368d1da.png" alt="Vista de la galería" class="gallery-card-img" />
+        <div class="gallery-card-overlay">
+          <button type="button" class="btn btn-sentry" @onclick="GoEditor">Editar Configuración</button>
+        </div>
+      </div>
+      <div class="gallery-card-info">
+        <h3 class="gallery-card-name">Tu avatar</h3>
+        <p class="gallery-card-role">@Auth.Role</p>
+      </div>
+    </div>
+    <div class="gallery-card">
+      <div class="gallery-card-preview gallery-card-preview--placeholder">
+        <span class="gallery-card-placeholder">+</span>
+        <div class="gallery-card-overlay">
+          <button type="button" class="btn btn-sentry" @onclick="GoEditor">Nuevo avatar</button>
+        </div>
+      </div>
+      <div class="gallery-card-info">
+        <h3 class="gallery-card-name">Crear nuevo</h3>
+        <p class="gallery-card-role">Ir al editor</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+@code {
+  private string _search = "";
+  private void GoEditor() => Nav.NavigateTo("/editor");
+  private void GoHome() => Nav.NavigateTo("/");
+}
+
+</AuthGuard>

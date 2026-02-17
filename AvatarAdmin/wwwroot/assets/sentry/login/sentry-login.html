@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Acceso Sentry (Modo Claro)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff0000",
+                        "background-light": "#ffffff",
+                        "background-alt": "#f3f4f6","surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    backgroundImage: {
+                        'tech-pattern': "radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px)"}
+                },
+            },
+        }
+    </script>
+</head>
+<body class="font-display antialiased text-gray-900 bg-background-light">
+<div class="relative flex min-h-screen w-full overflow-hidden">
+<div class="hidden lg:flex lg:w-7/12 relative flex-col justify-between p-12 bg-background-alt overflow-hidden border-r border-gray-200">
+<div class="absolute inset-0 z-0">
+<img alt="Futuristic 3D digital avatar render" class="h-full w-full object-cover object-top opacity-10 grayscale-[10%]" data-alt="Futuristic 3D digital avatar render in dark environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ6WumXbg1MBuHKtrRSE-0pOgYJxd4GWXaLXyq42Lwf62pZNETD6jyXeDDNVgK8oNMBmeNOwRtpouK1QICNzNBFIs1GY6LdlL3gcwxcX0qSJqhUDe-6_pd19LgiB1xw2g64vC0KrGvgnJmx0VUw05h9PpE7G3X-m-JQN9QYrWGf4Cm4eqcslpeRlW_bovmMZIqlz5HZkAdkzlkP9J3ZMgPeS4jwvVopXNILy04GHIOpsSBgCtrRvE1ogRXbUB0tIFL19e9953SZA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-alt via-background-alt/20 to-transparent"></div>
+<div class="absolute inset-0 bg-tech-pattern [background-size:24px_24px] opacity-40"></div>
+</div>
+<div class="relative z-10 flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/20">
+<span class="material-symbols-outlined text-primary">raven</span>
+</div>
+<span class="text-xl font-bold tracking-wide text-gray-900">SISTEMAS SENTRY</span>
+</div>
+<div class="relative z-10 max-w-2xl">
+<div class="inline-flex items-center rounded-full border border-gray-200 bg-white/80 backdrop-blur-md px-3 py-1 text-xs font-medium text-gray-700 shadow-sm mb-6">
+<span class="mr-2 h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Sistema Operativo
+                </div>
+<h1 class="text-5xl font-black leading-tight tracking-tight mb-4 text-gray-900">
+                    Gestiona tu <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-red-800">identidad digital</span>
+</h1>
+<p class="text-lg text-gray-600 font-medium max-w-lg leading-relaxed">
+                    Accede a la plataforma avanzada de gestión de avatares para configurar activos 3D, empresas y roles de usuario en tiempo real.
+                </p>
+</div>
+<div class="relative z-10 flex items-center gap-6 text-sm text-gray-500 font-medium">
+<span>v4.2.0 (Estable)</span>
+<span class="h-1 w-1 rounded-full bg-gray-400"></span>
+<span>Solo Personal Autorizado</span>
+</div>
+</div>
+<div class="flex flex-1 flex-col items-center justify-center p-6 lg:p-12 relative bg-white">
+<div class="absolute inset-0 bg-tech-pattern [background-size:32px_32px] opacity-30 pointer-events-none"></div>
+<div class="w-full max-w-[440px] bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-gray-100 p-8 sm:p-10 relative z-10">
+<div class="absolute top-0 left-8 right-8 h-1 bg-primary rounded-b-lg"></div>
+<div class="flex flex-col items-center gap-4 mb-8 text-center">
+<div class="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center border border-red-100 shadow-sm">
+<span class="material-symbols-outlined text-primary text-[32px]">raven</span>
+</div>
+<div>
+<h2 class="text-2xl font-bold text-gray-900">Bienvenido de nuevo</h2>
+<p class="text-gray-500 mt-1 text-sm font-medium">Inicia sesión en tu panel</p>
+</div>
+</div>
+<form class="flex flex-col gap-5">
+<div class="space-y-1.5">
+<label class="block text-sm font-semibold text-gray-700" for="email">Correo electrónico</label>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+</div>
+<input class="block w-full rounded-lg border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary transition-all duration-200 sm:text-sm font-medium" id="email" placeholder="nombre@sistemassentry.com" type="email"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block text-sm font-semibold text-gray-700" for="password">Contraseña</label>
+<a class="text-sm font-semibold text-primary hover:text-red-700 transition-colors" href="#">¿Olvidaste tu contraseña?</a>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+</div>
+<input class="block w-full rounded-lg border-gray-200 bg-gray-50 pl-11 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary transition-all duration-200 sm:text-sm font-medium" id="password" placeholder="••••••••••••" type="password"/>
+</div>
+</div>
+<button class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-white shadow-lg shadow-red-500/20 transition-all hover:bg-red-600 hover:shadow-red-500/30 active:scale-[0.98]" type="button">
+<span>Iniciar Sesión</span>
+<span class="material-symbols-outlined text-[18px] font-bold">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 pt-6 border-t border-gray-100 text-center">
+<p class="text-xs text-gray-500 leading-relaxed">
+                        Al continuar, aceptas los 
+                        <a class="font-semibold text-gray-900 hover:text-primary underline decoration-gray-300 underline-offset-2 hover:decoration-primary transition-all" href="#">Términos de servicio</a> 
+                        y la 
+                        <a class="font-semibold text-gray-900 hover:text-primary underline decoration-gray-300 underline-offset-2 hover:decoration-primary transition-all" href="#">Política de privacidad</a> de Sistemas Sentry.
+                    </p>
+</div>
+</div>
+<div class="mt-8 lg:hidden flex items-center gap-2 opacity-60">
+<span class="material-symbols-outlined text-gray-900 text-sm">raven</span>
+<span class="text-xs font-bold tracking-wide text-gray-900">SISTEMAS SENTRY</span>
+</div>
+</div>
+</div>
+
+</body></html>

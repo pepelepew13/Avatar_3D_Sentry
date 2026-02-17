@@ -12,6 +12,9 @@ public class AzureStorageOptions
 
     public string BlobServiceEndpoint { get; set; } = string.Empty;
 
+    /// <summary>Minutos de validez de las URLs SAS generadas. Por defecto 10.</summary>
+    public int SasExpiryMinutes { get; set; } = 10;
+
     // (Opcional) Si en tu .env tienes AzureStorage__AccountName y quieres usarlo:
     // public string AccountName { get; set; } = string.Empty;
 }

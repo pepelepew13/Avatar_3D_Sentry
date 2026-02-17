@@ -2,6 +2,30 @@
 
 Este documento describe las *shape keys* creadas en Blender para animar los fonemas y expresiones básicas del avatar.
 
+Para el **lip-sync con Azure TTS** se usan los visemas con nombres exactos (`viseme_sil`, `viseme_PP`, `viseme_aa`, etc.). El mapeo Azure Viseme ID → Shape Key y la nomenclatura de mallas/materiales (cabello, logo) están en [visemas-y-mallas.md](visemas-y-mallas.md).
+
+## Visemas (lip-sync)
+
+| Shape Key (Blender) | Uso |
+|--------------------|-----|
+| viseme_sil | Silencio / boca neutra |
+| viseme_PP | p, b, m |
+| viseme_FF | f, v |
+| viseme_TH | th, dh |
+| viseme_DD | t, d, n |
+| viseme_kk | k, g, ng |
+| viseme_CH | sh, ch, jh, zh |
+| viseme_SS | s, z |
+| viseme_nn | N/L alveolar |
+| viseme_RR | r |
+| viseme_aa | A abierta |
+| viseme_EE | E media |
+| viseme_II | I cerrada |
+| viseme_OO | O redondeada |
+| viseme_UU | U redondeada |
+
+## Otras expresiones (referencia)
+
 | Shape Key | Finalidad |
 |-----------|-----------|
 | A | Formar la vocal abierta **A**. |

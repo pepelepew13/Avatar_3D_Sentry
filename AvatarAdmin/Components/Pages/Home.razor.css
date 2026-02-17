@@ -1,6 +1,83 @@
 :host { display: block }
 
-/* ===== HERO ===== */
+/* ===== DASHBOARD (Stitch) ===== */
+.dashboard-header{
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.dashboard-title{ font-size: 1.25rem; font-weight: 800; margin: 0; color: var(--ink) }
+.dashboard-header-meta{ display: flex; gap: 8px; flex-wrap: wrap }
+
+.dashboard-welcome{
+  position: relative; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-sm);
+}
+.dashboard-welcome-bg{
+  position: absolute; right: 0; top: 0; height: 100%; width: 33%;
+  background: color-mix(in srgb, var(--brand-red) 8%, transparent);
+  transform: skewX(-12deg); opacity: .5;
+}
+.dashboard-welcome-inner{ position: relative; z-index: 1; max-width: 36rem }
+.dashboard-welcome-title{ font-size: 1.5rem; font-weight: 800; margin: 0 0 8px 0; color: var(--ink) }
+.dashboard-welcome-text{ color: var(--muted); margin: 0 0 16px 0; line-height: 1.5 }
+
+.dashboard-stats{
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+}
+.dashboard-stat{
+  position: relative;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px; box-shadow: var(--shadow-xs);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.dashboard-stat:hover{ border-color: color-mix(in srgb, var(--brand-red) 30%, var(--line)); box-shadow: var(--shadow-sm) }
+.dashboard-stat-icon{
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border-radius: 10px; font-size: 1.25rem; margin-bottom: 12px;
+}
+.dashboard-stat-icon--red{ background: color-mix(in srgb, var(--brand-red) 12%, #fff); border: 1px solid color-mix(in srgb, var(--brand-red) 20%, #fff) }
+.dashboard-stat-icon--yellow{ background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, #fff) }
+.dashboard-stat-icon--gray{ background: var(--gray-100); border: 1px solid var(--line) }
+.dashboard-stat-badge{
+  position: absolute; top: 16px; right: 16px;
+  font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+}
+.dashboard-stat-badge--ok{ background: var(--ok-bg); color: var(--ok-ink); border: 1px solid color-mix(in srgb, var(--ok) 40%, #fff) }
+.dashboard-stat-badge--warn{ background: var(--warn-bg); color: var(--warn-ink); border: 1px solid color-mix(in srgb, var(--warn) 40%, #fff) }
+.dashboard-stat-badge--muted{ background: var(--gray-100); color: var(--muted); border: 1px solid var(--line) }
+.dashboard-stat-label{ font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 4px 0 }
+.dashboard-stat-value{ font-size: 1.5rem; font-weight: 800; margin: 0; color: var(--ink) }
+
+.dashboard-main{ display: grid; grid-template-columns: 1fr 320px; gap: 24px }
+.dashboard-content{ min-width: 0 }
+.dashboard-sidebar{ display: flex; flex-direction: column; gap: 20px }
+.dashboard-panel{
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 20px; box-shadow: var(--shadow-sm);
+}
+.dashboard-panel-title{ font-size: 1.1rem; font-weight: 800; margin: 0 0 16px 0; color: var(--ink) }
+.dashboard-progress-list{ display: flex; flex-direction: column; gap: 16px }
+.dashboard-progress-item{ }
+.dashboard-progress-head{ display: flex; justify-content: space-between; font-size: .875rem; margin-bottom: 6px; color: var(--muted) }
+.dashboard-progress-pct{ font-weight: 600; color: var(--brand-red) }
+.dashboard-progress-pct--ok{ color: var(--ok) }
+.dashboard-progress-pct--info{ color: var(--info) }
+.dashboard-progress-bar{ height: 8px; background: var(--gray-100); border-radius: 999px; overflow: hidden }
+.dashboard-progress-fill{ height: 100%; border-radius: 999px; transition: width .3s ease }
+.dashboard-progress-fill--red{ background: var(--brand-red) }
+.dashboard-progress-fill--ok{ background: var(--ok) }
+.dashboard-progress-fill--info{ background: var(--info) }
+.dashboard-actions{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.dashboard-action-btn{
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); color: var(--ink); font-size: .8rem; font-weight: 600;
+  transition: border-color .15s ease, background .15s ease; text-decoration: none; cursor: pointer;
+}
+.dashboard-action-btn:hover{ border-color: var(--brand-red); background: color-mix(in srgb, var(--brand-red) 8%, #fff) }
+
+/* ===== HERO (legacy, kept for tags) ===== */
 .page-hero{
   position: relative;
   overflow: clip;
@@ -178,10 +255,18 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 1100px){
+  .dashboard-stats{ grid-template-columns: repeat(2, 1fr) }
+  .dashboard-main{ grid-template-columns: 1fr }
+  .dashboard-sidebar{ order: -1; flex-direction: row; flex-wrap: wrap }
+  .dashboard-panel{ flex: 1; min-width: 260px }
   .card{ grid-column: span 12 }
   .card--wide{ grid-column: span 12 }
   .kv{ grid-template-columns: 1fr }
   .kv-logo{ grid-column: span 1 }
+}
+@media (max-width: 640px){
+  .dashboard-stats{ grid-template-columns: 1fr }
+  .dashboard-actions{ grid-template-columns: 1fr }
 }
 @media (min-width: 1850px) and (min-height: 980px){
   .page-hero{ padding: 32px }

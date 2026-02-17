@@ -1,0 +1,68 @@
+/* UserAvatarProfile.razor — Stitch User Avatar Profile */
+:host[b-dvbw1nt7tz] { display: block }
+
+.profile-stitch-header[b-dvbw1nt7tz]{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; border-bottom: 1px solid var(--line);
+  background: var(--surface); box-shadow: var(--shadow-xs);
+}
+.profile-stitch-brand[b-dvbw1nt7tz]{ display: flex; align-items: center; gap: 12px }
+.profile-stitch-icon[b-dvbw1nt7tz]{
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--brand-red) 12%, #fff);
+  border-radius: 10px; font-size: 1.5rem;
+}
+.profile-stitch-title[b-dvbw1nt7tz]{ font-size: 1.1rem; font-weight: 800; margin: 0; color: var(--ink) }
+.profile-stitch-user[b-dvbw1nt7tz]{ display: flex; align-items: center; gap: 16px }
+.profile-stitch-user-info[b-dvbw1nt7tz]{ text-align: right }
+.profile-stitch-user-name[b-dvbw1nt7tz]{ display: block; font-size: .9rem; font-weight: 700; color: var(--ink) }
+.profile-stitch-user-role[b-dvbw1nt7tz]{ display: block; font-size: .7rem; color: var(--muted); text-transform: uppercase }
+.profile-stitch-logout[b-dvbw1nt7tz]{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); font-size: .8rem; font-weight: 700; color: var(--ink);
+  cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+.profile-stitch-logout:hover[b-dvbw1nt7tz]{ background: var(--gray-50); border-color: var(--brand-red) }
+
+.profile-stitch-main[b-dvbw1nt7tz]{ padding: 24px; max-width: 1200px; margin: 0 auto }
+.profile-breadcrumb[b-dvbw1nt7tz]{
+  display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted);
+  margin-bottom: 24px;
+}
+.profile-breadcrumb a[b-dvbw1nt7tz]{ color: var(--brand-blue); text-decoration: none }
+.profile-breadcrumb a:hover[b-dvbw1nt7tz]{ color: var(--brand-red) }
+.profile-breadcrumb-sep[b-dvbw1nt7tz]{ opacity: .6 }
+.profile-breadcrumb-current[b-dvbw1nt7tz]{ font-weight: 700; color: var(--ink) }
+
+.profile-stitch-head[b-dvbw1nt7tz]{
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;
+  margin-bottom: 32px;
+}
+.profile-stitch-h1[b-dvbw1nt7tz]{ font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--ink) }
+.profile-stitch-sub[b-dvbw1nt7tz]{ font-size: .9rem; color: var(--muted); margin: .35rem 0 0 0 }
+.profile-stitch-actions[b-dvbw1nt7tz]{ flex-shrink: 0 }
+
+.profile-stitch-grid[b-dvbw1nt7tz]{ display: grid; grid-template-columns: minmax(0, 400px); gap: 24px }
+.profile-stitch-card[b-dvbw1nt7tz]{
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 24px; box-shadow: var(--shadow-sm);
+}
+.profile-stitch-card-title[b-dvbw1nt7tz]{ font-size: 1.1rem; font-weight: 800; margin: 0 0 16px 0; color: var(--ink) }
+.profile-stitch-preview[b-dvbw1nt7tz]{
+  position: relative; width: 100%; border-radius: 12px; overflow: hidden;
+  background: var(--gray-100); border: 1px solid var(--line); margin-bottom: 16px;
+}
+.profile-stitch-preview-img[b-dvbw1nt7tz]{
+  width: 100%; height: auto; display: block; max-height: 280px; object-fit: cover;
+}
+.profile-stitch-preview-badge[b-dvbw1nt7tz]{
+  position: absolute; bottom: 12px; right: 12px;
+  padding: 4px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+  background: var(--ok); color: #fff;
+}
+.profile-stitch-meta[b-dvbw1nt7tz]{ font-size: .9rem; color: var(--muted); margin-bottom: 20px }
+.profile-stitch-meta p[b-dvbw1nt7tz]{ margin: 6px 0 }
+.profile-stitch-meta strong[b-dvbw1nt7tz]{ color: var(--ink) }
+.profile-stitch-cta[b-dvbw1nt7tz]{ display: flex; flex-direction: column; gap: 10px }
+.profile-stitch-cta .btn[b-dvbw1nt7tz]{ border-radius: 10px }

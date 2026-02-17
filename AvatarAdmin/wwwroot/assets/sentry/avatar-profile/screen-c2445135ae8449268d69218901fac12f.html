@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión Avanzada de Empresas y Sedes</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff0000",
+                        "primary-hover": "#cc0000",
+                        "background-light": "#ffffff",
+                        "background-dark": "#f0f0f0",
+                        "surface-light": "#f3f4f6", 
+                        "surface-dark": "#e5e7eb",
+                        "border-light": "#d1d5db",
+                        "text-main": "#111827",
+                        "text-subtle": "#6b7280",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light text-text-main min-h-screen flex flex-col overflow-hidden">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light bg-white px-6 py-3 z-20 shrink-0 h-16 shadow-sm">
+<div class="flex items-center gap-4 text-text-main">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">shield_person</span>
+</div>
+<h2 class="text-text-main text-lg font-bold leading-tight tracking-[-0.015em]">Sistemas Sentry</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-text-main text-sm font-semibold">Usuario Admin</span>
+<span class="text-text-subtle text-xs">Administrador del Sistema</span>
+</div>
+<div class="h-8 w-[1px] bg-border-light hidden md:block"></div>
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 border border-border-light" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCepCwwv58KfgqLDOH0BHTFiDEUhnsnAXT3JEU0JpX_upkkXEaFALDLqG-S7_lxMnfJs9yaDcgSKFQdFC0eceb6nyZOBGvWwVZTQCDBd-vZwB9kX1Uv59jNNoDNbxU4NPfTzFaCtSmtAB4LFDFZ62Xo6ho5B-R2p3M52q2qAccCNb9TU_QPXyun92JRmH4J4KTvqyLeiP-LRzKppybqKN6gr4BOcYwBILmFFsxsWBkZJ3k5FhBFh9Famm9UY06lPhPy9TD5vpg6_w");'></div>
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-white border border-border-light hover:bg-gray-50 transition-colors text-text-main text-sm font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined text-lg">logout</span>
+<span class="hidden sm:inline">Cerrar Sesión</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<main class="flex-1 overflow-y-auto custom-scrollbar relative z-10 p-6 md:p-10 max-w-7xl mx-auto w-full">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+<div>
+<h1 class="text-3xl font-bold text-text-main tracking-tight">Gestión Avanzada de Empresas y Sedes</h1>
+<p class="text-text-subtle mt-1 text-sm">Gestione cuentas corporativas, sedes activas y configuraciones de avatar.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="relative group flex-1 md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle group-focus-within:text-text-main transition-colors">search</span>
+<input class="w-full bg-white border border-border-light rounded-lg py-2.5 pl-10 pr-4 text-sm text-text-main placeholder-text-subtle/70 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm" placeholder="Buscar empresas..." type="text"/>
+</div>
+<button class="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-lg shadow-primary/20 shrink-0">
+<span class="material-symbols-outlined text-xl">add_business</span>
+<span>Añadir Empresa</span>
+</button>
+</div>
+</div>
+<div class="space-y-4">
+<details class="group bg-surface-light border border-border-light rounded-xl overflow-hidden shadow-sm transition-all duration-200 open:shadow-md open:border-border-light/80" open="">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-white transition-colors select-none list-none outline-none">
+<div class="flex items-center gap-5">
+<div class="size-12 rounded-lg bg-cover bg-center border border-border-light shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAhjpFt4uBLCFoOIz79R3prkJ3H_8bBY5iOCOsevCTkx54aBjHLXnupNsWg5ASMHcrMKHuqynl1UDSmcY7Vh0Qf7soR6HbYjYlHR8wfuHVw4Ov5DTMMdbvansQl7FWT7hRoFh1Ape9HkHDddZfLRsNQYW1iR5FR-w2CpwpezsIi9Ap0TGWCvSLcvjpVhdvAHkrlDUbpjn8i-1bsx-zPcjqcFolmp2aLrNGfJ-FQvgtg9O1s4kCVqpU1UOF5DHHwWwxv9gEsXei7lg");'></div>
+<div>
+<h3 class="text-lg font-bold text-text-main leading-tight group-hover:text-primary transition-colors">Acme Corp</h3>
+<div class="flex items-center gap-3 mt-1">
+<span class="inline-flex items-center gap-1 text-xs font-medium text-text-subtle bg-white px-2 py-0.5 rounded border border-border-light">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Activo
+                                    </span>
+<span class="text-xs text-text-subtle">ID: CP-2938</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6 md:gap-10">
+<button class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light bg-white text-text-subtle hover:text-primary hover:border-primary transition-all text-xs font-semibold shadow-sm group-hover:border-gray-300 z-10 mr-2" title="Editar información global de la empresa">
+<span class="material-symbols-outlined text-base">edit_square</span>
+                                Gestionar Empresa
+                            </button>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">4</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Sedes</span>
+</div>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">1,250</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Usuarios</span>
+</div>
+<div class="size-8 rounded-full bg-white border border-border-light flex items-center justify-center text-text-subtle group-open:bg-primary group-open:text-white group-open:border-primary transition-all">
+<span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-white border-t border-border-light">
+<div class="p-5 grid gap-4">
+<h4 class="text-xs font-bold text-text-subtle uppercase tracking-wider px-2">Sedes</h4>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-light bg-surface-light hover:border-gray-400 transition-colors">
+<div class="flex items-start gap-4">
+<div class="p-2 rounded bg-white border border-border-light text-text-subtle">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+<div>
+<h5 class="text-text-main font-medium">Sede Central</h5>
+<p class="text-sm text-text-subtle">Ciudad de México, MX • 850 Usuarios</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center size-9 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-primary hover:text-primary transition-all text-text-subtle" title="Gestionar detalles de la sede">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="group/btn flex items-center gap-2 px-4 py-2 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-text-subtle transition-all text-sm font-medium text-text-main h-9">
+<span class="material-symbols-outlined text-lg text-primary group-hover/btn:scale-110 transition-transform">accessibility_new</span>
+                                        Editar Configuración Avatar
+                                    </button>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-light bg-surface-light hover:border-gray-400 transition-colors">
+<div class="flex items-start gap-4">
+<div class="p-2 rounded bg-white border border-border-light text-text-subtle">
+<span class="material-symbols-outlined">warehouse</span>
+</div>
+<div>
+<h5 class="text-text-main font-medium">Sede Norte (Logística)</h5>
+<p class="text-sm text-text-subtle">Monterrey, MX • 320 Usuarios</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center size-9 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-primary hover:text-primary transition-all text-text-subtle" title="Gestionar detalles de la sede">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="group/btn flex items-center gap-2 px-4 py-2 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-text-subtle transition-all text-sm font-medium text-text-main h-9">
+<span class="material-symbols-outlined text-lg text-primary group-hover/btn:scale-110 transition-transform">accessibility_new</span>
+                                        Editar Configuración Avatar
+                                    </button>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-light bg-surface-light hover:border-gray-400 transition-colors">
+<div class="flex items-start gap-4">
+<div class="p-2 rounded bg-white border border-border-light text-text-subtle">
+<span class="material-symbols-outlined">science</span>
+</div>
+<div>
+<h5 class="text-text-main font-medium">Laboratorio de Innovación</h5>
+<p class="text-sm text-text-subtle">Guadalajara, MX • 80 Usuarios</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center size-9 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-primary hover:text-primary transition-all text-text-subtle" title="Gestionar detalles de la sede">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="group/btn flex items-center gap-2 px-4 py-2 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-text-subtle transition-all text-sm font-medium text-text-main h-9">
+<span class="material-symbols-outlined text-lg text-primary group-hover/btn:scale-110 transition-transform">accessibility_new</span>
+                                        Editar Configuración Avatar
+                                    </button>
+</div>
+</div>
+</div>
+<div class="px-5 pb-5 pt-0">
+<button class="w-full py-2 border border-dashed border-border-light rounded text-sm text-text-subtle hover:text-text-main hover:border-text-subtle hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">add</span>
+                                Añadir Nueva Sede
+                            </button>
+</div>
+</div>
+</details>
+<details class="group bg-surface-light border border-border-light rounded-xl overflow-hidden shadow-sm transition-all duration-200 open:shadow-md open:border-border-light/80">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-white transition-colors select-none list-none outline-none">
+<div class="flex items-center gap-5">
+<div class="size-12 rounded-lg bg-cover bg-center border border-border-light shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBYm5XLq38rDBLuJxul_4xXN0V4uVbq5GrXl-haf3uijXZ2eQMcocJVR9_GmcQwPWZNUYi1TmGV5AwEqHbi5NIUbuSebs9C1UFRaNZE6_wYYJaOXcenddpD3PrXctwlg6P_f2omjxZs1wyKOoC3D2Fru-lMUFqVdvfXjUXKp5PK53s13dHiOzGbyv7MbpwbDUAzqeMcaNr0_jp-CkBeePh71DZevEgYuFFBd__IltojnZ8BkK797tIiK1OWKJCK4YA1XdT4O7sHtw");'></div>
+<div>
+<h3 class="text-lg font-bold text-text-main leading-tight group-hover:text-primary transition-colors">Global Tech Systems</h3>
+<div class="flex items-center gap-3 mt-1">
+<span class="inline-flex items-center gap-1 text-xs font-medium text-text-subtle bg-white px-2 py-0.5 rounded border border-border-light">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Activo
+                                    </span>
+<span class="text-xs text-text-subtle">ID: GT-8842</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6 md:gap-10">
+<button class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light bg-white text-text-subtle hover:text-primary hover:border-primary transition-all text-xs font-semibold shadow-sm group-hover:border-gray-300 z-10 mr-2" title="Editar información global de la empresa">
+<span class="material-symbols-outlined text-base">edit_square</span>
+                                Gestionar Empresa
+                            </button>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">2</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Sedes</span>
+</div>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">450</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Usuarios</span>
+</div>
+<div class="size-8 rounded-full bg-white border border-border-light flex items-center justify-center text-text-subtle group-open:bg-primary group-open:text-white group-open:border-primary transition-all">
+<span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-white border-t border-border-light">
+<div class="p-5 grid gap-4">
+<h4 class="text-xs font-bold text-text-subtle uppercase tracking-wider px-2">Sedes</h4>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-light bg-surface-light hover:border-gray-400 transition-colors">
+<div class="flex items-start gap-4">
+<div class="p-2 rounded bg-white border border-border-light text-text-subtle">
+<span class="material-symbols-outlined">business_center</span>
+</div>
+<div>
+<h5 class="text-text-main font-medium">Oficina Principal</h5>
+<p class="text-sm text-text-subtle">Bogotá, CO • 400 Usuarios</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center size-9 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-primary hover:text-primary transition-all text-text-subtle" title="Gestionar detalles de la sede">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="group/btn flex items-center gap-2 px-4 py-2 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-text-subtle transition-all text-sm font-medium text-text-main h-9">
+<span class="material-symbols-outlined text-lg text-primary group-hover/btn:scale-110 transition-transform">accessibility_new</span>
+                                        Editar Configuración Avatar
+                                    </button>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-light bg-surface-light hover:border-gray-400 transition-colors">
+<div class="flex items-start gap-4">
+<div class="p-2 rounded bg-white border border-border-light text-text-subtle">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<h5 class="text-text-main font-medium">Centro de Soporte</h5>
+<p class="text-sm text-text-subtle">Remoto • 50 Usuarios</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center size-9 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-primary hover:text-primary transition-all text-text-subtle" title="Gestionar detalles de la sede">
+<span class="material-symbols-outlined text-lg">settings</span>
+</button>
+<button class="group/btn flex items-center gap-2 px-4 py-2 rounded border border-border-light bg-white hover:bg-gray-50 hover:border-text-subtle transition-all text-sm font-medium text-text-main h-9">
+<span class="material-symbols-outlined text-lg text-primary group-hover/btn:scale-110 transition-transform">accessibility_new</span>
+                                        Editar Configuración Avatar
+                                    </button>
+</div>
+</div>
+</div>
+<div class="px-5 pb-5 pt-0">
+<button class="w-full py-2 border border-dashed border-border-light rounded text-sm text-text-subtle hover:text-text-main hover:border-text-subtle hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">add</span>
+                                Añadir Nueva Sede
+                            </button>
+</div>
+</div>
+</details>
+<details class="group bg-surface-light border border-border-light rounded-xl overflow-hidden shadow-sm transition-all duration-200 open:shadow-md open:border-border-light/80 opacity-75">
+<summary class="flex items-center justify-between p-5 cursor-pointer hover:bg-white transition-colors select-none list-none outline-none">
+<div class="flex items-center gap-5">
+<div class="size-12 rounded-lg bg-cover bg-center border border-border-light shrink-0 grayscale" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDVTIZfRo5-fz-KNwY5LbIcD-uZhmziSBU_XQV0M71kEGrTIcT2OXufAfnTWfw2oC_PfLHfssPkxda8a6NnY5XbtymYwcKUm7QjABQmPc8ZYGB9-i8gjj2QEAft3lYbBHLxSI3-tHODTnd8t3CCIQPU6a9BufHxm_of6EoXd1z-Ll9GAuW95qF2mpGG-O0Ny446XivHabOX84z0SopZSMutQ1WaOI4qkO-VpYkbMYrzU9Lh1MtPrMBdfzmW64vRIb46NPMLmXclvw");'></div>
+<div>
+<h3 class="text-lg font-bold text-text-main leading-tight group-hover:text-primary transition-colors">Omega Services</h3>
+<div class="flex items-center gap-3 mt-1">
+<span class="inline-flex items-center gap-1 text-xs font-medium text-text-subtle bg-white px-2 py-0.5 rounded border border-border-light">
+<span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Pendiente
+                                    </span>
+<span class="text-xs text-text-subtle">ID: OM-1002</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6 md:gap-10">
+<button class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light bg-white text-text-subtle hover:text-primary hover:border-primary transition-all text-xs font-semibold shadow-sm group-hover:border-gray-300 z-10 mr-2" title="Editar información global de la empresa">
+<span class="material-symbols-outlined text-base">edit_square</span>
+                                Gestionar Empresa
+                            </button>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">1</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Sede</span>
+</div>
+<div class="hidden sm:flex flex-col items-end">
+<span class="text-xl font-bold text-text-main">0</span>
+<span class="text-xs text-text-subtle uppercase tracking-wider font-medium">Usuarios</span>
+</div>
+<div class="size-8 rounded-full bg-white border border-border-light flex items-center justify-center text-text-subtle group-open:bg-primary group-open:text-white group-open:border-primary transition-all">
+<span class="material-symbols-outlined transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-white border-t border-border-light">
+<div class="p-5 flex flex-col items-center justify-center py-8 text-center">
+<span class="material-symbols-outlined text-4xl text-text-subtle mb-2">hourglass_empty</span>
+<h4 class="text-text-main font-medium">Activación Pendiente</h4>
+<p class="text-sm text-text-subtle max-w-sm mx-auto mt-1">Este perfil de empresa está actualmente en revisión. Las sedes y la configuración de Avatar estarán disponibles una vez aprobadas.</p>
+<button class="mt-4 text-primary hover:text-primary-hover text-sm font-semibold">Revisar Solicitud</button>
+</div>
+</div>
+</details>
+</div>
+<div class="mt-8 flex justify-center">
+<p class="text-text-subtle text-sm">Mostrando 3 de 42 empresas</p>
+</div>
+</main>
+</div>
+
+</body></html>

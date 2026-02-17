@@ -1,8 +1,38 @@
 /* Users.razor.css — Gestión de usuarios (Admin) */
 :host[b-3mve78z9dc]{ display:block }
 
+/* ===== STITCH HEADER + STATS ===== */
+.users-header[b-3mve78z9dc]{ margin-bottom: 1.5rem }
+.users-header-inner[b-3mve78z9dc]{
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem;
+}
+.users-header-copy[b-3mve78z9dc]{ }
+.users-title[b-3mve78z9dc]{ font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--ink) }
+.users-subtitle[b-3mve78z9dc]{ font-size: .9rem; color: var(--muted); margin: .25rem 0 0 0 }
+.users-header-actions[b-3mve78z9dc]{ display: flex; gap: .75rem; flex-shrink: 0 }
+.users-stats-row[b-3mve78z9dc]{
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;
+}
+.users-stat-card[b-3mve78z9dc]{
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 1rem 1.25rem; box-shadow: var(--shadow-xs);
+}
+.users-stat-card--red[b-3mve78z9dc]{ border-left: 4px solid var(--brand-red) }
+.users-stat-card--blue[b-3mve78z9dc]{ border-left: 4px solid var(--brand-blue) }
+.users-stat-card--yellow[b-3mve78z9dc]{ border-left: 4px solid var(--brand-yellow) }
+.users-stat-card--search[b-3mve78z9dc]{ display: flex; align-items: center }
+.users-stat-dt[b-3mve78z9dc]{ font-size: .8rem; font-weight: 500; color: var(--muted); margin: 0 }
+.users-stat-dd[b-3mve78z9dc]{ font-size: 1.75rem; font-weight: 700; margin: .25rem 0 0 0; color: var(--ink) }
+.users-search-input[b-3mve78z9dc]{
+  width: 100%; padding: .5rem .75rem .5rem 2rem;
+  border: 1px solid var(--line); border-radius: 10px;
+  font-size: .9rem; background: var(--gray-50);
+}
+.users-search-input:focus[b-3mve78z9dc]{ border-color: var(--brand-red); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-red) 20%, transparent) }
+@media (max-width: 900px){ .users-stats-row[b-3mve78z9dc]{ grid-template-columns: 1fr 1fr } }
+@media (max-width: 500px){ .users-stats-row[b-3mve78z9dc]{ grid-template-columns: 1fr } }
 
-/* ===== HERO ===== */
+/* ===== HERO (legacy) ===== */
 .users-hero[b-3mve78z9dc]{
   position:relative;
   overflow:clip;

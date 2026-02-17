@@ -196,7 +196,7 @@ function ensureLogoPlaneOrFind(root){
     if (material) return;
     if (!child.isMesh) return;
     const lower = (child.name ?? '').toLowerCase();
-    if (/(logo|badge|emblem|logolabel)/.test(lower)){
+    if (/(logomesh|logolabel|logo|badge|emblem)/.test(lower)){
       material = ensureSingleMaterial(child);
     }
   });
@@ -220,7 +220,7 @@ function applyHairColor(state, value){
   const color = new THREE.Color(value);
   state.root.traverse(child => {
     const n = (child.name || '').toLowerCase();
-    if (child.isMesh && /hair|pelo|cabello/.test(n)){
+    if (child.isMesh && /avaturn_hair|hair|pelo|cabello/.test(n)){
       if (child.material?.color){
         child.material.color.set(color);
         child.material.needsUpdate = true;

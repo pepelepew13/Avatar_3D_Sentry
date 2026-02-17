@@ -12,37 +12,37 @@
 @inject IJSRuntime JS
 
 <AdminGuard>
-  <!-- HERO -->
-  <section class="users-hero" role="region" aria-label="Gestión de usuarios">
-    <div class="hero-decor orb orb-1" aria-hidden="true"></div>
-    <div class="hero-decor orb orb-2" aria-hidden="true"></div>
-
-    <div class="hero-left">
-      <div class="hero-ic" aria-hidden="true">👥</div>
-      <div class="hero-copy">
-        <h1>Usuarios del sistema</h1>
-        <p>Como administrador puedes crear nuevas cuentas y gestionar las existentes.</p>
-        <div class="hero-tags">
-          <span class="tag">@Auth.Email</span>
-          <span class="tag">Rol: @Auth.Role</span>
-          <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
-        </div>
+  <!-- Header Stitch: Gestión de Usuarios -->
+  <section class="users-header" role="region" aria-label="Gestión de usuarios">
+    <div class="users-header-inner">
+      <div class="users-header-copy">
+        <h1 class="users-title">Gestión de Usuarios</h1>
+        <p class="users-subtitle">Administra el acceso, roles y asignación de avatares para la plataforma.</p>
+      </div>
+      <div class="users-header-actions">
+        <button type="button" class="btn btn-outline-sentry" aria-label="Exportar">Exportar</button>
+        <button type="button" class="btn btn-sentry" @onclick="ScrollToCreateForm" aria-label="Nuevo usuario">Nuevo Usuario</button>
       </div>
     </div>
+  </section>
 
-    <div class="hero-stats" aria-label="Estadísticas rápidas">
-      <div class="stat">
-      <div class="stat-num">@totalUsers</div>
-        <div class="stat-label">Total</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">@AdminsCount</div>
-        <div class="stat-label">Admins</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">@NormalUsersCount</div>
-        <div class="stat-label">Usuarios</div>
-      </div>
+  <!-- Stats row (Stitch mockup) -->
+  <section class="users-stats-row" role="region" aria-label="Estadísticas">
+    <div class="users-stat-card users-stat-card--red">
+      <dt class="users-stat-dt">Usuarios Totales</dt>
+      <dd class="users-stat-dd">@totalUsers</dd>
+    </div>
+    <div class="users-stat-card users-stat-card--blue">
+      <dt class="users-stat-dt">Empresas Activas</dt>
+      <dd class="users-stat-dd">—</dd>
+    </div>
+    <div class="users-stat-card users-stat-card--yellow">
+      <dt class="users-stat-dt">Avatares Personalizados</dt>
+      <dd class="users-stat-dd">—</dd>
+    </div>
+    <div class="users-stat-card users-stat-card--search">
+      <label class="visually-hidden" for="users-search">Buscar usuario, correo o sede</label>
+      <input id="users-search" type="text" class="users-search-input" placeholder="Buscar usuario, correo o sede..." value="@q" @oninput="OnSearchInput" />
     </div>
   </section>
 
@@ -64,7 +64,7 @@
   <!-- GRID CREAR + PREVIEW -->
   <section class="users-grid">
     <!-- CARD: Crear usuario -->
-    <div class="card form-card">
+    <div class="card form-card" id="users-create-form">
       <header class="card-head center">
         <div class="ic" aria-hidden="true">➕</div>
         <div>
@@ -457,6 +457,11 @@
   private bool IsUser => string.Equals(_vm.Role, "User", StringComparison.OrdinalIgnoreCase);
   private void SetRole(string role) { _vm.Role = role; StateHasChanged(); }
   private void TogglePwd() => _showPwd = !_showPwd;
+
+  private async Task ScrollToCreateForm()
+  {
+    try { await JS.InvokeVoidAsync("eval", "document.getElementById('users-create-form')?.scrollIntoView({ behavior: 'smooth' });"); } catch { }
+  }
 
   private async Task OnCreateUserAsync()
   {

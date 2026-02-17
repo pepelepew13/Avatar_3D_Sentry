@@ -52,23 +52,31 @@ var internalApiOptions = builder.Configuration.GetSection(InternalApiOptions.Sec
     ?? new InternalApiOptions();
 
 // ==================================================================
-// 3) CONSUMO API INTERNA (OBLIGATORIO)
+// 3) CONSUMO API INTERNA (opcional hasta que Sentry despliegue la API que conecta la DB)
 // ==================================================================
-if (string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl))
-    throw new InvalidOperationException("Falta InternalApi:BaseUrl (debe venir desde .env o appsettings).");
-
-builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
+// Según documento MetaFusion→Sentry: la API interna y la DB son responsabilidad de Sentry.
+// Este BFF solo consume /internal/* (companies, sites, users, avatar-config, voices). Cuando BaseUrl esté configurado, se usan los clientes HTTP.
+if (!string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl))
 {
-    client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
-});
-builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
-builder.Services.AddHttpClient<IInternalApiTokenService, InternalApiTokenService>()
-    .AddHttpMessageHandler<InternalApiApiKeyHandler>();
-builder.Services.AddTransient<InternalApiAuthHandler>();
-builder.Services.AddHttpClient<IInternalUserClient, InternalUserClient>()
-    .AddHttpMessageHandler<InternalApiAuthHandler>();
-builder.Services.AddHttpClient<IInternalAvatarConfigClient, InternalAvatarConfigClient>()
-    .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<InternalApiAvatarDataStore>(client =>
+    {
+        client.BaseAddress = new Uri(internalApiOptions.BaseUrl.TrimEnd('/') + "/");
+    }).AddHttpMessageHandler<InternalApiApiKeyHandler>();
+    builder.Services.AddScoped<IAvatarDataStore, InternalApiAvatarDataStore>();
+    builder.Services.AddHttpClient<IInternalApiTokenService, InternalApiTokenService>()
+        .AddHttpMessageHandler<InternalApiApiKeyHandler>();
+    builder.Services.AddTransient<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<IInternalUserClient, InternalUserClient>()
+        .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<IInternalAvatarConfigClient, InternalAvatarConfigClient>()
+        .AddHttpMessageHandler<InternalApiAuthHandler>();
+}
+else
+{
+    builder.Services.AddSingleton<IAvatarDataStore, StubAvatarDataStore>();
+    builder.Services.AddSingleton<IInternalUserClient, StubInternalUserClient>();
+    builder.Services.AddSingleton<IInternalAvatarConfigClient, StubInternalAvatarConfigClient>();
+}
 
 // ==================================================================
 // 4) JWT AUTH
@@ -159,6 +167,7 @@ builder.Services.AddSingleton<IAssetStorage>(sp =>
     {
         Mode = "Azure",
         AzureConnection = az.ConnectionString,
+        SasExpiryMinutes = az.SasExpiryMinutes,
         Containers = new StorageOptions.ContainerNames
         {
             Models = az.ContainerNamePublic,

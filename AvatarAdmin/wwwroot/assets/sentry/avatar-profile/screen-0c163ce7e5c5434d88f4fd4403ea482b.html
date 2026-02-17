@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión de Usuarios Premium - Sistemas Sentry</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff0000",
+                        "primary-hover": "#cc0000",
+                        "primary-gradient-start": "#ff3333",
+                        "primary-gradient-end": "#cc0000",
+                        "background-light": "#f8fafc",
+                        "surface-light": "#ffffff", 
+                        "border-light": "#e2e8f0",
+                        "text-main": "#0f172a",
+                        "text-subtle": "#64748b",
+                    },
+                    fontFamily: {
+                        "sans": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.375rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details[open] .expand-icon {
+            transform: rotate(180deg);
+        }
+        .selected-user-card {
+            border-color: rgba(255, 0, 0, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(255, 0, 0, 0.08), 0 8px 10px -6px rgba(255, 0, 0, 0.05);
+        }
+        .premium-button {
+            background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
+            transition: all 0.3s ease;
+        }
+        .premium-button:hover {
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25);
+            transform: translateY(-1px);
+        }
+        .inner-shadow-section {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03);
+        }
+    </style>
+</head>
+<body class="font-sans bg-background-light text-text-main min-h-screen flex flex-col overflow-hidden">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light bg-white px-8 py-3 z-20 shrink-0 h-16 shadow-sm">
+<div class="flex items-center gap-4 text-text-main">
+<div class="size-9 flex items-center justify-center bg-red-50 rounded-lg text-primary">
+<span class="material-symbols-outlined text-2xl font-bold">shield_person</span>
+</div>
+<h2 class="text-text-main text-lg font-extrabold leading-tight tracking-tight">Sistemas Sentry</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-text-main text-sm font-bold">Usuario Admin</span>
+<span class="text-text-subtle text-[11px] font-medium tracking-wide uppercase">Administrador Central</span>
+</div>
+<div class="h-8 w-[1px] bg-border-light hidden md:block"></div>
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-xl size-9 border border-border-light shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCepCwwv58KfgqLDOH0BHTFiDEUhnsnAXT3JEU0JpX_upkkXEaFALDLqG-S7_lxMnfJs9yaDcgSKFQdFC0eceb6nyZOBGvWwVZTQCDBd-vZwB9kX1Uv59jNNoDNbxU4NPfTzFaCtSmtAB4LFDFZ62Xo6ho5B-R2p3M52q2qAccCNb9TU_QPXyun92JRmH4J4KTvqyLeiP-LRzKppybqKN6gr4BOcYwBILmFFsxsWBkZJ3k5FhBFh9Famm9UY06lPhPy9TD5vpg6_w");'></div>
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-white border border-border-light hover:bg-gray-50 transition-all text-text-main text-xs font-bold gap-2">
+<span class="material-symbols-outlined text-lg">logout</span>
+<span class="hidden sm:inline">Cerrar Sesión</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<main class="flex-1 overflow-y-auto custom-scrollbar relative z-10 p-6 md:p-10 max-w-7xl mx-auto w-full">
+<div class="flex items-center gap-2 text-xs font-medium text-text-subtle mb-6">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm">business</span> Empresas
+            </a>
+<span class="material-symbols-outlined text-[10px] opacity-40">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Acme Corp</a>
+<span class="material-symbols-outlined text-[10px] opacity-40">chevron_right</span>
+<span class="font-bold text-text-main">Sede Central</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+<div>
+<h1 class="text-3xl font-extrabold text-text-main tracking-tight">Gestión de Usuarios</h1>
+<p class="text-text-subtle mt-1.5 text-sm max-w-lg leading-relaxed">Administre los accesos de la sede y personalice las identidades digitales de sus avatares.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="premium-button flex items-center justify-center gap-2 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-xl">person_add</span>
+<span>Añadir Usuario</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+<div class="lg:col-span-4">
+<div class="bg-surface-light border border-border-light rounded-2xl shadow-sm p-7 sticky top-4">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-lg font-extrabold text-text-main">Información de la Sede</h3>
+<button class="text-text-subtle hover:text-primary hover:bg-red-50 p-2 rounded-xl transition-all">
+<span class="material-symbols-outlined text-xl">settings</span>
+</button>
+</div>
+<div class="relative group cursor-pointer w-full mb-8">
+<div class="h-40 w-full rounded-2xl bg-cover bg-center border border-border-light shadow-inner" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAhjpFt4uBLCFoOIz79R3prkJ3H_8bBY5iOCOsevCTkx54aBjHLXnupNsWg5ASMHcrMKHuqynl1UDSmcY7Vh0Qf7soR6HbYjYlHR8wfuHVw4Ov5DTMMdbvansQl7FWT7hRoFh1Ape9HkHDddZfLRsNQYW1iR5FR-w2CpwpezsIi9Ap0TGWCvSLcvjpVhdvAHkrlDUbpjn8i-1bsx-zPcjqcFolmp2aLrNGfJ-FQvgtg9O1s4kCVqpU1UOF5DHHwWwxv9gEsXei7lg");'></div>
+<div class="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+<span class="material-symbols-outlined text-white text-3xl">photo_camera</span>
+</div>
+<div class="absolute -bottom-3 right-4 bg-white px-3 py-1 rounded-full shadow-md border border-border-light flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+<span class="text-[10px] font-bold text-text-main uppercase">Operativa</span>
+</div>
+</div>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 shrink-0 self-start">
+<span class="material-symbols-outlined text-text-subtle text-xl">apartment</span>
+</div>
+<div>
+<label class="block text-[10px] font-extrabold text-text-subtle uppercase tracking-widest mb-0.5">Nombre Legal</label>
+<p class="text-sm font-bold text-text-main">Sede Central - Acme Corp</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 shrink-0 self-start">
+<span class="material-symbols-outlined text-text-subtle text-xl">location_on</span>
+</div>
+<div>
+<label class="block text-[10px] font-extrabold text-text-subtle uppercase tracking-widest mb-0.5">Dirección</label>
+<p class="text-sm font-medium text-text-main leading-snug">Av. Reforma 222, Cuauhtémoc, 06600 CDMX</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex gap-3">
+<div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 shrink-0">
+<span class="material-symbols-outlined text-text-subtle text-lg">call</span>
+</div>
+<div>
+<label class="block text-[10px] font-extrabold text-text-subtle uppercase tracking-widest mb-0.5">Teléfono</label>
+<p class="text-sm font-medium text-text-main">+52 55 1234</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100 shrink-0">
+<span class="material-symbols-outlined text-text-subtle text-lg">verified</span>
+</div>
+<div>
+<label class="block text-[10px] font-extrabold text-text-subtle uppercase tracking-widest mb-0.5">Estado</label>
+<span class="inline-flex items-center text-xs font-bold text-green-600">Activo</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-dashed border-border-light">
+<button class="w-full flex items-center justify-center gap-2 bg-gray-50 border border-border-light hover:bg-gray-100 text-text-main px-4 py-3 rounded-xl font-bold text-xs transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+<span>Descargar Reporte Mensual</span>
+</button>
+</div>
+</div>
+</div>
+<div class="lg:col-span-8">
+<div class="bg-surface-light border border-border-light rounded-2xl shadow-sm overflow-hidden">
+<div class="px-6 py-5 border-b border-border-light flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-base font-extrabold text-text-main">Lista de Usuarios Asignados</h3>
+<p class="text-xs text-text-subtle">Mostrando registros activos en la sede</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle text-lg">search</span>
+<input class="pl-10 pr-4 py-2 text-sm border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-full sm:w-56 transition-all" placeholder="Buscar por nombre..." type="text"/>
+</div>
+</div>
+</div>
+<div class="divide-y divide-border-light">
+<details class="group" open="">
+<summary class="flex items-center justify-between p-6 hover:bg-red-50/20 transition-all cursor-pointer list-none selected-user-card">
+<div class="flex items-center gap-4">
+<div class="size-14 rounded-2xl bg-white flex items-center justify-center text-primary font-bold border-2 border-primary/20 shadow-sm relative shrink-0">
+                                        RM
+                                        <span class="absolute -bottom-1 -right-1 size-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<h4 class="text-sm font-extrabold text-text-main flex items-center gap-2">
+                                            Roberto Martínez
+                                            <span class="material-symbols-outlined text-primary text-base">verified_user</span>
+</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-xs text-text-subtle font-medium">Gerente de Sede</span>
+<span class="text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Admin</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-[9px] uppercase font-extrabold text-text-subtle tracking-tighter">Estado Avatar</span>
+<div class="flex items-center gap-1.5">
+<span class="size-1.5 rounded-full bg-primary"></span>
+<span class="text-[11px] font-extrabold text-primary uppercase">Configurado</span>
+</div>
+</div>
+<div class="size-8 rounded-lg flex items-center justify-center bg-gray-50 border border-border-light text-text-subtle group-open:bg-primary group-open:text-white group-open:border-primary transition-all">
+<span class="material-symbols-outlined text-xl transition-transform expand-icon">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-[#F9F9F9] p-6 border-t border-border-light inner-shadow-section">
+<div class="bg-white rounded-2xl border border-border-light p-6 shadow-sm">
+<div class="flex flex-col md:flex-row gap-8">
+<div class="shrink-0 mx-auto md:mx-0">
+<div class="w-36 h-48 bg-gray-50 rounded-2xl border border-border-light overflow-hidden relative group/avatar shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-b from-white via-gray-100 to-gray-200"></div>
+<div class="relative z-10 w-full h-full bg-contain bg-no-repeat bg-bottom transition-transform duration-500 group-hover/avatar:scale-105" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCepCwwv58KfgqLDOH0BHTFiDEUhnsnAXT3JEU0JpX_upkkXEaFALDLqG-S7_lxMnfJs9yaDcgSKFQdFC0eceb6nyZOBGvWwVZTQCDBd-vZwB9kX1Uv59jNNoDNbxU4NPfTzFaCtSmtAB4LFDFZ62Xo6ho5B-R2p3M52q2qAccCNb9TU_QPXyun92JRmH4J4KTvqyLeiP-LRzKppybqKN6gr4BOcYwBILmFFsxsWBkZJ3k5FhBFh9Famm9UY06lPhPy9TD5vpg6_w");'></div>
+<div class="absolute inset-0 bg-black/5 opacity-0 group-hover/avatar:opacity-100 transition-opacity"></div>
+</div>
+</div>
+<div class="flex-1 space-y-5">
+<div class="flex items-start justify-between">
+<div>
+<h4 class="text-sm font-extrabold text-text-main tracking-tight">Configuración de Avatar Premium</h4>
+<p class="text-[11px] font-bold text-text-subtle mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">smart_toy</span>
+                                                        Modelo: Asistente Corporativo V3
+                                                    </p>
+</div>
+<span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-extrabold border border-green-200 uppercase">
+<span class="size-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                                    Online
+                                                </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+<span class="block text-[10px] text-text-subtle uppercase font-extrabold mb-1 tracking-widest">Personalidad Voz</span>
+<span class="text-sm font-bold text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-primary">record_voice_over</span>
+                                                        Neural Es-MX (Sofia)
+                                                    </span>
+</div>
+<div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+<span class="block text-[10px] text-text-subtle uppercase font-extrabold mb-1 tracking-widest">Identidad Visual</span>
+<span class="text-sm font-bold text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-primary">apparel</span>
+                                                        Ejecutivo Sentry
+                                                    </span>
+</div>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 premium-button flex items-center justify-center gap-2 text-white px-5 py-3 rounded-xl font-bold text-xs">
+<span class="material-symbols-outlined text-lg">tune</span>
+<span>Configurar Avatar</span>
+</button>
+<button class="px-4 py-3 border border-border-light rounded-xl hover:bg-gray-50 text-text-subtle transition-all">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</details>
+<details class="group">
+<summary class="flex items-center justify-between p-6 hover:bg-gray-50 transition-all cursor-pointer list-none">
+<div class="flex items-center gap-4">
+<div class="size-14 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 font-bold border border-purple-100 relative shrink-0">
+                                        AL
+                                        <span class="absolute -bottom-1 -right-1 size-3.5 bg-gray-300 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<h4 class="text-sm font-extrabold text-text-main">Ana López</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-xs text-text-subtle font-medium">Supervisora de Turno</span>
+<span class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Editor</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-[9px] uppercase font-extrabold text-text-subtle tracking-tighter">Estado Avatar</span>
+<div class="flex items-center gap-1.5">
+<span class="size-1.5 rounded-full bg-gray-400"></span>
+<span class="text-[11px] font-extrabold text-text-subtle uppercase">Pendiente</span>
+</div>
+</div>
+<div class="size-8 rounded-lg flex items-center justify-center bg-gray-50 border border-border-light text-text-subtle group-open:bg-primary group-open:text-white transition-all">
+<span class="material-symbols-outlined text-xl transition-transform expand-icon">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-[#F9F9F9] p-8 border-t border-border-light inner-shadow-section">
+<div class="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center">
+<div class="size-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
+<span class="material-symbols-outlined text-3xl text-gray-300">face_retouching_off</span>
+</div>
+<h5 class="text-sm font-extrabold text-text-main mb-1">Sin Avatar Configurado</h5>
+<p class="text-xs text-text-subtle font-medium mb-6">El usuario Ana López aún no tiene una identidad digital asignada.</p>
+<button class="premium-button inline-flex items-center gap-2 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-primary/10">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span>Empezar Configuración</span>
+</button>
+</div>
+</div>
+</details>
+<details class="group">
+<summary class="flex items-center justify-between p-6 hover:bg-gray-50 transition-all cursor-pointer list-none">
+<div class="flex items-center gap-4">
+<div class="size-14 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 font-bold border border-amber-100 relative shrink-0">
+                                        CR
+                                        <span class="absolute -bottom-1 -right-1 size-3.5 bg-red-500 border-2 border-white rounded-full"></span>
+</div>
+<div>
+<h4 class="text-sm font-extrabold text-text-main">Carlos Ruiz</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-xs text-text-subtle font-medium">Monitor de Seguridad</span>
+<span class="text-xs font-bold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded">Visor</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-[9px] uppercase font-extrabold text-text-subtle tracking-tighter">Estado Avatar</span>
+<div class="flex items-center gap-1.5">
+<span class="size-1.5 rounded-full bg-primary"></span>
+<span class="text-[11px] font-extrabold text-primary uppercase">Configurado</span>
+</div>
+</div>
+<div class="size-8 rounded-lg flex items-center justify-center bg-gray-50 border border-border-light text-text-subtle group-open:bg-primary group-open:text-white transition-all">
+<span class="material-symbols-outlined text-xl transition-transform expand-icon">expand_more</span>
+</div>
+</div>
+</summary>
+<div class="bg-[#F9F9F9] p-6 border-t border-border-light inner-shadow-section">
+<div class="bg-white rounded-2xl border border-border-light p-6 shadow-sm">
+<div class="flex flex-col md:flex-row gap-8">
+<div class="shrink-0 mx-auto md:mx-0">
+<div class="w-36 h-48 bg-gray-50 rounded-2xl border border-border-light overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gray-100"></div>
+<div class="relative z-10 w-full h-full bg-contain bg-no-repeat bg-bottom grayscale opacity-50" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCepCwwv58KfgqLDOH0BHTFiDEUhnsnAXT3JEU0JpX_upkkXEaFALDLqG-S7_lxMnfJs9yaDcgSKFQdFC0eceb6nyZOBGvWwVZTQCDBd-vZwB9kX1Uv59jNNoDNbxU4NPfTzFaCtSmtAB4LFDFZ62Xo6ho5B-R2p3M52q2qAccCNb9TU_QPXyun92JRmH4J4KTvqyLeiP-LRzKppybqKN6gr4BOcYwBILmFFsxsWBkZJ3k5FhBFh9Famm9UY06lPhPy9TD5vpg6_w");'></div>
+</div>
+</div>
+<div class="flex-1 space-y-5">
+<div class="flex items-start justify-between">
+<div>
+<h4 class="text-sm font-extrabold text-text-main tracking-tight">Configuración de Avatar Asignado</h4>
+<p class="text-[11px] font-bold text-text-subtle mt-0.5">Modelo: Guardia de Seguridad Pro</p>
+</div>
+<span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-500 text-[10px] font-extrabold border border-gray-200 uppercase">
+<span class="size-1.5 bg-gray-400 rounded-full"></span>
+                                                    Offline
+                                                </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+<span class="block text-[10px] text-text-subtle uppercase font-extrabold mb-1">Voz</span>
+<span class="text-sm font-bold text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-primary">record_voice_over</span>
+                                                        Neural Es-ES (Alvaro)
+                                                    </span>
+</div>
+<div class="p-3.5 bg-gray-50 rounded-xl border border-gray-100">
+<span class="block text-[10px] text-text-subtle uppercase font-extrabold mb-1">Uniforme</span>
+<span class="text-sm font-bold text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-primary">security</span>
+                                                        Táctico Sentry
+                                                    </span>
+</div>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 premium-button flex items-center justify-center gap-2 text-white px-5 py-3 rounded-xl font-bold text-xs">
+<span class="material-symbols-outlined text-lg">tune</span>
+<span>Configurar</span>
+</button>
+<button class="px-4 py-3 border border-border-light rounded-xl hover:bg-gray-50 text-text-subtle transition-all">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</details>
+</div>
+<div class="bg-gray-50 p-5 text-center border-t border-border-light">
+<button class="text-[11px] font-extrabold text-text-subtle hover:text-primary transition-colors uppercase tracking-widest flex items-center justify-center gap-2 mx-auto">
+                            Ver todos los usuarios (850)
+                            <span class="material-symbols-outlined text-sm">keyboard_double_arrow_down</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

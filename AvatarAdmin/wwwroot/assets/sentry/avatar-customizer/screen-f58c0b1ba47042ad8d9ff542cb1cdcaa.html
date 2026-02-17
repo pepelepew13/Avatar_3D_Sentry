@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Previsualización de Turnos Corporativa</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FF0000", // Corporate Red (Sentry)
+                        secondary: "#002060", // Deep Blue
+                        accent: "#FFCC00", // Corporate Yellow
+                        neutral: "#666666", // Corporate Grey
+                        "background-light": "#F3F4F6", // Light gray background for whole page
+                        "surface-light": "#FFFFFF",
+                    },
+                    fontFamily: {
+                        display: ["Montserrat", "sans-serif"],
+                        body: ["Montserrat", "sans-serif"],
+                    },
+                    animation: {
+                        marquee: 'marquee 25s linear infinite',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        }
+                    }
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-background-light font-body text-gray-800 min-h-screen flex flex-col overflow-hidden">
+<main class="flex-1 grid grid-cols-12 gap-0 h-screen w-full relative">
+<section class="col-span-12 lg:col-span-8 relative bg-gray-200 overflow-hidden flex flex-col justify-between h-full">
+<div class="absolute inset-0 z-0">
+<img alt="Office Environment" class="w-full h-full object-cover opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi7OVYC8j8KP8HsAIv_klojyQWHuZDeuwI9ZXKepexqZKto00jx1da0vfzUfG1MIvdUChuzZehCYxoUY1HSTOxgPUyUr7oVV5XA9Mxc_rXeh0QglOFDoMaziHQYPWSPNq0xfCfMj3T_4lTfSr8-dcH4dpYVIooZKxjTUkwJUJ_GLNsha1HKxsYHJnhsMwn3U94OKhMqAKlh2KyHiwS-w43xDOwuprnvqIpek_Loek4ZfNGI7d8ZmbeGEl0uu_s2uUIyDXu71RcOg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+</div>
+<div class="absolute inset-0 z-10 flex items-end justify-center pointer-events-none">
+<img alt="Avatar Presenter" class="h-[85%] w-auto object-cover object-top drop-shadow-2xl translate-y-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0EdVdm0Hen0dJW0Cy7FR8D_pRTYgi0whsrqUu46gxYpF78YFc9tr21bNqaKo6ibj024Ddwq4ko6uRJBd1chYV9FTrIoJ_9Yf_ovvpsjc0i8FUaHxeKNYSokJSwbHA9I5z784Ac4z134DW6oPFkhlbkQLS-zezmFgy1cRx5MBEORFMs1EOBb3xR2XEeI3FAB8i7s5PtlNZxocJvvCLNlzlyg0RkbLq6qKbXA-rY1QAVcyiwx9MSXefu6VACSSfVO2axhncN-sk-g"/>
+</div>
+<div class="absolute top-6 left-6 z-20">
+</div>
+<div class="relative z-30 mt-auto bg-primary text-white py-4 overflow-hidden border-t-4 border-white">
+<div class="whitespace-nowrap animate-marquee flex items-center gap-12 text-2xl font-bold uppercase tracking-wide">
+<span>Bienvenido a Sistemas Sentry</span>
+<span class="mx-4 text-accent">•</span>
+<span>Por favor espere su turno en la sala</span>
+<span class="mx-4 text-accent">•</span>
+<span>Recuerde tener sus documentos a la mano</span>
+<span class="mx-4 text-accent">•</span>
+<span>Horario de atención: 8:00 AM - 5:00 PM</span>
+<span class="mx-4 text-accent">•</span>
+<span>Para consultas adicionales visite el módulo de información</span>
+</div>
+</div>
+<div class="absolute bottom-[4.5rem] right-0 z-30 bg-white rounded-tl-2xl px-8 py-3 shadow-lg flex items-center gap-4 border-l border-t border-gray-100">
+<div class="text-right">
+<div class="text-3xl font-bold text-gray-800 leading-none">09:28 <span class="text-lg font-medium text-gray-500">a. m.</span></div>
+<div class="text-sm font-medium text-gray-500 uppercase tracking-wider mt-1">30 de Enero de 2026</div>
+</div>
+<span class="material-symbols-outlined text-4xl text-primary">schedule</span>
+</div>
+</section>
+<section class="col-span-12 lg:col-span-4 bg-white border-l border-gray-200 h-full flex flex-col shadow-2xl z-40">
+<div class="p-6 border-b border-gray-100 flex items-center justify-center bg-gray-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl">security</span>
+<div class="leading-tight">
+<h1 class="font-bold text-2xl text-neutral tracking-tight">Sistemas <span class="text-primary">Sentry</span></h1>
+</div>
+</div>
+</div>
+<div class="bg-primary px-4 py-3 shadow-md z-10 flex justify-between items-center text-white">
+<div class="flex items-center gap-2 w-1/2 justify-center">
+<span class="material-symbols-outlined text-3xl">receipt_long</span>
+<span class="font-bold text-xl tracking-wider">TURNO</span>
+</div>
+<div class="h-8 w-px bg-white/30"></div>
+<div class="flex items-center gap-2 w-1/2 justify-center">
+<span class="font-bold text-xl tracking-wider">TAQUILLA</span>
+<span class="material-symbols-outlined text-3xl">desktop_windows</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+<div class="bg-white rounded-xl shadow-lg border-l-8 border-primary overflow-hidden transform scale-105 transition-transform duration-300 ring-4 ring-red-100 mb-6">
+<div class="flex">
+<div class="flex-1 py-6 flex flex-col items-center justify-center border-r border-gray-100">
+<span class="text-sm font-medium text-gray-400 mb-1">TURNO ACTUAL</span>
+<span class="text-6xl font-extrabold text-primary">G-22</span>
+</div>
+<div class="flex-1 py-6 flex flex-col items-center justify-center bg-red-50/30">
+<span class="text-sm font-medium text-gray-400 mb-1">TAQUILLA</span>
+<span class="text-6xl font-extrabold text-primary">3</span>
+</div>
+</div>
+<div class="bg-primary text-white text-center py-1 text-xs font-bold tracking-widest uppercase animate-pulse">
+                        Llamando ahora
+                    </div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex h-24">
+<div class="flex-1 flex items-center justify-center border-r border-gray-100">
+<span class="text-5xl font-bold text-gray-700">P-3</span>
+</div>
+<div class="flex-1 flex items-center justify-center bg-gray-50/50">
+<span class="text-5xl font-bold text-primary">5</span>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex h-24 opacity-90">
+<div class="flex-1 flex items-center justify-center border-r border-gray-100">
+<span class="text-5xl font-bold text-gray-600">G-19</span>
+</div>
+<div class="flex-1 flex items-center justify-center bg-gray-50/50">
+<span class="text-5xl font-bold text-primary">1</span>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex h-24 opacity-80">
+<div class="flex-1 flex items-center justify-center border-r border-gray-100">
+<span class="text-5xl font-bold text-gray-500">G-15</span>
+</div>
+<div class="flex-1 flex items-center justify-center bg-gray-50/50">
+<span class="text-5xl font-bold text-primary">4</span>
+</div>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex h-24 opacity-70">
+<div class="flex-1 flex items-center justify-center border-r border-gray-100">
+<span class="text-5xl font-bold text-gray-400">A-02</span>
+</div>
+<div class="flex-1 flex items-center justify-center bg-gray-50/50">
+<span class="text-5xl font-bold text-primary">2</span>
+</div>
+</div>
+</div>
+<div class="bg-white p-4 border-t border-gray-200 text-center text-xs text-gray-400">
+                Sistemas Sentry © 2026 v2.4.1
+            </div>
+</section>
+</main>
+
+</body></html>

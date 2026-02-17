@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Remove="Avatar_3D_Sentry.Tests/**" />
     <None Remove="Avatar_3D_Sentry.Tests/**" />
+    <Compile Remove="Tests/**" />
+    <None Remove="Tests/**" />
     <Compile Remove="AvatarAdmin/**" />
     <None Remove="AvatarAdmin/**" />
     <EmbeddedResource Remove="AvatarAdmin/**" />

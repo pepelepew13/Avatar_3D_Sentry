@@ -12,6 +12,8 @@ public class InternalAvatarConfigDto
     public string? LogoPath { get; set; }
     public string? ColorCabello { get; set; }
     public string? BackgroundPath { get; set; }
+    /// <summary>UTC en que expira la URL SAS de los assets. Solo en respuestas; no se persiste.</summary>
+    public DateTime? UrlExpiresAtUtc { get; set; }
     public bool IsActive { get; set; }
 }
 

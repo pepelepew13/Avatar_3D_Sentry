@@ -154,9 +154,9 @@ C:\Users\USUARIO\Documents\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\appsettings.json
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\libman.json
-C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\Data\app.db
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\AvatarAdmin.staticwebassets.runtime.json
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\AvatarAdmin.staticwebassets.endpoints.json
+C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\Data\app.db
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\AvatarAdmin.exe
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\AvatarAdmin.deps.json
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\bin\Debug\net8.0\AvatarAdmin.runtimeconfig.json
@@ -286,9 +286,12 @@ C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Deb
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Layout\MainLayout.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Layout\NavMenu.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Auth.razor.rz.scp.css
+C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\AvatarGallery.razor.rz.scp.css
+C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Configs.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Editor.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Error.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Home.razor.rz.scp.css
+C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\UserAvatarProfile.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Pages\Users.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Shared\AvatarViewer.razor.rz.scp.css
 C:\Users\USUARIO\OneDrive\Documentos\GitHub\Avatar_3D_Sentry\AvatarAdmin\obj\Debug\net8.0\scopedcss\Components\Shared\SessionToast.razor.rz.scp.css

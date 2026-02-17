@@ -93,12 +93,12 @@ globalScope.THREE = THREE;
         casual: "vestido"
     };
 
-    const logoMaterialNames = ["avaturn_look_0.002", "logo", "avatar_logo"];
+    const logoMaterialNames = ["LogoLabel", "LogoMesh", "avaturn_look_0.002", "logo", "avatar_logo"];
     const shirtMaterialHints = ["shirt", "blouse", "upper", "body_cloth"];
     const pantsMaterialHints = ["pant", "trouser", "lower"];
     const shoeMaterialHints = ["shoe", "boot"];
     const accessoryHints = ["tie", "belt", "accessory"];
-    const hairMaterialNames = ["avaturn_hair_1", "hair", "hair_01", "hair_mat", "scalp", "cap", "head_hair"];
+    const hairMaterialNames = ["avaturn_hair_0", "avaturn_hair_1", "avaturn_hair_0_material", "avaturn_hair_1_material", "hair", "hair_01", "hair_mat", "scalp", "cap", "head_hair"];
 
     function normalizeOutfitKey(key) {
         if (!key) {

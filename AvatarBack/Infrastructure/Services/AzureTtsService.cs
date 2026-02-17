@@ -181,30 +181,28 @@ namespace Avatar_3D_Sentry.Services
         }
 
         /// <summary>
-        /// Mapeo base: ajusta según tus blendshapes. Si ya tienes `VisemeMapper`, úsalo aquí.
+        /// Mapeo Azure Viseme ID → Shape Key (Blender). Ver docs/visemas-y-mallas.md.
         /// </summary>
         private static string MapAzureVisemeToShapeKey(int visemeId)
         {
             return visemeId switch
             {
-                // Vocales abiertas
-                0 => "viseme_aa",
-                1 => "viseme_aa",
-                2 => "viseme_E",
-                3 => "viseme_I",
-                4 => "viseme_O",
-                5 => "viseme_U",
-
-                // Consonantes frecuentes (aprox)
-                6 => "viseme_SS",
-                7 => "viseme_RR",
-                8 => "viseme_kk",
-                9 => "viseme_SS",
-                10 => "viseme_RR",
-                11 => "viseme_kk",
-
-                // Resto: boca media
-                _ => "viseme_aa"
+                0 => "viseme_sil",   // silence / boca neutra
+                2 => "viseme_aa",    // A abierta
+                4 => "viseme_EE",    // E media
+                6 => "viseme_II",    // I cerrada
+                7 => "viseme_UU",    // U redondeada (u, w, uw)
+                8 => "viseme_OO",    // O redondeada (o, ow)
+                13 => "viseme_RR",   // R
+                14 => "viseme_nn",   // N/L alveolar
+                15 => "viseme_SS",   // S/Z
+                16 => "viseme_CH",   // CH/SH/JH
+                17 => "viseme_TH",   // th, dh
+                18 => "viseme_FF",   // f, v
+                19 => "viseme_DD",   // t, d, n
+                20 => "viseme_kk",   // k, g, ng
+                21 => "viseme_PP",   // p, b, m
+                _ => "viseme_sil"
             };
         }
 

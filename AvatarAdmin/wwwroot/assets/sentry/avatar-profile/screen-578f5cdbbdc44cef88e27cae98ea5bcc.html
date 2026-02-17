@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión Detallada de Empresa y Sedes</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff0000",
+                        "primary-hover": "#cc0000",
+                        "background-light": "#f9fafb",
+                        "background-dark": "#f0f0f0",
+                        "surface-light": "#ffffff", 
+                        "surface-dark": "#e5e7eb",
+                        "border-light": "#e5e7eb",
+                        "text-main": "#111827",
+                        "text-subtle": "#6b7280",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light text-text-main min-h-screen flex flex-col overflow-hidden">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-light bg-white px-6 py-3 z-20 shrink-0 h-16 shadow-sm">
+<div class="flex items-center gap-4 text-text-main">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">shield_person</span>
+</div>
+<h2 class="text-text-main text-lg font-bold leading-tight tracking-[-0.015em]">Sistemas Sentry</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex flex-col items-end">
+<span class="text-text-main text-sm font-semibold">Usuario Admin</span>
+<span class="text-text-subtle text-xs">Administrador del Sistema</span>
+</div>
+<div class="h-8 w-[1px] bg-border-light hidden md:block"></div>
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 border border-border-light" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCepCwwv58KfgqLDOH0BHTFiDEUhnsnAXT3JEU0JpX_upkkXEaFALDLqG-S7_lxMnfJs9yaDcgSKFQdFC0eceb6nyZOBGvWwVZTQCDBd-vZwB9kX1Uv59jNNoDNbxU4NPfTzFaCtSmtAB4LFDFZ62Xo6ho5B-R2p3M52q2qAccCNb9TU_QPXyun92JRmH4J4KTvqyLeiP-LRzKppybqKN6gr4BOcYwBILmFFsxsWBkZJ3k5FhBFh9Famm9UY06lPhPy9TD5vpg6_w");'></div>
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-white border border-border-light hover:bg-gray-50 transition-colors text-text-main text-sm font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined text-lg">logout</span>
+<span class="hidden sm:inline">Cerrar Sesión</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<main class="flex-1 overflow-y-auto custom-scrollbar relative z-10 p-6 md:p-10 max-w-6xl mx-auto w-full">
+<div class="flex items-center gap-2 text-sm text-text-subtle mb-6">
+<a class="hover:text-primary transition-colors" href="#">Empresas</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="font-medium text-text-main">Acme Corp</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+<div>
+<h1 class="text-3xl font-bold text-text-main tracking-tight">Detalles de Empresa</h1>
+<p class="text-text-subtle mt-1 text-sm">Administre la información corporativa y sus sedes asociadas.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center gap-2 bg-white border border-border-light hover:bg-gray-50 text-text-main px-4 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-xl">delete</span>
+<span>Eliminar Empresa</span>
+</button>
+<button class="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-xl">save</span>
+<span>Guardar Cambios</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-1 space-y-6">
+<div class="bg-surface-light border border-border-light rounded-xl shadow-sm p-6">
+<h3 class="text-lg font-bold text-text-main mb-4">Información General</h3>
+<div class="flex flex-col items-center mb-6">
+<div class="relative group cursor-pointer">
+<div class="size-24 rounded-xl bg-cover bg-center border border-border-light shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAhjpFt4uBLCFoOIz79R3prkJ3H_8bBY5iOCOsevCTkx54aBjHLXnupNsWg5ASMHcrMKHuqynl1UDSmcY7Vh0Qf7soR6HbYjYlHR8wfuHVw4Ov5DTMMdbvansQl7FWT7hRoFh1Ape9HkHDddZfLRsNQYW1iR5FR-w2CpwpezsIi9Ap0TGWCvSLcvjpVhdvAHkrlDUbpjn8i-1bsx-zPcjqcFolmp2aLrNGfJ-FQvgtg9O1s4kCVqpU1UOF5DHHwWwxv9gEsXei7lg");'></div>
+<div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-2xl">edit</span>
+</div>
+</div>
+<span class="text-xs text-text-subtle mt-2">Haga clic para cambiar logo</span>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-text-main mb-1">Nombre de la Empresa</label>
+<input class="w-full bg-white border border-border-light rounded-lg py-2 px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm" type="text" value="Acme Corp"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-text-main mb-1">ID Corporativo</label>
+<div class="flex items-center gap-2 bg-gray-50 border border-border-light rounded-lg py-2 px-3 text-sm text-text-subtle">
+<span class="material-symbols-outlined text-base">fingerprint</span>
+<span>CP-2938</span>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-text-main mb-1">Estado</label>
+<select class="w-full bg-white border border-border-light rounded-lg py-2 px-3 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm">
+<option selected="" value="active">Activo</option>
+<option value="inactive">Inactivo</option>
+<option value="pending">Pendiente</option>
+</select>
+</div>
+</div>
+</div>
+<div class="bg-surface-light border border-border-light rounded-xl shadow-sm p-6">
+<h3 class="text-lg font-bold text-text-main mb-4">Estadísticas</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-3 bg-gray-50 rounded-lg border border-border-light text-center">
+<span class="block text-2xl font-bold text-text-main">4</span>
+<span class="text-xs text-text-subtle uppercase font-medium">Sedes Activas</span>
+</div>
+<div class="p-3 bg-gray-50 rounded-lg border border-border-light text-center">
+<span class="block text-2xl font-bold text-text-main">1,250</span>
+<span class="text-xs text-text-subtle uppercase font-medium">Usuarios</span>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-light border border-border-light rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+<div class="p-6 border-b border-border-light flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-lg font-bold text-text-main">Gestión de Sedes</h3>
+<p class="text-sm text-text-subtle mt-0.5">Configure las ubicaciones físicas asociadas a esta empresa.</p>
+</div>
+<button class="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg">add_location_alt</span>
+<span>Añadir Nueva Sede</span>
+</button>
+</div>
+<div class="p-6 space-y-4 bg-white/50 flex-1">
+<div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-border-light bg-white hover:border-gray-300 hover:shadow-md transition-all">
+<div class="flex items-start gap-4">
+<div class="size-10 rounded-full bg-red-50 text-primary flex items-center justify-center border border-red-100 shrink-0">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+<div>
+<h4 class="text-text-main font-bold">Sede Central</h4>
+<div class="flex items-center gap-2 text-sm text-text-subtle mt-1">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span> Ciudad de México, MX</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>850 Usuarios</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center border-t sm:border-t-0 border-gray-100 w-full sm:w-auto pt-3 sm:pt-0">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 text-xs font-medium text-text-main transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+                                        Editar
+                                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 hover:text-red-600 hover:border-red-200 text-xs font-medium text-text-subtle transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+                                        Eliminar
+                                    </button>
+</div>
+</div>
+<div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-border-light bg-white hover:border-gray-300 hover:shadow-md transition-all">
+<div class="flex items-start gap-4">
+<div class="size-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+<span class="material-symbols-outlined">warehouse</span>
+</div>
+<div>
+<h4 class="text-text-main font-bold">Sede Norte (Logística)</h4>
+<div class="flex items-center gap-2 text-sm text-text-subtle mt-1">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span> Monterrey, MX</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>320 Usuarios</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center border-t sm:border-t-0 border-gray-100 w-full sm:w-auto pt-3 sm:pt-0">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 text-xs font-medium text-text-main transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+                                        Editar
+                                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 hover:text-red-600 hover:border-red-200 text-xs font-medium text-text-subtle transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+                                        Eliminar
+                                    </button>
+</div>
+</div>
+<div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-border-light bg-white hover:border-gray-300 hover:shadow-md transition-all">
+<div class="flex items-start gap-4">
+<div class="size-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shrink-0">
+<span class="material-symbols-outlined">science</span>
+</div>
+<div>
+<h4 class="text-text-main font-bold">Laboratorio de Innovación</h4>
+<div class="flex items-center gap-2 text-sm text-text-subtle mt-1">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span> Guadalajara, MX</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>80 Usuarios</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center border-t sm:border-t-0 border-gray-100 w-full sm:w-auto pt-3 sm:pt-0">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 text-xs font-medium text-text-main transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+                                        Editar
+                                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 hover:text-red-600 hover:border-red-200 text-xs font-medium text-text-subtle transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+                                        Eliminar
+                                    </button>
+</div>
+</div>
+<div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border border-border-light bg-white hover:border-gray-300 hover:shadow-md transition-all">
+<div class="flex items-start gap-4">
+<div class="size-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shrink-0">
+<span class="material-symbols-outlined">business_center</span>
+</div>
+<div>
+<h4 class="text-text-main font-bold">Oficina Comercial</h4>
+<div class="flex items-center gap-2 text-sm text-text-subtle mt-1">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span> Cancún, MX</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>15 Usuarios</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center border-t sm:border-t-0 border-gray-100 w-full sm:w-auto pt-3 sm:pt-0">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 text-xs font-medium text-text-main transition-colors">
+<span class="material-symbols-outlined text-base">edit</span>
+                                        Editar
+                                    </button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-light bg-white hover:bg-gray-50 hover:text-red-600 hover:border-red-200 text-xs font-medium text-text-subtle transition-colors">
+<span class="material-symbols-outlined text-base">delete</span>
+                                        Eliminar
+                                    </button>
+</div>
+</div>
+</div>
+<div class="p-4 bg-gray-50 border-t border-border-light text-center">
+<button class="text-sm text-text-subtle hover:text-primary font-medium transition-colors">Ver sedes archivadas</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

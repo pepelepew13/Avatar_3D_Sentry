@@ -276,6 +276,7 @@ public class AvatarConfigsController : ControllerBase
 
     private AvatarConfigDto MapToDtoWithUrls(InternalAvatarConfigDto config)
     {
+        var expiry = DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
         var dto = new AvatarConfigDto
         {
             Id = config.Id,
@@ -288,17 +289,19 @@ public class AvatarConfigsController : ControllerBase
             LogoPath = config.LogoPath,
             ColorCabello = config.ColorCabello,
             BackgroundPath = config.BackgroundPath,
+            UrlExpiresAtUtc = expiry,
             IsActive = config.IsActive
         };
 
-        dto.LogoUrl = BuildPublicUrl(config.LogoPath);
-        dto.BackgroundUrl = BuildPublicUrl(config.BackgroundPath);
+        dto.LogoUrl = BuildAssetUrl(config.LogoPath);
+        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundPath);
 
         return dto;
     }
 
     private AvatarConfigListItemDto MapToListItemWithUrls(InternalAvatarConfigDto config)
     {
+        var expiry = DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
         var dto = new AvatarConfigListItemDto
         {
             Id = config.Id,
@@ -311,11 +314,12 @@ public class AvatarConfigsController : ControllerBase
             LogoPath = config.LogoPath,
             ColorCabello = config.ColorCabello,
             BackgroundPath = config.BackgroundPath,
+            UrlExpiresAtUtc = expiry,
             IsActive = config.IsActive
         };
 
-        dto.LogoUrl = BuildPublicUrl(config.LogoPath);
-        dto.BackgroundUrl = BuildPublicUrl(config.BackgroundPath);
+        dto.LogoUrl = BuildAssetUrl(config.LogoPath);
+        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundPath);
 
         return dto;
     }
@@ -349,29 +353,23 @@ public class AvatarConfigsController : ControllerBase
         return $"public/{safeEmpresa}/{safeSede}/models/{fileName}";
     }
 
-    private string? BuildPublicUrl(string? blobPath)
+    /// <summary>Genera URL de lectura (SAS si Azure, o estática si local) para un asset. Path es la fuente de verdad.</summary>
+    private string? BuildAssetUrl(string? blobPath)
     {
         if (string.IsNullOrWhiteSpace(blobPath))
         {
             return null;
         }
 
-        var trimmed = blobPath.Trim();
+        var trimmed = blobPath.Trim().TrimStart('/');
         if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
             || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
             || trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
-            return trimmed;
+            return blobPath.Trim();
         }
 
-        var baseUrl = _storageOptions.BlobServiceEndpoint?.TrimEnd('/') ?? string.Empty;
-        var container = _storageOptions.ContainerNamePublic?.Trim('/') ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(container))
-        {
-            return trimmed;
-        }
-
-        return $"{baseUrl}/{container}/{trimmed.TrimStart('/')}";
+        return _storage.GetPublicUrl(blobPath.TrimStart('/'), TimeSpan.FromMinutes(_storageOptions.SasExpiryMinutes));
     }
 
     private static string SanitizeSegment(string value)

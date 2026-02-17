@@ -1,0 +1,69 @@
+@page "/profile/avatar"
+@using AvatarAdmin.Services
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Perfil de Avatar · Sentry</PageTitle>
+<AuthGuard>
+
+<header class="profile-stitch-header">
+  <div class="profile-stitch-brand">
+    <div class="profile-stitch-icon" aria-hidden="true">🛡️</div>
+    <h2 class="profile-stitch-title">Sistemas Sentry</h2>
+  </div>
+  <div class="profile-stitch-user">
+    <div class="profile-stitch-user-info">
+      <span class="profile-stitch-user-name">@Auth.Email</span>
+      <span class="profile-stitch-user-role">@(Auth.Role ?? "Usuario")</span>
+    </div>
+    <button type="button" class="profile-stitch-logout" @onclick="GoLogout" aria-label="Cerrar sesión">Cerrar Sesión</button>
+  </div>
+</header>
+
+<main class="profile-stitch-main">
+  <nav class="profile-breadcrumb" aria-label="Navegación">
+    <a href="/">Panel</a>
+    <span class="profile-breadcrumb-sep">›</span>
+    <span class="profile-breadcrumb-current">Perfil de Avatar</span>
+  </nav>
+
+  <div class="profile-stitch-head">
+    <div>
+      <h1 class="profile-stitch-h1">Perfil de Avatar</h1>
+      <p class="profile-stitch-sub">Administre su identidad digital y el avatar asignado a su cuenta.</p>
+    </div>
+    <div class="profile-stitch-actions">
+      <button type="button" class="btn btn-sentry" @onclick="GoEditor">Ir al editor</button>
+    </div>
+  </div>
+
+  <div class="profile-stitch-grid">
+    <div class="profile-stitch-card">
+      <h3 class="profile-stitch-card-title">Información del Avatar</h3>
+      <div class="profile-stitch-preview">
+        <img src="/assets/sentry/avatar-profile/screenshot-0c163ce7e5c5434d88f4fd4403ea482b.png" alt="Vista de referencia del perfil de avatar" class="profile-stitch-preview-img" />
+        <div class="profile-stitch-preview-badge">Activo</div>
+      </div>
+      <div class="profile-stitch-meta">
+        <p><strong>Empresa / Sede</strong> @(Auth.Empresa ?? "—") / @(Auth.Sede ?? "—")</p>
+        <p><strong>Rol</strong> @Auth.Role</p>
+      </div>
+      <div class="profile-stitch-cta">
+        <button type="button" class="btn btn-primary w-100" @onclick="GoEditor">Personalizar avatar</button>
+        <button type="button" class="btn btn-outline-sentry w-100" @onclick="GoHome">Panel principal</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+@code {
+  private void GoEditor() => Nav.NavigateTo("/editor");
+  private void GoHome() => Nav.NavigateTo("/");
+  private void GoLogout()
+  {
+    Auth.Logout();
+    Nav.NavigateTo("/auth", forceLoad: true);
+  }
+}
+
+</AuthGuard>

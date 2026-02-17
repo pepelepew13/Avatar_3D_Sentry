@@ -10,7 +10,7 @@ public class AvatarContext : DbContext
 
     public DbSet<AvatarConfig> AvatarConfigs => Set<AvatarConfig>();
     public DbSet<ApplicationUser> Users       => Set<ApplicationUser>();
-    public DbSet<AssetFile>      Assets      => Set<AssetFile>();   // 👈 AQUI
+    public DbSet<AssetFile>      Assets      => Set<AssetFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

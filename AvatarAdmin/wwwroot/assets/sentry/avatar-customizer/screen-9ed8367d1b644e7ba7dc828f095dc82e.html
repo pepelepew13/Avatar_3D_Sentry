@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Personalizador de Avatar (Modo Claro)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FF0000", // Corporate Red (Pantone 185 C)
+                        secondary: "#002060", // Deep Blue (implied from images for trust/security)
+                        accent: "#FFCC00", // Corporate Yellow/Gold
+                        neutral: "#666666", // Corporate Grey (Cool Gray 10 C)
+                        "background-light": "#F9FAFB", // Updated to very light gray/white as requested
+                        "background-dark": "#111827",
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1F2937",
+                        "border-light": "#E5E7EB",
+                        "border-dark": "#374151",
+                    },
+                    fontFamily: {
+                        display: ["Montserrat", "sans-serif"],
+                        body: ["Montserrat", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        xl: "1rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>.custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #CBD5E1;
+            border-radius: 20px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #4B5563;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
+<nav class="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark px-6 py-3 flex items-center justify-between shadow-sm sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-icons-round text-primary text-3xl">security</span>
+<div class="leading-tight">
+<h1 class="font-bold text-xl text-neutral dark:text-white tracking-tight">Sistemas <span class="text-primary">Sentry</span></h1>
+</div>
+</div>
+<div class="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-2 hidden md:block"></div>
+<span class="text-sm font-medium text-gray-500 dark:text-gray-400 hidden md:block">Personalizador de Avatar</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-300 transition-colors" onclick="document.documentElement.classList.toggle('dark')" title="Cambiar Tema">
+<span class="material-icons-round dark:hidden">dark_mode</span>
+<span class="material-icons-round hidden dark:block">light_mode</span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-semibold dark:text-white">Administrador</p>
+<p class="text-xs text-gray-500 dark:text-gray-400">Sede Central Sentry</p>
+</div>
+<img alt="User Profile" class="w-10 h-10 rounded-full border-2 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2ntJbLaL83SuYE3lDHspwQHu5kqIvDNTa1mxyDt-h3X5606fGkpU5FP-3VHOBaRu1jnYkqZ7Ah6lTKKuKQ-FkgJs_npfm9Js9am1bP7V3fCcaWt2VMnUkNBHg4LMkYEc18r6P9XUz8nJZ8mrUgQUe4IjCLoxYG0zYE_yVm_LMrIF7tvbc95ZIaap-EGzp9SaK9CbzG4g4ddju4F_vhLlKH1fF7Gf5PHN7o-v5yLd2AXFRI1kE4qRTrcLfksNSbnz-c2RY3vuT2Q"/>
+</div>
+</div>
+</nav>
+<main class="flex-1 flex flex-col lg:flex-row overflow-hidden h-[calc(100vh-65px)]">
+<div class="flex-1 relative bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#E5E7EB 1px, transparent 1px); background-size: 24px 24px;">
+</div>
+<div class="relative z-10 w-full h-full flex items-center justify-center p-8">
+<div class="relative h-[80%] w-auto aspect-[3/4] transition-all duration-500">
+<img alt="3D Avatar Preview" class="h-full w-full object-cover object-top rounded-2xl shadow-2xl ring-4 ring-white/40 dark:ring-black/20 filter drop-shadow-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0EdVdm0Hen0dJW0Cy7FR8D_pRTYgi0whsrqUu46gxYpF78YFc9tr21bNqaKo6ibj024Ddwq4ko6uRJBd1chYV9FTrIoJ_9Yf_ovvpsjc0i8FUaHxeKNYSokJSwbHA9I5z784Ac4z134DW6oPFkhlbkQLS-zezmFgy1cRx5MBEORFMs1EOBb3xR2XEeI3FAB8i7s5PtlNZxocJvvCLNlzlyg0RkbLq6qKbXA-rY1QAVcyiwx9MSXefu6VACSSfVO2axhncN-sk-g"/>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700">
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300" title="Rotar Izquierda">
+<span class="material-icons-round text-xl">rotate_left</span>
+</button>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300" title="Alejar">
+<span class="material-icons-round text-xl">remove</span>
+</button>
+<span class="text-xs font-mono text-gray-500 dark:text-gray-400 w-12 text-center">100%</span>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300" title="Acercar">
+<span class="material-icons-round text-xl">add</span>
+</button>
+<button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300" title="Rotar Derecha">
+<span class="material-icons-round text-xl">rotate_right</span>
+</button>
+</div>
+</div>
+</div>
+<div class="absolute top-6 left-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 max-w-xs">
+<div class="flex items-center gap-3">
+<div class="bg-secondary/10 p-2 rounded-md">
+<span class="material-icons-round text-secondary dark:text-blue-400">apartment</span>
+</div>
+<div>
+<p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">Sucursal</p>
+<h3 class="font-bold text-gray-800 dark:text-white">Oficina Central - Bogotá</h3>
+</div>
+</div>
+</div>
+</div>
+<aside class="w-full lg:w-[400px] xl:w-[450px] bg-surface-light dark:bg-surface-dark border-l border-border-light dark:border-border-dark flex flex-col h-full shadow-xl z-20">
+<div class="flex items-center px-2 pt-4 border-b border-border-light dark:border-border-dark overflow-x-auto no-scrollbar">
+<button class="flex-1 min-w-fit px-4 py-3 text-sm font-semibold text-primary border-b-2 border-primary bg-primary/5 dark:bg-primary/10 transition-colors whitespace-nowrap">
+<span class="material-icons-round text-lg align-bottom mr-1">checkroom</span>
+                    Modelo y Ropa
+                </button>
+<button class="flex-1 min-w-fit px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors whitespace-nowrap">
+<span class="material-icons-round text-lg align-bottom mr-1">record_voice_over</span>
+                    Voz
+                </button>
+<button class="flex-1 min-w-fit px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors whitespace-nowrap">
+<span class="material-icons-round text-lg align-bottom mr-1">wallpaper</span>
+                    Entorno
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+<section>
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+<span class="w-1 h-6 bg-secondary dark:bg-blue-500 rounded-full"></span>
+                            Modelo 3D
+                        </h3>
+<span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500 dark:text-gray-400">Humanoide v2.4</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div class="cursor-pointer group relative">
+<div class="absolute inset-0 border-2 border-primary rounded-lg z-10 pointer-events-none"></div>
+<div class="absolute top-1 right-1 bg-primary text-white text-[10px] px-1 rounded z-20">Activo</div>
+<img alt="Female Model" class="w-full h-24 object-cover rounded-lg opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1vsMw07IBVJXzLwsdiJFx18Xkgx6iN9RiWMJ1EqiQdpByFaqPFHiTKyalkvXeLkVfk0I_TWSViRCofAPmpwzHA8HCMDNVXs325IriaZfiCVhsSdDeNVjBdL6eYonqIsfSTA2kmlIcjMmWt0bULXlQ1WoQNEgjKgtjUtJqxY_rsPg0DQgcB9lchdXcWOoAM6HFDzJBVJBLFgbKgEjdAQpUNp79oQvrKsZFwkzG2a6ZpqQPivGTkdZdlKMF2Fnj_c6JlbGDyxeHbQ"/>
+<p class="mt-1 text-center text-xs font-medium text-primary dark:text-red-400">Ejecutiva</p>
+</div>
+<div class="cursor-pointer group relative opacity-60 hover:opacity-100 transition-opacity">
+<img alt="Male Model" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDn2wdBsLUTO2bg-DKtEbXB9UPZ9eA5aJs6SlVuQQGv3y5O3Dk1KHlN09Myzaq42dlbDn8-iuKLNKnb8QUDWLhfodfroMOgTwLb1c1w8qvr99nfS76D9UpimmDCMqF2gHjaP0DLIdpzCZyjEExIAvQ39wCGm-0Gf0ChgPqmuAeQa365UDbbgBJTSgBw9Xnm4XxVLTfb6QxGo2lntVkEz5gPBMcBEwugseMGgaI6Sb4YWOMMXFi0-iCKCauIdSrmcwT3TGnpxBLQ9A"/>
+<p class="mt-1 text-center text-xs font-medium text-gray-600 dark:text-gray-400">Ejecutivo</p>
+</div>
+<div class="cursor-pointer group relative opacity-60 hover:opacity-100 transition-opacity">
+<div class="w-full h-24 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+<span class="material-icons-round text-gray-400">smart_toy</span>
+</div>
+<p class="mt-1 text-center text-xs font-medium text-gray-600 dark:text-gray-400">Robot</p>
+</div>
+</div>
+</section>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<section>
+<h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+<span class="w-1 h-6 bg-accent rounded-full"></span>
+                         Vestimenta y Estilo
+                    </h3>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Color de Cabello</label>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-black ring-2 ring-offset-2 ring-primary cursor-pointer"></div>
+<div class="w-10 h-10 rounded-full bg-[#4A3223] cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-gray-400 dark:ring-offset-gray-800"></div>
+<div class="w-10 h-10 rounded-full bg-[#D4AF37] cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-gray-400 dark:ring-offset-gray-800"></div>
+<div class="w-10 h-10 rounded-full bg-[#A52A2A] cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-gray-400 dark:ring-offset-gray-800"></div>
+<button class="w-10 h-10 rounded-full border border-dashed border-gray-400 dark:border-gray-500 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800">
+<span class="material-icons-round text-lg">colorize</span>
+</button>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Tipo de Uniforme</label>
+<select class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-secondary focus:border-secondary p-2.5">
+<option>Formal Corporativo (Saco)</option>
+<option>Casual de Negocios (Camisa)</option>
+<option>Uniforme Técnico (Chaleco)</option>
+</select>
+</div>
+</div>
+</section>
+<hr class="border-gray-200 dark:border-gray-700"/>
+<section>
+<h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+<span class="w-1 h-6 bg-neutral rounded-full"></span>
+                        Branding Corporativo
+                    </h3>
+<div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-dashed border-gray-300 dark:border-gray-600 text-center hover:bg-blue-50 dark:hover:bg-gray-750 transition-colors cursor-pointer group">
+<div class="mb-3">
+<span class="material-icons-round text-4xl text-gray-400 group-hover:text-secondary dark:group-hover:text-blue-400 transition-colors">upload_file</span>
+</div>
+<h4 class="font-semibold text-gray-800 dark:text-white mb-1">Subir Logo de Empresa</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400 mb-3">PNG, JPG (Max 2MB). Fondo transparente recomendado.</p>
+<button class="bg-white dark:bg-gray-700 text-secondary dark:text-blue-300 border border-gray-200 dark:border-gray-600 px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm group-hover:border-secondary dark:group-hover:border-blue-400 transition-colors">
+                            Seleccionar Archivo
+                        </button>
+</div>
+<div class="mt-4 flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 bg-gray-100 rounded flex items-center justify-center p-1">
+<svg class="w-full h-full text-secondary fill-current" viewBox="0 0 24 24"><path d="M12 2L2 20h20L12 2zm0 3.5L18.5 18H5.5L12 5.5z"></path></svg>
+</div>
+<div>
+<p class="text-sm font-semibold text-gray-800 dark:text-white">logo_sentry_v2.png</p>
+<p class="text-xs text-gray-500">256kb • Cargado hoy</p>
+</div>
+</div>
+<button class="text-gray-400 hover:text-red-500 transition-colors">
+<span class="material-icons-round">delete</span>
+</button>
+</div>
+</section>
+</div>
+<div class="p-6 bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark">
+<div class="flex gap-3">
+<button class="flex-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 px-4 py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Descartar
+                    </button>
+<button class="flex-[2] bg-primary text-white px-4 py-3 rounded-lg font-semibold shadow-lg shadow-red-500/30 hover:bg-red-700 transition-all flex items-center justify-center gap-2 transform active:scale-95">
+<span class="material-icons-round text-sm">save</span>
+                        Guardar Cambios
+                    </button>
+</div>
+<p class="mt-3 text-center text-[10px] text-gray-400 dark:text-gray-500">
+                    Última actualización: hace 5 minutos por Admin
+                </p>
+</div>
+</aside>
+</main>
+
+</body></html>

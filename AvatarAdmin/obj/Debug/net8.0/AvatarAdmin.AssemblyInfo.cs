@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AvatarAdmin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+17cb59d10cc9622520b4c9e1f4513b33f63415e3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b7bbb2f9462f372b6d46d0a36689b56ccb841e30")]
 [assembly: System.Reflection.AssemblyProductAttribute("AvatarAdmin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AvatarAdmin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -17,6 +17,7 @@ public class AvatarConfigDto
     public string? ColorCabello { get; set; }
     public string? BackgroundPath { get; set; }
     public string? BackgroundUrl { get; set; }
+    public DateTime? UrlExpiresAtUtc { get; set; }
     public bool IsActive { get; set; }
 }
 
@@ -34,6 +35,7 @@ public class AvatarConfigListItemDto
     public string? ColorCabello { get; set; }
     public string? BackgroundPath { get; set; }
     public string? BackgroundUrl { get; set; }
+    public DateTime? UrlExpiresAtUtc { get; set; }
     public bool IsActive { get; set; }
 }
 

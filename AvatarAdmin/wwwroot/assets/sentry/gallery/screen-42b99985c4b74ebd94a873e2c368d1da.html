@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Galería de Avatares por Sede (Sentry)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff0000",
+                        "background-light": "#f8f5f5",
+                        "background-dark": "#230f0f",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .avatar-card:hover .edit-button {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#1d0c0c] dark:text-white min-h-screen">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#f4e6e6] dark:border-[#3d1a1a] px-10 py-3 bg-white dark:bg-[#1a0b0b]">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-[#1d0c0c] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Sistemas Sentry</h2>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-9">
+<a class="text-[#1d0c0c] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Sedes</a>
+<a class="text-[#1d0c0c] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Usuarios</a>
+<a class="text-[#1d0c0c] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Reportes</a>
+<a class="text-[#1d0c0c] dark:text-white text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">Configuración</a>
+</nav>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-[#f4e6e6] dark:bg-[#3d1a1a] text-[#1d0c0c] dark:text-white">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-[#f4e6e6] dark:bg-[#3d1a1a] text-[#1d0c0c] dark:text-white">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Avatar circular del administrador del sistema" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBfcD0ecC_jalmhTYCu1SfIQpXQrKlU5q9HZjcVmsuVNfFX3zFcNgNdBWAbwq8FxgFkrs5H8i7rSDDrrjX3gUJhkeYQKTVS6vOxb2RTAkS7lE8-TGuOgPDACUUMgSz2HbIlHiZFU5AfHgoV2LGrEd7fGYEBClkcdAYuaiqVRy5pjNVhtLavnMdXQbVxNr22nJ4fURAWL5w_sn915paJtDNMpqVjNJytUvLo89HyRFwJhEq2pXAwT8dPfyNw2Qzy4DT6XhBUd-EtUw");'></div>
+</div>
+</header>
+<div class="flex flex-1">
+<!-- Side Navigation -->
+<aside class="w-64 border-r border-[#f4e6e6] dark:border-[#3d1a1a] bg-white dark:bg-[#1a0b0b] p-4 flex flex-col justify-between">
+<div class="flex flex-col gap-4">
+<div class="flex gap-3 items-center mb-6">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Logo corporativo de Sentry Admin" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDv9eNZOaPc4QK400qoiCCq6UA_F4kGzmIo7l_gMbQxS3alwhmqo238cvH92JZhSNfsNUwqyLkgLPJqcn7Jsts7SjiA2446ACmDbb0qqaQ1rlQNdDABbaTuRLADlkc1aQAzqzw2C5KKE52tPYcFoa4STTVuP2_qhJXpVL7KspHv1TwElRbnIMcA0pMugbebuWgCSrZIzVcDkQCwsY0r3x_v_PCcfINfg-efx1nVj9QlloeuxerLNEn52t04XkKyyGNspY1A0A87yQ");'></div>
+<div class="flex flex-col">
+<h1 class="text-[#1d0c0c] dark:text-white text-base font-bold leading-normal">Sentry Admin</h1>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-xs font-normal leading-normal">Control de Identidad 3D</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-primary/5 rounded-lg transition-colors">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium">Dashboard</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white cursor-pointer shadow-md">
+<span class="material-symbols-outlined">person_outline</span>
+<p class="text-sm font-medium">Galería de Avatares</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-primary/5 rounded-lg transition-colors">
+<span class="material-symbols-outlined">location_on</span>
+<p class="text-sm font-medium">Sedes</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-primary/5 rounded-lg transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium">Ajustes</p>
+</div>
+</nav>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<div class="max-w-[1200px] w-full mx-auto p-8">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 mb-4">
+<a class="text-[#a14545] dark:text-[#cc7a7a] text-sm font-medium hover:underline" href="#">Inicio</a>
+<span class="material-symbols-outlined text-sm text-[#a14545]">chevron_right</span>
+<a class="text-[#a14545] dark:text-[#cc7a7a] text-sm font-medium hover:underline" href="#">Sedes</a>
+<span class="material-symbols-outlined text-sm text-[#a14545]">chevron_right</span>
+<span class="text-[#1d0c0c] dark:text-white text-sm font-bold">Sede Central</span>
+</div>
+<!-- Page Heading -->
+<div class="flex flex-wrap justify-between items-end gap-4 mb-8">
+<div class="flex flex-col gap-2">
+<h1 class="text-[#1d0c0c] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">Galería de Avatares - Sede Central</h1>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-lg font-normal">Gestión de avatares 3D para Acme Corp.</p>
+</div>
+<button class="flex items-center justify-center gap-2 rounded-lg h-11 px-6 bg-[#f4e6e6] dark:bg-[#3d1a1a] text-[#1d0c0c] dark:text-white text-sm font-bold shadow-sm hover:bg-[#ebd5d5] transition-all">
+<span class="material-symbols-outlined">download</span>
+<span>Exportar Configuraciones</span>
+</button>
+</div>
+<!-- Search Bar -->
+<div class="mb-8">
+<div class="flex w-full max-w-2xl items-stretch rounded-xl h-14 shadow-sm border border-[#f4e6e6] dark:border-[#3d1a1a] overflow-hidden">
+<div class="text-[#a14545] dark:text-[#cc7a7a] flex items-center justify-center pl-4 bg-white dark:bg-[#2d1212]">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="flex-1 bg-white dark:bg-[#2d1212] text-[#1d0c0c] dark:text-white focus:ring-0 border-none px-4 text-base placeholder:text-[#a14545]/60" placeholder="Buscar usuario por nombre o cargo..." type="text"/>
+</div>
+</div>
+<!-- Avatar Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar masculino con traje ejecutivo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSTo5x2ovTzaBrvPDdpVQWPllJlg_Ycpk3oEEYllrmgFWPxxrpesKw4hIWG1j6NoekZnyiEtHy_7FDL_O7ANtaEkrnheI7zvc3whdaYrovkubGnvy9D3w7KQzaVplTAELVctrR_jqwy5bGKEHmohDzSPrVMFnSbBW9LfD0yHd5AAOMXNtrV2EvwcFCeTc8GqjcSZ2_R6JAmEDk4BIpy9aX7fg4iLxSqwApX_Y9c4ImBmaSftA5xf5eGcfuFFG_zc_WBgOU85_xMg");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Carlos Mendoza</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Director de Operaciones</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar femenino con vestimenta casual-profesional" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBB7LpDz063kHunGJYRcnLpCHOxXbcwMOHc0x8k-fj2eRxUvl5h6VjFYNlUj5YBd-s80rPzr6kDVdp6AuSojZPrFBYuezvAWemBYdFj5HkjNaggUw_kWk_MFL6Pw1r7JpC-_zIT-40ELxQqiHgdmLWfpweG7onXzP9oMl1yyoxjATGfQqxqgF9p6fZEoX9phJa-XdxmfJXocBhgI26cOGsqlX6pL36rj8OzNQ_68akuckeBA3S3qFD4IgFpKd1wsGcB9jWKRjp8eA");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Elena Ramírez</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Gerente de Recursos Humanos</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar masculino con uniforme de técnico" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuArtNjnTQCUAMTBsPr-lU5doBWJEa8NPJYBvxDyGQLnBPHgOgUURutGU3SqDExv8ECwJjKx6oGnkQ5KFCAgOesQ4AH14iLksMoIeoYTz4i_sQgdHmMj1Wx88ZjPqWFNG-aAQinllKQy9MQ346MrhZDUwuCsca2a8HxQoLComIpS_DqRG1p3nFWz4mp598m2d6rG_QBzupv5BhZvQXi08IU-IgzkTOZHx5JvFJbcrJPxTyD0HVoHVa-W020AAswXyH8cBJJgjURWcw");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Javier Soto</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Supervisor de Planta</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar femenino con estilo moderno y gafas" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4QDsjByFNf72ItVCNITmNbhZX31Z-PSKFFw0qaLxMolcIwCsBTB8m9elqR4lW-L4p0B9RtRTSuhlmT8meG0uOWvLARhaBstrIi-666yWMgdaaEviMpIkcEavkZZyiU4j0_OZFUO0-2kkw7U3XbimW_JseLlOS6Vrbd3uCD3wWIYr1wpTTnfjTT7UyOVXumC7h0A_PUdP78qzBJ9A1r5ESWgUameZzaebwI-r_h_zYoGrwBpw1XVpOJGzWfusAM0Rtept-MpWcmQ");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Sofía Castillo</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Analista de Datos</p>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar masculino deportivo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCT8OJr4YBQcWUltalP3gVfs9yDDcF0-k6iE371WnM9_pq4eB9xO2je5xFsa93H9Z2SGw6Eheay0c--YQ03d6AoK63E-_xAgT-XtXAV4XEOIoDwGEm_ltRm__bNTvf20SnfA5iUkfPFkNOJxl--SjPkvoqza44RMCqivUoGdWRpOc0ZCTXXRXqt8teO3SfwEuue8ossuj_RG8zqDbUM7qvow5sHzMv3Aq7oU22o_cozNy9YWsNZchr-5SsWFTdJ1hfqWppgtabBEw");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Roberto Guzmán</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Coordinador de Seguridad</p>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar femenino con atuendo formal" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDaxiNyHUqrfn9YNYjKZ9yhPm2ogsikRcBEjBW63Qi6N0XoLUTaRq4o60fFjtQmiveUUxbbSMGSztrr2DTGUEnsVvGubdOFcad8UkPYIEOA9H5JiUbmNdaZdG6uLBu5HZGIgWJNFNNYwoaZBs5DmRG2l4O_mtf7d7_G_CLDWakMVfUj-VV_u9wV35BwJuAWidZspFaMItMyxZqwAmwnJwFFv9Rw3P9wkLTurX3hh8ufNc_YGVOpxD6JGFyGj4yjRrCSHv1PS9x-2Q");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Laura Méndez</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Finanzas</p>
+</div>
+</div>
+<!-- Card 7 -->
+<div class="avatar-card group relative bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border border-[#f4e6e6] dark:border-[#3d1a1a] shadow-sm hover:shadow-xl transition-all duration-300">
+<div class="aspect-[4/5] relative bg-[#fcf8f8] dark:bg-[#2d1212]">
+<div class="w-full h-full bg-center bg-no-repeat bg-contain p-4" data-alt="Render 3D de avatar masculino joven" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCiOr4o0g4R0dctyRWYV4N-vbt2OoBeq5dsVQ0arEoD_Am6grvTYexCQowRRNVOseC9dSSKWYnbuyXn7GcH5bPuPap5rdx3F0wjFcFdMJ0Xu3PI07xZEd2gXHJf_bd10CKz21VVzR1NwRLsPTtBnvBbBnpbbVipwYDbIFmusaQE9bAK5TZiY0_WMLoVLzERcQzeZrJKT_FVHO3XeZgK6KD-5KgQT4_9hAOasBghqRk-FQ4k0m1jJ1D1qbjfOO5cAd9D3e7uO_q1ZQ");'></div>
+<div class="edit-button opacity-0 absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300">
+<button class="bg-primary text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-primary/90 transform hover:scale-105 transition-all">
+                                        Editar Configuración
+                                    </button>
+</div>
+</div>
+<div class="p-4 border-t border-[#f4e6e6] dark:border-[#3d1a1a]">
+<h3 class="font-bold text-[#1d0c0c] dark:text-white text-lg truncate">Adrián Torres</h3>
+<p class="text-[#a14545] dark:text-[#cc7a7a] text-sm">Soporte IT</p>
+</div>
+</div>
+<!-- Add New User Placeholder -->
+<div class="group relative bg-dashed bg-white dark:bg-[#1a0b0b] rounded-xl overflow-hidden border-2 border-dashed border-[#f4e6e6] dark:border-[#3d1a1a] flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-all">
+<div class="aspect-[4/5] flex flex-col items-center justify-center gap-4 text-[#a14545] dark:text-[#cc7a7a] group-hover:text-primary">
+<span class="material-symbols-outlined text-5xl">person_add</span>
+<p class="font-bold text-sm px-6 text-center">Registrar Nuevo Avatar</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

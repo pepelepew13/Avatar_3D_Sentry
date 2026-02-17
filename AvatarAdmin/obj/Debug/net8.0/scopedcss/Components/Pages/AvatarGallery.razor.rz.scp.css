@@ -1,0 +1,80 @@
+/* AvatarGallery.razor — Galería de Avatares por Sede (Stitch) */
+:host[b-ttszsqnvah] { display: block }
+
+.gallery-stitch-header[b-ttszsqnvah]{
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  padding: 12px 24px; border-bottom: 1px solid var(--line);
+  background: var(--surface); box-shadow: var(--shadow-xs);
+}
+.gallery-stitch-brand[b-ttszsqnvah]{ display: flex; align-items: center; gap: 12px }
+.gallery-stitch-logo[b-ttszsqnvah]{
+  width: 32px; height: 32px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-2));
+  color: #fff; font-weight: 800; font-size: 1.1rem; border-radius: 8px;
+}
+.gallery-stitch-title[b-ttszsqnvah]{ font-size: 1.1rem; font-weight: 800; margin: 0; color: var(--ink) }
+.gallery-stitch-nav[b-ttszsqnvah]{ display: flex; gap: 24px }
+.gallery-stitch-nav a[b-ttszsqnvah]{ color: var(--ink); text-decoration: none; font-size: .9rem; font-weight: 500 }
+.gallery-stitch-nav a:hover[b-ttszsqnvah]{ color: var(--brand-red) }
+.gallery-stitch-user[b-ttszsqnvah]{ font-size: .85rem; color: var(--muted) }
+.gallery-stitch-user-email[b-ttszsqnvah]{ font-weight: 600; color: var(--ink) }
+
+.gallery-stitch-main[b-ttszsqnvah]{ padding: 24px; max-width: 1200px; margin: 0 auto }
+.gallery-breadcrumb[b-ttszsqnvah]{
+  display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted);
+  margin-bottom: 20px;
+}
+.gallery-breadcrumb a[b-ttszsqnvah]{ color: var(--brand-red); text-decoration: none }
+.gallery-breadcrumb a:hover[b-ttszsqnvah]{ text-decoration: underline }
+.gallery-breadcrumb-sep[b-ttszsqnvah]{ opacity: .6 }
+.gallery-breadcrumb-current[b-ttszsqnvah]{ font-weight: 700; color: var(--ink) }
+
+.gallery-stitch-head[b-ttszsqnvah]{
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;
+  margin-bottom: 24px;
+}
+.gallery-stitch-h1[b-ttszsqnvah]{ font-size: 1.75rem; font-weight: 900; margin: 0; color: var(--ink); letter-spacing: -0.02em }
+.gallery-stitch-sub[b-ttszsqnvah]{ font-size: 1rem; color: var(--muted); margin: .35rem 0 0 0 }
+
+.gallery-search-wrap[b-ttszsqnvah]{
+  max-width: 32rem; margin-bottom: 28px;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: var(--surface); box-shadow: var(--shadow-xs);
+}
+.gallery-search-input[b-ttszsqnvah]{
+  width: 100%; padding: 14px 18px; border: none;
+  font-size: 1rem; background: transparent; color: var(--ink);
+}
+.gallery-search-input[b-ttszsqnvah]::placeholder{ color: var(--muted) }
+.gallery-search-input:focus[b-ttszsqnvah]{ outline: none }
+
+.gallery-grid[b-ttszsqnvah]{
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px;
+}
+.gallery-card[b-ttszsqnvah]{
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  overflow: hidden; box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.gallery-card:hover[b-ttszsqnvah]{ box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--brand-red) 25%, var(--line)) }
+.gallery-card-preview[b-ttszsqnvah]{
+  position: relative; aspect-ratio: 4/5; background: var(--gray-100);
+}
+.gallery-card-img[b-ttszsqnvah]{
+  width: 100%; height: 100%; object-fit: cover; object-position: top; display: block;
+}
+.gallery-card-preview--placeholder[b-ttszsqnvah]{
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gray-150);
+}
+.gallery-card-placeholder[b-ttszsqnvah]{ font-size: 3rem; font-weight: 300; color: var(--muted) }
+.gallery-card-overlay[b-ttszsqnvah]{
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s ease;
+}
+.gallery-card:hover .gallery-card-overlay[b-ttszsqnvah]{ opacity: 1 }
+.gallery-card-info[b-ttszsqnvah]{ padding: 16px; border-top: 1px solid var(--line) }
+.gallery-card-name[b-ttszsqnvah]{ font-size: 1.1rem; font-weight: 800; margin: 0 0 4px 0; color: var(--ink) }
+.gallery-card-role[b-ttszsqnvah]{ font-size: .85rem; color: var(--muted); margin: 0 }

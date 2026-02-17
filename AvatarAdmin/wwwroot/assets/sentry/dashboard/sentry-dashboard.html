@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sentry Admin Dashboard (Modo Claro)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FF0000", 
+                        secondary: "#666666",
+                        "background-light": "#F9FAFB",
+                        "surface-light": "#FFFFFF",
+                        "text-main": "#1F2937",
+                        "text-muted": "#6B7280",
+                    },
+                    fontFamily: {
+                        display: ["Roboto", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #D1D5DB;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-text-main antialiased min-h-screen">
+<div class="flex h-screen overflow-hidden">
+<aside class="hidden md:flex w-64 flex-col bg-surface-light border-r border-gray-200 h-full flex-shrink-0">
+<div class="h-16 flex items-center justify-center border-b border-gray-200 px-4">
+<div class="flex items-center gap-2">
+<div class="relative w-8 h-8 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl">local_fire_department</span>
+</div>
+<span class="text-xl font-bold tracking-tight text-gray-900">
+                        Sistemas <span class="text-primary">Sentry</span>
+</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-4">
+<nav class="space-y-1 px-3">
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary text-white shadow-sm" href="#">
+<span class="material-symbols-outlined mr-3 text-lg">dashboard</span>
+                        Panel Principal
+                    </a>
+<div class="pt-4 pb-2">
+<p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administración</p>
+</div>
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-red-50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-lg text-gray-400 group-hover:text-primary">people</span>
+                        Usuarios
+                    </a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-red-50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-lg text-gray-400 group-hover:text-primary">business</span>
+                        Compañías
+                    </a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-red-50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-lg text-gray-400 group-hover:text-primary">store</span>
+                        Sucursales
+                    </a>
+<div class="pt-4 pb-2">
+<p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuración 3D</p>
+</div>
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-red-50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-lg text-gray-400 group-hover:text-primary">face</span>
+                        Avatares
+                    </a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-red-50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-lg text-gray-400 group-hover:text-primary">palette</span>
+                        Texturas
+                    </a>
+</nav>
+</div>
+<div class="border-t border-gray-200 p-4">
+<a class="flex items-center w-full px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 transition-colors" href="#">
+<img alt="Avatar del Admin" class="h-8 w-8 rounded-full border border-gray-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_WEC3bLsG3yZFIoASe3Gkai5Cpxku75qUtlohgh6CczL8-fLJtwCIEOYzEoBOpUv3tktpy3CHoGSpxw92eYcz3CjXrsI3Q4ma0DtM2NQ65h_9w_Bt1ESiDpaBVrO8GslCbyqCld4_ZGsrwifAurJqmmlx1ylaA4fkSOPd3jxo6uBVOQ4jtuvCoVAHQUhyhWf9W095HmocyrPZmrmpCIrBYjXKQWZd-KcSiU798UWEcg_ADEwRJJSEV6FiYKGcfgv5k2HE2eVTdw"/>
+<div class="ml-3 flex flex-col items-start">
+<span class="text-sm font-medium text-gray-800">Admin General</span>
+<span class="text-xs text-gray-500">Ver perfil</span>
+</div>
+</a>
+</div>
+</aside>
+<main class="flex-1 flex flex-col relative overflow-y-auto focus:outline-none bg-gray-50">
+<header class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+<div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 text-gray-500 hover:text-gray-700">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-xl font-bold text-gray-800">Resumen General</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 relative rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 block h-2 w-2 rounded-full bg-primary ring-2 ring-white"></span>
+</button>
+</div>
+</div>
+</header>
+<div class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+<div class="mb-8 bg-white rounded-lg shadow-md border border-gray-100 p-6 relative overflow-hidden">
+<div class="absolute right-0 top-0 h-full w-1/3 bg-red-50 transform skew-x-12 opacity-50"></div>
+<div class="relative z-10">
+<h2 class="text-2xl font-bold mb-2 text-gray-900">Bienvenido a Sentry Admin</h2>
+<p class="text-gray-600 max-w-xl">Gestiona la identidad visual y los avatares corporativos. Revisa las configuraciones pendientes y mantén la plataforma actualizada con el nuevo sistema de gestión.</p>
+<div class="mt-4 flex gap-3">
+<button class="px-4 py-2 bg-primary text-white text-sm font-medium rounded shadow hover:bg-red-700 transition-colors">
+                                Nueva Configuración
+                            </button>
+<button class="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
+                                Ver Reportes
+                            </button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:border-red-200 transition-colors">
+<div class="flex items-center justify-between mb-4">
+<div class="bg-red-50 p-2 rounded-lg border border-red-100">
+<span class="material-symbols-outlined text-primary">people</span>
+</div>
+<span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100">+12%</span>
+</div>
+<h3 class="text-gray-500 text-sm font-medium uppercase tracking-wide">Total Usuarios</h3>
+<p class="text-2xl font-bold text-gray-900 mt-1">2,543</p>
+</div>
+<div class="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:border-red-200 transition-colors">
+<div class="flex items-center justify-between mb-4">
+<div class="bg-red-50 p-2 rounded-lg border border-red-100">
+<span class="material-symbols-outlined text-primary">face</span>
+</div>
+<span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100">+5%</span>
+</div>
+<h3 class="text-gray-500 text-sm font-medium uppercase tracking-wide">Avatares Activos</h3>
+<p class="text-2xl font-bold text-gray-900 mt-1">1,890</p>
+</div>
+<div class="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:border-red-200 transition-colors">
+<div class="flex items-center justify-between mb-4">
+<div class="bg-yellow-50 p-2 rounded-lg border border-yellow-100">
+<span class="material-symbols-outlined text-yellow-600">pending_actions</span>
+</div>
+<span class="text-xs font-semibold text-yellow-700 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">Acción Req</span>
+</div>
+<h3 class="text-gray-500 text-sm font-medium uppercase tracking-wide">Pendientes Config</h3>
+<p class="text-2xl font-bold text-gray-900 mt-1">14</p>
+</div>
+<div class="bg-white rounded-lg p-5 shadow-sm border border-gray-200 hover:border-red-200 transition-colors">
+<div class="flex items-center justify-between mb-4">
+<div class="bg-gray-100 p-2 rounded-lg border border-gray-200">
+<span class="material-symbols-outlined text-gray-600">domain</span>
+</div>
+<span class="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded border border-gray-200">Estable</span>
+</div>
+<h3 class="text-gray-500 text-sm font-medium uppercase tracking-wide">Compañías</h3>
+<p class="text-2xl font-bold text-gray-900 mt-1">45</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+<h3 class="text-lg font-bold text-gray-800">Avatares Recientes</h3>
+<a class="text-sm text-primary hover:text-red-700 font-medium" href="#">Ver todos</a>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full text-left text-sm whitespace-nowrap">
+<thead class="uppercase tracking-wider border-b border-gray-200 bg-white text-gray-500 font-medium">
+<tr>
+<th class="px-6 py-3" scope="col">Compañía</th>
+<th class="px-6 py-3" scope="col">Usuario</th>
+<th class="px-6 py-3" scope="col">Estado</th>
+<th class="px-6 py-3" scope="col">Fecha</th>
+<th class="px-6 py-3 text-right" scope="col">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-200 text-gray-700 bg-white">
+<tr class="hover:bg-red-50 transition-colors">
+<td class="px-6 py-4 flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">TC</div>
+<span class="font-medium text-gray-900">TechCorp S.A.</span>
+</td>
+<td class="px-6 py-4">Ana Martínez</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600"></span> Activo
+                                            </span>
+</td>
+<td class="px-6 py-4 text-gray-500">Hoy, 10:23 AM</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-red-50 transition-colors">
+<td class="px-6 py-4 flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-secondary flex items-center justify-center text-xs font-bold text-white">GL</div>
+<span class="font-medium text-gray-900">Global Logistics</span>
+</td>
+<td class="px-6 py-4">Carlos Ruiz</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-100">
+<span class="w-1.5 h-1.5 rounded-full bg-yellow-600"></span> Pendiente
+                                            </span>
+</td>
+<td class="px-6 py-4 text-gray-500">Ayer, 4:15 PM</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-red-50 transition-colors">
+<td class="px-6 py-4 flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-primary flex items-center justify-center text-xs font-bold text-white">FS</div>
+<span class="font-medium text-gray-900">FinServ Group</span>
+</td>
+<td class="px-6 py-4">Elena Gomez</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span> Inactivo
+                                            </span>
+</td>
+<td class="px-6 py-4 text-gray-500">12 Oct, 2023</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-red-50 transition-colors">
+<td class="px-6 py-4 flex items-center gap-3">
+<div class="h-8 w-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">IV</div>
+<span class="font-medium text-gray-900">Innova Tech</span>
+</td>
+<td class="px-6 py-4">Miguel Angel</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600"></span> Activo
+                                            </span>
+</td>
+<td class="px-6 py-4 text-gray-500">10 Oct, 2023</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="lg:col-span-1 space-y-6">
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+<h3 class="text-lg font-bold text-gray-800 mb-4">Estado del Sistema</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-600">Servidores de Renderizado</span>
+<span class="text-primary font-medium">98%</span>
+</div>
+<div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+<div class="bg-primary h-2 rounded-full" style="width: 98%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-600">Base de Datos</span>
+<span class="text-green-600 font-medium">45%</span>
+</div>
+<div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+<div class="bg-green-600 h-2 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-600">API Gateway</span>
+<span class="text-blue-600 font-medium">12%</span>
+</div>
+<div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+<div class="bg-blue-600 h-2 rounded-full" style="width: 12%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+<h3 class="text-lg font-bold text-gray-800 mb-4">Acciones Rápidas</h3>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-white border border-gray-200 hover:border-primary hover:bg-red-50 group transition-all">
+<span class="material-symbols-outlined text-2xl text-secondary mb-2 group-hover:text-primary transition-colors">person_add</span>
+<span class="text-xs font-medium text-gray-600 group-hover:text-primary transition-colors">Nuevo Usuario</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-white border border-gray-200 hover:border-primary hover:bg-red-50 group transition-all">
+<span class="material-symbols-outlined text-2xl text-secondary mb-2 group-hover:text-primary transition-colors">add_business</span>
+<span class="text-xs font-medium text-gray-600 group-hover:text-primary transition-colors">Nueva Empresa</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-white border border-gray-200 hover:border-primary hover:bg-red-50 group transition-all">
+<span class="material-symbols-outlined text-2xl text-secondary mb-2 group-hover:text-primary transition-colors">settings_applications</span>
+<span class="text-xs font-medium text-gray-600 group-hover:text-primary transition-colors">Config Global</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-lg bg-white border border-gray-200 hover:border-primary hover:bg-red-50 group transition-all">
+<span class="material-symbols-outlined text-2xl text-secondary mb-2 group-hover:text-primary transition-colors">help_outline</span>
+<span class="text-xs font-medium text-gray-600 group-hover:text-primary transition-colors">Soporte</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

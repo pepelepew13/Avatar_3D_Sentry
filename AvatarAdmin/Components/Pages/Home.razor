@@ -6,45 +6,59 @@
 @inject AuthState Auth
 @inject NavigationManager Nav
 
-<PageTitle>Panel Avatar</PageTitle>
+<PageTitle>Resumen General · Sentry Admin</PageTitle>
 
-<section class="page-hero" role="region" aria-label="Resumen y accesos rápidos">
-  <div class="hero-bg orb orb-1" aria-hidden="true"></div>
-  <div class="hero-bg orb orb-2" aria-hidden="true"></div>
-
-  <div class="hero-head">
-    <h1>Panel del Avatar 3D</h1>
-
-    <div class="hero-tags" aria-label="Datos de sesión">
-      <span class="tag">@Auth.Email</span>
-      <span class="tag">Rol: @Auth.Role</span>
-      <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
-      <span class="tag tag-quiet">Sesión: @FormatEta(Auth.TimeRemaining())</span>
-    </div>
+<header class="dashboard-header" role="banner">
+  <h1 class="dashboard-title">Resumen General</h1>
+  <div class="dashboard-header-meta">
+    <span class="tag">@Auth.Email</span>
+    <span class="tag">Rol: @Auth.Role</span>
+    <span class="tag tag-quiet">Sesión: @FormatEta(Auth.TimeRemaining())</span>
   </div>
+</header>
 
-  <p class="hero-sub">Consulta y gestiona la configuración por empresa y sede. Cuando estés listo, abre el editor.</p>
-
-  <div class="cta-row">
-    <button class="btn btn-primary u-anim" @onclick="GoEditor" aria-label="Ir al editor de avatar">
-      Ir al editor
-    </button>
-    <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver configuraciones">
-      Ver configuraciones
-    </button>
-    @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-    {
-      <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver configuraciones">
-        Ver configuraciones
-      </button>
-      <button class="btn btn-outline-light u-anim" @onclick="GoUsers" aria-label="Ir a gestión de usuarios">
-        Gestión de usuarios
-      </button>
-    }
+<section class="dashboard-welcome" role="region" aria-label="Bienvenida">
+  <div class="dashboard-welcome-bg" aria-hidden="true"></div>
+  <div class="dashboard-welcome-inner">
+    <h2 class="dashboard-welcome-title">Bienvenido a Sentry Admin</h2>
+    <p class="dashboard-welcome-text">Gestiona la identidad visual y los avatares corporativos. Revisa las configuraciones pendientes y mantén la plataforma actualizada con el nuevo sistema de gestión.</p>
+    <div class="cta-row">
+      <button class="btn btn-primary u-anim" @onclick="GoConfigs" aria-label="Nueva configuración">Nueva Configuración</button>
+      <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver reportes">Ver Reportes</button>
+    </div>
   </div>
 </section>
 
-<section class="card-grid" role="region" aria-label="Configuración de avatar">
+<section class="dashboard-stats" role="region" aria-label="Estadísticas">
+  <div class="dashboard-stat">
+    <div class="dashboard-stat-icon dashboard-stat-icon--red">👥</div>
+    <span class="dashboard-stat-badge dashboard-stat-badge--ok">+12%</span>
+    <h3 class="dashboard-stat-label">Total Usuarios</h3>
+    <p class="dashboard-stat-value">2,543</p>
+  </div>
+  <div class="dashboard-stat">
+    <div class="dashboard-stat-icon dashboard-stat-icon--red">👤</div>
+    <span class="dashboard-stat-badge dashboard-stat-badge--ok">+5%</span>
+    <h3 class="dashboard-stat-label">Avatares Activos</h3>
+    <p class="dashboard-stat-value">1,890</p>
+  </div>
+  <div class="dashboard-stat">
+    <div class="dashboard-stat-icon dashboard-stat-icon--yellow">⏳</div>
+    <span class="dashboard-stat-badge dashboard-stat-badge--warn">Acción Req</span>
+    <h3 class="dashboard-stat-label">Pendientes Config</h3>
+    <p class="dashboard-stat-value">14</p>
+  </div>
+  <div class="dashboard-stat">
+    <div class="dashboard-stat-icon dashboard-stat-icon--gray">🏢</div>
+    <span class="dashboard-stat-badge dashboard-stat-badge--muted">Estable</span>
+    <h3 class="dashboard-stat-label">Compañías</h3>
+    <p class="dashboard-stat-value">45</p>
+  </div>
+</section>
+
+<section class="dashboard-main" role="region" aria-label="Configuración de avatar">
+  <div class="dashboard-content">
+    <div class="card-grid">
   <!-- Card: Empresa / Sede -->
   <div class="card">
     <header class="card-h">
@@ -138,6 +152,36 @@
       </div>
     }
   </div>
+    </div>
+  </div>
+  <aside class="dashboard-sidebar" role="complementary">
+    <div class="dashboard-panel">
+      <h3 class="dashboard-panel-title">Estado del Sistema</h3>
+      <div class="dashboard-progress-list">
+        <div class="dashboard-progress-item">
+          <div class="dashboard-progress-head"><span>Servidores de Renderizado</span><span class="dashboard-progress-pct">98%</span></div>
+          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--red" style="width:98%"></div></div>
+        </div>
+        <div class="dashboard-progress-item">
+          <div class="dashboard-progress-head"><span>Base de Datos</span><span class="dashboard-progress-pct dashboard-progress-pct--ok">45%</span></div>
+          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--ok" style="width:45%"></div></div>
+        </div>
+        <div class="dashboard-progress-item">
+          <div class="dashboard-progress-head"><span>API Gateway</span><span class="dashboard-progress-pct dashboard-progress-pct--info">12%</span></div>
+          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--info" style="width:12%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dashboard-panel">
+      <h3 class="dashboard-panel-title">Acciones Rápidas</h3>
+      <div class="dashboard-actions">
+        <button type="button" class="dashboard-action-btn" @onclick="GoUsers" aria-label="Nuevo usuario">👤<span>Nuevo Usuario</span></button>
+        <button type="button" class="dashboard-action-btn" @onclick="GoConfigs" aria-label="Config global">⚙️<span>Config Global</span></button>
+        <button type="button" class="dashboard-action-btn" @onclick="GoEditor" aria-label="Editor de avatar">🎨<span>Editor Avatar</span></button>
+        <a href="/gallery" class="dashboard-action-btn" aria-label="Galería">🖼️<span>Galería</span></a>
+      </div>
+    </div>
+  </aside>
 </section>
 
 @code {

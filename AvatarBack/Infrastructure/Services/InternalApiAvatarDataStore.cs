@@ -149,12 +149,16 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
 
     private async Task ApplyAuthHeadersAsync(HttpRequestMessage request, CancellationToken ct)
     {
-        var token = await GetTokenAsync(ct);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         if (!string.IsNullOrWhiteSpace(_options.ApiKey))
         {
+            request.Headers.Remove("X-Api-Key");
             request.Headers.TryAddWithoutValidation("X-Api-Key", _options.ApiKey);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_options.AuthUser) && !string.IsNullOrWhiteSpace(_options.AuthPassword))
+        {
+            var token = await GetTokenAsync(ct);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
     }
 
@@ -176,7 +180,7 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
 
             if (string.IsNullOrWhiteSpace(_options.AuthUser) || string.IsNullOrWhiteSpace(_options.AuthPassword))
             {
-                throw new InvalidOperationException("Falta InternalApi:AuthUser o InternalApi:AuthPassword para autenticación.");
+                return string.Empty;
             }
 
             var payload = new AuthRequest(_options.AuthUser, _options.AuthPassword);

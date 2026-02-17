@@ -1,0 +1,68 @@
+/* UserAvatarProfile.razor — Stitch User Avatar Profile */
+:host { display: block }
+
+.profile-stitch-header{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; border-bottom: 1px solid var(--line);
+  background: var(--surface); box-shadow: var(--shadow-xs);
+}
+.profile-stitch-brand{ display: flex; align-items: center; gap: 12px }
+.profile-stitch-icon{
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--brand-red) 12%, #fff);
+  border-radius: 10px; font-size: 1.5rem;
+}
+.profile-stitch-title{ font-size: 1.1rem; font-weight: 800; margin: 0; color: var(--ink) }
+.profile-stitch-user{ display: flex; align-items: center; gap: 16px }
+.profile-stitch-user-info{ text-align: right }
+.profile-stitch-user-name{ display: block; font-size: .9rem; font-weight: 700; color: var(--ink) }
+.profile-stitch-user-role{ display: block; font-size: .7rem; color: var(--muted); text-transform: uppercase }
+.profile-stitch-logout{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); font-size: .8rem; font-weight: 700; color: var(--ink);
+  cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+.profile-stitch-logout:hover{ background: var(--gray-50); border-color: var(--brand-red) }
+
+.profile-stitch-main{ padding: 24px; max-width: 1200px; margin: 0 auto }
+.profile-breadcrumb{
+  display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted);
+  margin-bottom: 24px;
+}
+.profile-breadcrumb a{ color: var(--brand-blue); text-decoration: none }
+.profile-breadcrumb a:hover{ color: var(--brand-red) }
+.profile-breadcrumb-sep{ opacity: .6 }
+.profile-breadcrumb-current{ font-weight: 700; color: var(--ink) }
+
+.profile-stitch-head{
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;
+  margin-bottom: 32px;
+}
+.profile-stitch-h1{ font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--ink) }
+.profile-stitch-sub{ font-size: .9rem; color: var(--muted); margin: .35rem 0 0 0 }
+.profile-stitch-actions{ flex-shrink: 0 }
+
+.profile-stitch-grid{ display: grid; grid-template-columns: minmax(0, 400px); gap: 24px }
+.profile-stitch-card{
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 24px; box-shadow: var(--shadow-sm);
+}
+.profile-stitch-card-title{ font-size: 1.1rem; font-weight: 800; margin: 0 0 16px 0; color: var(--ink) }
+.profile-stitch-preview{
+  position: relative; width: 100%; border-radius: 12px; overflow: hidden;
+  background: var(--gray-100); border: 1px solid var(--line); margin-bottom: 16px;
+}
+.profile-stitch-preview-img{
+  width: 100%; height: auto; display: block; max-height: 280px; object-fit: cover;
+}
+.profile-stitch-preview-badge{
+  position: absolute; bottom: 12px; right: 12px;
+  padding: 4px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+  background: var(--ok); color: #fff;
+}
+.profile-stitch-meta{ font-size: .9rem; color: var(--muted); margin-bottom: 20px }
+.profile-stitch-meta p{ margin: 6px 0 }
+.profile-stitch-meta strong{ color: var(--ink) }
+.profile-stitch-cta{ display: flex; flex-direction: column; gap: 10px }
+.profile-stitch-cta .btn{ border-radius: 10px }
