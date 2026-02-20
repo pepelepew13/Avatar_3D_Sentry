@@ -55,8 +55,9 @@
         --sp-4:.25rem; --sp-6:.375rem; --sp-8:.5rem; --sp-10:.625rem;
         --sp-12:.75rem; --sp-16:1rem; --sp-20:1.25rem; --sp-24:1.5rem;
 
-        /* Tipografía (UI) */
-        --font-ui:'Exo 2','Segoe UI',Tahoma,system-ui,Arial,sans-serif;
+        /* Tipografía (UI) — Sentry mockups: Inter + Roboto */
+        --font-ui: 'Inter', 'Roboto', 'Segoe UI', system-ui, sans-serif;
+        --font-display: 'Roboto', 'Inter', sans-serif;
 
         /* Ring accesible */
         --ring-color: color-mix(in oklab, var(--brand-red) 42%, white);
@@ -264,6 +265,7 @@
 
     /* Espaciados y tipografía */
     .u-muted{ color: var(--muted) }
+    .sentry-page-subtitle{ margin: -0.5rem 0 1rem 0; color: var(--muted); font-size: 0.9375rem }
     .u-hide{ display:none !important }
     .u-link{ color:var(--brand-blue); text-decoration:none }
     .u-link:hover{ color:var(--brand-red) }
@@ -274,6 +276,12 @@
         --_ring: var(--ring);
     }
     .u-focus:focus-visible{ box-shadow: var(--_ring) }
+
+    /* Material Symbols (Stitch mockups) */
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        user-select: none;
+    }
 
     /* Density switches (páginas con mucha tabla/lista) */
     .density-compact{ --density: .88 }

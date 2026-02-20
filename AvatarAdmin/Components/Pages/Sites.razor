@@ -1,0 +1,140 @@
+@page "/sites"
+@using AvatarAdmin.Services
+@inject AvatarApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Sedes · Sentry Admin</PageTitle>
+
+<AdminGuard>
+  <section class="users-header" role="region" aria-label="Sedes">
+    <div class="users-header-inner">
+      <div class="users-header-copy">
+        <h1 class="users-title">Sedes</h1>
+        <p class="users-subtitle">Listado de sedes por empresa.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card configs-filters">
+    <div class="filter-grid">
+      <div class="field">
+        <label class="form-label" for="site-company">Id Empresa</label>
+        <input id="site-company" type="number" class="form-control" @bind="companyIdFilter" placeholder="Opcional" />
+      </div>
+      <div class="field">
+        <label class="form-label" for="site-code">Código</label>
+        <input id="site-code" class="form-control" @bind="codeFilter" placeholder="Código" />
+      </div>
+      <div class="field">
+        <label class="form-label" for="site-name">Nombre</label>
+        <input id="site-name" class="form-control" @bind="nameFilter" placeholder="Nombre" />
+      </div>
+      <div class="field actions">
+        <button class="btn btn-primary" @onclick="LoadAsync" disabled="@loading">Buscar</button>
+      </div>
+    </div>
+  </section>
+
+  @if (!string.IsNullOrWhiteSpace(error))
+  {
+    <div class="alert alert-danger" role="alert">@error</div>
+  }
+
+  <section class="card configs-table">
+    <div class="table-wrap">
+      @if (loading)
+      {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      }
+      else if (items.Count == 0)
+      {
+        <div class="empty-row">
+          <div class="empty-ic">📍</div>
+          <div>No hay sedes con estos filtros.</div>
+        </div>
+      }
+      else
+      {
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Id Empresa</th>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Ciudad</th>
+              <th>Activa</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var s in items)
+            {
+              <tr>
+                <td>@s.Id</td>
+                <td>@s.CompanyId</td>
+                <td><code>@(s.Code ?? "—")</code></td>
+                <td>@s.Name</td>
+                <td>@(s.City ?? "—")</td>
+                <td>@(s.IsActive ? "Sí" : "No")</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <div class="table-footer text-muted">
+          Total: @total · Página @(page) de @(totalPages > 0 ? totalPages : 1)
+        </div>
+      }
+    </div>
+  </section>
+</AdminGuard>
+
+@code {
+  private bool loading;
+  private string? error;
+  private List<AvatarApiClient.SiteItem> items = new();
+  private int total;
+  private int totalPages;
+  private int page = 1;
+  private int pageSize = 20;
+  private int? companyIdFilter;
+  private string? codeFilter;
+  private string? nameFilter;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await Auth.EnsureHydratedAsync();
+    if (Auth.IsAdmin)
+      await LoadAsync();
+  }
+
+  private async Task LoadAsync()
+  {
+    loading = true;
+    error = null;
+    StateHasChanged();
+    try
+    {
+      var resp = await Api.ListSitesAsync(
+        companyId: companyIdFilter,
+        code: string.IsNullOrWhiteSpace(codeFilter) ? null : codeFilter,
+        name: string.IsNullOrWhiteSpace(nameFilter) ? null : nameFilter,
+        page: page,
+        pageSize: pageSize);
+      items = resp.Items ?? new();
+      total = resp.Total;
+      totalPages = resp.TotalPages;
+    }
+    catch (Exception ex)
+    {
+      error = ex.Message;
+      items = new();
+    }
+    finally
+    {
+      loading = false;
+      StateHasChanged();
+    }
+  }
+}

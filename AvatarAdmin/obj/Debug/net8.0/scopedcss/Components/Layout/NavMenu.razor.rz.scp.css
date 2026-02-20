@@ -1,171 +1,87 @@
-/* NavMenu.razor.css — Nav lateral estilo Sentry (aislado) */
-:host[b-v1v7zs53k2]{ display:block }
+/* NavMenu — Sentry Dashboard sidebar (Stitch) */
+:host[b-v1v7zs53k2] { display: block }
 
-/* ===== Contenedor general ===== */
-.nav-shell[b-v1v7zs53k2]{
-  display:flex; flex-direction:column; gap: 1.2rem;
-  color:#fff;
-}
-
-/* Los <a> heredan color y no subrayado */
-.nav-shell a[b-v1v7zs53k2]{ color: inherit; text-decoration: none }
-
-/* ===== Encabezado (títulos) ===== */
-.nav-brand[b-v1v7zs53k2]{
-  display:flex; flex-direction:column; gap:.25rem;
-  padding: 1.1rem 1.2rem;
-  background: linear-gradient(145deg, var(--brand-red), var(--brand-red-2));
-  border-radius: 20px;
-  box-shadow: 0 18px 34px rgba(176,0,32,.28);
-}
-.nav-brand-title[b-v1v7zs53k2]{
-  margin:0; font-size:1.02rem; font-weight:800; letter-spacing:.01em;
-}
-.nav-brand-subtitle[b-v1v7zs53k2]{
-  margin:0; font-size:.8rem; text-transform:uppercase; letter-spacing:.22em;
-  color: rgba(255,255,255,.82);
+.sentry-nav[b-v1v7zs53k2] {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* ===== Tarjeta de sección ===== */
-.nav-card[b-v1v7zs53k2]{
-  background: linear-gradient(150deg, var(--brand-red), var(--brand-red-2));
-  border-radius: 24px;
-  padding: 1.15rem 1.05rem 1.25rem;
-  box-shadow: 0 18px 38px rgba(176,0,32,.25);
-  display:flex; flex-direction:column; gap:.85rem;
+.sentry-nav-section[b-v1v7zs53k2] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-/* Header dentro de la tarjeta */
-.nav-card-header[b-v1v7zs53k2]{
-  display:flex; gap:.75rem; align-items:center;
-  margin-bottom:.2rem;
-}
-.nav-card-icon[b-v1v7zs53k2]{
-  width:2.4rem; height:2.4rem; border-radius:16px;
-  background: rgba(255,255,255,.22);
-  display:grid; place-items:center; font-size:1.25rem;
-  backdrop-filter: blur(6px);
-}
-.nav-card-icon[b-v1v7zs53k2]::before{ font-family: "Segoe UI Symbol","Segoe UI",system-ui,sans-serif }
-.nav-card-icon-panel[b-v1v7zs53k2]::before{ content:"🏠" }
-.nav-card-icon-session[b-v1v7zs53k2]::before{ content:"👤" }
-.nav-card-icon-access[b-v1v7zs53k2]::before{ content:"🔐" }
-
-.nav-card-title[b-v1v7zs53k2]{
-  margin:0; font-size:.92rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
-}
-.nav-card-description[b-v1v7zs53k2]{
-  margin:0; font-size:.8rem; color: rgba(255,255,255,.8)
+.sentry-nav-group[b-v1v7zs53k2] {
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
 }
 
-/* ===== Píldoras de navegación (NavLink y <a>) ===== */
-.nav-card-link[b-v1v7zs53k2],
-.nav-card-link.as-button[b-v1v7zs53k2],
-a.nav-card-link[b-v1v7zs53k2]{
-  --pill-bg:#fff;
-  --pill-ink: var(--brand-red-2);
-
-  display:flex; align-items:center; gap:.75rem;
-  padding:.85rem 1rem; border-radius: 999px;
-  background: var(--pill-bg); color: var(--pill-ink);
-  border:none; text-decoration:none; cursor:pointer;
-
-  transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
-  box-shadow: 0 2px 0 rgba(0,0,0,.02);
-}
-.nav-card-link + .nav-card-link[b-v1v7zs53k2]{ margin-top:.45rem }
-a.nav-card-link + a.nav-card-link[b-v1v7zs53k2]{ margin-top:.45rem }
-
-.nav-card-link:hover[b-v1v7zs53k2],
-.nav-card-link:focus-visible[b-v1v7zs53k2],
-a.nav-card-link:hover[b-v1v7zs53k2],
-a.nav-card-link:focus-visible[b-v1v7zs53k2]{
-  transform: translateY(-2px);
-  box-shadow: 0 14px 26px rgba(176,0,32,.24);
-  outline:none;
+.sentry-nav-group-title[b-v1v7zs53k2] {
+  padding: 0 0.75rem;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400, #9ca3af);
 }
 
-.nav-card-link:focus-visible[b-v1v7zs53k2],
-a.nav-card-link:focus-visible[b-v1v7zs53k2]{ box-shadow: var(--ring), 0 14px 26px rgba(176,0,32,.24) }
-
-/* Activo: por clase .active o aria-current="page" (NavLink/anchor) */
-.nav-card-link.active[b-v1v7zs53k2],
-.nav-card-link[aria-current="page"][b-v1v7zs53k2],
-a.nav-card-link.active[b-v1v7zs53k2],
-a.nav-card-link[aria-current="page"][b-v1v7zs53k2]{
-  box-shadow:
-    inset 0 0 0 2px color-mix(in srgb, var(--brand-red-2) 45%, #fff),
-    0 12px 22px rgba(176,0,32,.22);
+.sentry-nav-link[b-v1v7zs53k2] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  color: var(--gray-600, #4b5563);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* Icono circular rojo dentro de la píldora */
-.nav-card-link-icon[b-v1v7zs53k2]{
-  width:2.4rem; height:2.4rem; border-radius:50%;
-  display:grid; place-items:center; flex:0 0 auto;
-  background: var(--brand-red); color:#fff; font-size:1.35rem;
-}
-.nav-card-link-icon[b-v1v7zs53k2]::before{ font-family: "Segoe UI Symbol","Segoe UI",system-ui,sans-serif }
-.nav-card-link-icon-home[b-v1v7zs53k2]::before{ content:"⌂" }
-.nav-card-link-icon-login[b-v1v7zs53k2]::before{ content:"🔑" }
-.nav-card-link-icon-register[b-v1v7zs53k2]::before{ content:"✚" }
-.nav-card-link-icon-logout[b-v1v7zs53k2]::before{ content:"⇦" }
-/* extras ya usados */
-.nav-card-link-icon-edit[b-v1v7zs53k2]::before{ content:"✎" }
-.nav-card-link-icon-configs[b-v1v7zs53k2]::before{ content:"🧩" }
-.nav-card-link-icon-users[b-v1v7zs53k2]::before{ content:"👥" }
-.nav-card-link-icon-user[b-v1v7zs53k2]::before{ content:"👤" }
-
-/* Deshabilitado cuando no hay sesión */
-.nav-card-link.is-disabled[b-v1v7zs53k2]{ opacity:.55; pointer-events:none }
-
-/* ===== Panel “Tu sesión” y caret ===== */
-.nav-card-link.as-button[b-v1v7zs53k2]{ position:relative; padding-right: 2.1rem }
-.nav-card-link.as-button[b-v1v7zs53k2]::after{
-  content:"▾"; position:absolute; right:.9rem; top:50%; transform: translateY(-50%) rotate(0deg);
-  transition: transform .2s ease; opacity:.7;
-}
-.nav-card-link.as-button.is-open[b-v1v7zs53k2]::after{ transform: translateY(-50%) rotate(180deg) }
-.nav-card-link.as-button.is-open .nav-card-link-icon[b-v1v7zs53k2]{
-  box-shadow: 0 10px 22px rgba(0,0,0,.18); outline:2px solid rgba(255,255,255,.25)
+.sentry-nav-link .material-symbols-outlined[b-v1v7zs53k2] {
+  font-size: 1.125rem;
+  color: var(--gray-400, #9ca3af);
+  flex-shrink: 0;
 }
 
-/* User info “glass card” */
-.nav-card-userinfo[b-v1v7zs53k2]{
-  padding:.85rem; border-radius:16px;
-  background:
-    radial-gradient(120% 160% at -20% -30%, rgba(255,255,255,.18), transparent 60%),
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
-  border:1px solid rgba(255,255,255,.28);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 12px 28px rgba(0,0,0,.18);
-  color:#fff; transform-origin: top center; animation: navUserInfoIn-b-v1v7zs53k2 .22s ease-out;
-}
-@keyframes navUserInfoIn-b-v1v7zs53k2{
-  from{ opacity:0; transform: translateY(-6px) scaleY(.98) }
-  to  { opacity:1; transform: translateY(0)    scaleY(1) }
-}
-.nav-card-userinfo > div[b-v1v7zs53k2]{
-  display:grid; grid-template-columns: 1fr auto; align-items:center;
-  gap:.5rem; padding:.35rem .25rem; font-size:.9rem;
-}
-.nav-card-userinfo > div + div[b-v1v7zs53k2]{ border-top:1px dashed rgba(255,255,255,.25) }
-.nav-card-userinfo strong[b-v1v7zs53k2]{ font-weight:800; letter-spacing:.02em; opacity:.95 }
-.nav-card-userinfo .kv-value[b-v1v7zs53k2]{
-  display:inline-block; padding:.2rem .6rem; border-radius:999px;
-  background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
-  font-weight:700; backdrop-filter: blur(4px);
+.sentry-nav-link:hover[b-v1v7zs53k2] {
+  background: color-mix(in oklch, var(--brand-red) 8%, transparent);
+  color: var(--brand-red);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 1100px){
-  .nav-brand[b-v1v7zs53k2], .nav-card[b-v1v7zs53k2]{ border-radius: 20px; padding: 1rem .95rem 1.1rem }
-  .nav-card-link[b-v1v7zs53k2], .nav-card-link.as-button[b-v1v7zs53k2], a.nav-card-link[b-v1v7zs53k2]{ padding:.78rem .9rem }
-  .nav-card-link-icon[b-v1v7zs53k2]{ width:2.2rem; height:2.2rem; font-size:1.2rem }
-  .nav-card-userinfo[b-v1v7zs53k2]{ border-radius:14px; padding:.75rem }
-  .nav-card-userinfo > div[b-v1v7zs53k2]{ font-size:.88rem }
+.sentry-nav-link:hover .material-symbols-outlined[b-v1v7zs53k2] {
+  color: var(--brand-red);
 }
 
-/* Un poco más compacto aún en móviles */
-@media (max-width: 640px){
-  .nav-card[b-v1v7zs53k2]{ border-radius:16px }
-  .nav-brand[b-v1v7zs53k2]{ border-radius:16px }
+.sentry-nav-link.active[b-v1v7zs53k2] {
+  background: var(--brand-red);
+  color: #fff;
+}
+
+.sentry-nav-link.active .material-symbols-outlined[b-v1v7zs53k2] {
+  color: #fff;
+}
+
+.sentry-nav-link.is-disabled[b-v1v7zs53k2] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.sentry-nav-btn[b-v1v7zs53k2] {
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.sentry-nav-actions[b-v1v7zs53k2] {
+  margin-top: auto;
+  padding-top: 0.5rem;
 }

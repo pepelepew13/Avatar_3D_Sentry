@@ -8,191 +8,280 @@
 
 <PageTitle>Resumen General · Sentry Admin</PageTitle>
 
-<header class="dashboard-header" role="banner">
-  <h1 class="dashboard-title">Resumen General</h1>
-  <div class="dashboard-header-meta">
-    <span class="tag">@Auth.Email</span>
-    <span class="tag">Rol: @Auth.Role</span>
-    <span class="tag tag-quiet">Sesión: @FormatEta(Auth.TimeRemaining())</span>
-  </div>
-</header>
-
-<section class="dashboard-welcome" role="region" aria-label="Bienvenida">
-  <div class="dashboard-welcome-bg" aria-hidden="true"></div>
-  <div class="dashboard-welcome-inner">
-    <h2 class="dashboard-welcome-title">Bienvenido a Sentry Admin</h2>
-    <p class="dashboard-welcome-text">Gestiona la identidad visual y los avatares corporativos. Revisa las configuraciones pendientes y mantén la plataforma actualizada con el nuevo sistema de gestión.</p>
-    <div class="cta-row">
-      <button class="btn btn-primary u-anim" @onclick="GoConfigs" aria-label="Nueva configuración">Nueva Configuración</button>
-      <button class="btn btn-outline-light u-anim" @onclick="GoConfigs" aria-label="Ver reportes">Ver Reportes</button>
+<header class="sentry-page-header" role="banner">
+  <div class="sentry-page-header-inner">
+    <div class="sentry-header-left">
+      <button class="sentry-mobile-menu" aria-label="Menú">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <h1 class="sentry-page-title">Resumen General</h1>
     </div>
-  </div>
-</section>
-
-<section class="dashboard-stats" role="region" aria-label="Estadísticas">
-  <div class="dashboard-stat">
-    <div class="dashboard-stat-icon dashboard-stat-icon--red">👥</div>
-    <span class="dashboard-stat-badge dashboard-stat-badge--ok">+12%</span>
-    <h3 class="dashboard-stat-label">Total Usuarios</h3>
-    <p class="dashboard-stat-value">2,543</p>
-  </div>
-  <div class="dashboard-stat">
-    <div class="dashboard-stat-icon dashboard-stat-icon--red">👤</div>
-    <span class="dashboard-stat-badge dashboard-stat-badge--ok">+5%</span>
-    <h3 class="dashboard-stat-label">Avatares Activos</h3>
-    <p class="dashboard-stat-value">1,890</p>
-  </div>
-  <div class="dashboard-stat">
-    <div class="dashboard-stat-icon dashboard-stat-icon--yellow">⏳</div>
-    <span class="dashboard-stat-badge dashboard-stat-badge--warn">Acción Req</span>
-    <h3 class="dashboard-stat-label">Pendientes Config</h3>
-    <p class="dashboard-stat-value">14</p>
-  </div>
-  <div class="dashboard-stat">
-    <div class="dashboard-stat-icon dashboard-stat-icon--gray">🏢</div>
-    <span class="dashboard-stat-badge dashboard-stat-badge--muted">Estable</span>
-    <h3 class="dashboard-stat-label">Compañías</h3>
-    <p class="dashboard-stat-value">45</p>
-  </div>
-</section>
-
-<section class="dashboard-main" role="region" aria-label="Configuración de avatar">
-  <div class="dashboard-content">
-    <div class="card-grid">
-  <!-- Card: Empresa / Sede -->
-  <div class="card">
-    <header class="card-h">
-      <h5>Empresa / Sede</h5>
-      <p class="text-muted">Selecciona el ámbito que quieres revisar</p>
-    </header>
-
-    <div class="form-row">
-      <label class="form-label" for="empresa-input">Empresa</label>
-      <div class="input-icon">
-        <span class="ii" aria-hidden="true">🏢</span>
-        <input id="empresa-input" class="form-control" @bind="empresa" autocomplete="organization" disabled="@(!Auth.IsAdmin)" />
-      </div>
-    </div>
-
-    <div class="form-row">
-      <label class="form-label" for="sede-input">Sede</label>
-      <div class="input-icon">
-        <span class="ii" aria-hidden="true">📍</span>
-        <input id="sede-input" class="form-control" @bind="sede" autocomplete="section" disabled="@(!Auth.IsAdmin)" />
-      </div>
-    </div>
-
-    <div class="mt-3 d-grid">
-      <button class="btn btn-primary u-anim" @onclick="LoadAsync" disabled="@loading" aria-busy="@loading">
-        @(loading ? "Cargando..." : "Cargar configuración")
+    <div class="sentry-page-header-actions">
+      <button type="button" class="sentry-icon-btn" aria-label="Notificaciones">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="sentry-icon-btn-badge" aria-hidden="true"></span>
       </button>
     </div>
   </div>
+</header>
 
-  <!-- Card: Configuración actual -->
-  <div class="card card--wide">
-    <div class="card-title-row">
-      <h5>Configuración actual</h5>
-      @if (cfg is not null)
-      {
-        <small class="text-muted">ID: @cfg.Id</small>
-      }
+<div class="dashboard-container">
+
+  <section class="dashboard-welcome" role="region" aria-label="Bienvenida">
+    <div class="dashboard-welcome-bg" aria-hidden="true"></div>
+    <div class="dashboard-welcome-inner">
+      <h2 class="dashboard-welcome-title">Bienvenido a Sentry Admin</h2>
+      <p class="dashboard-welcome-text">Gestiona la identidad visual y los avatares corporativos. Revisa las configuraciones pendientes y mantén la plataforma actualizada con el nuevo sistema de gestión.</p>
+      <div class="cta-row">
+        <button class="btn btn-primary" @onclick="GoConfigs">Nueva Configuración</button>
+        <button class="btn btn-outline" @onclick="GoConfigs">Ver Reportes</button>
+      </div>
     </div>
+  </section>
 
-    @if (loading)
-    {
-      <div class="skeleton" aria-live="polite">
-        <div class="skeleton-line w-60"></div>
-        <div class="skeleton-line w-40"></div>
-        <div class="skeleton-grid">
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line"></div>
-          <div class="skeleton-line"></div>
+  <section class="dashboard-stats" role="region" aria-label="Estadísticas">
+    <div class="dashboard-stat">
+      <div class="dashboard-stat-header">
+        <div class="dashboard-stat-icon dashboard-stat-icon--red"><span class="material-symbols-outlined">people</span></div>
+        <span class="stat-badge stat-badge--green">+12%</span>
+      </div>
+      <h3 class="dashboard-stat-label">Total Usuarios</h3>
+      <p class="dashboard-stat-value">@(statsLoaded ? totalUsers.ToString("N0") : (loadingStats ? "…" : "—"))</p>
+    </div>
+    <div class="dashboard-stat">
+      <div class="dashboard-stat-header">
+        <div class="dashboard-stat-icon dashboard-stat-icon--red"><span class="material-symbols-outlined">face</span></div>
+        <span class="stat-badge stat-badge--green">+5%</span>
+      </div>
+      <h3 class="dashboard-stat-label">Avatares Activos</h3>
+      <p class="dashboard-stat-value">@(statsLoaded ? totalConfigs.ToString("N0") : (loadingStats ? "…" : "—"))</p>
+    </div>
+    <div class="dashboard-stat">
+      <div class="dashboard-stat-header">
+        <div class="dashboard-stat-icon dashboard-stat-icon--yellow"><span class="material-symbols-outlined">pending_actions</span></div>
+        <span class="stat-badge stat-badge--yellow">Acción Req</span>
+      </div>
+      <h3 class="dashboard-stat-label">Pendientes Config</h3>
+      <p class="dashboard-stat-value">@(statsLoaded ? pendingConfigs.ToString("N0") : (loadingStats ? "…" : "—"))</p>
+    </div>
+    <div class="dashboard-stat">
+      <div class="dashboard-stat-header">
+        <div class="dashboard-stat-icon dashboard-stat-icon--gray"><span class="material-symbols-outlined">domain</span></div>
+        <span class="stat-badge stat-badge--gray">Estable</span>
+      </div>
+      <h3 class="dashboard-stat-label">Compañías</h3>
+      <p class="dashboard-stat-value">@(statsLoaded ? totalCompanies.ToString("N0") : (loadingStats ? "…" : "—"))</p>
+    </div>
+  </section>
+
+  <section class="dashboard-main" role="region" aria-label="Contenido principal">
+
+    <div class="dashboard-content">
+
+      <div class="sentry-card sentry-table-card">
+        <div class="sentry-card-header">
+          <h3 class="sentry-card-title">Avatares Recientes</h3>
+          <a href="/configs" class="sentry-card-link">Ver todos</a>
+        </div>
+        <div class="sentry-table-wrap">
+          <table class="sentry-table">
+            <thead>
+              <tr>
+                <th scope="col">Compañía</th>
+                <th scope="col">Usuario</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Configuración</th>
+                <th scope="col" class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (cfg is not null)
+              {
+                <tr>
+                  <td>
+                    <div class="table-company-cell">
+                      <div class="company-avatar">@empresa.Substring(0, Math.Min(2, empresa.Length)).ToUpper()</div>
+                      <span class="sentry-table-company">@empresa</span>
+                    </div>
+                  </td>
+                  <td>—</td>
+                  <td>
+                    <span class="sentry-status sentry-status--ok">
+                      <span class="status-dot"></span> Activo
+                    </span>
+                  </td>
+                  <td>@(cfg.Vestimenta ?? "—")</td>
+                  <td class="text-end">
+                    <button class="table-action-btn" @onclick="GoEditor" aria-label="Editar">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                  </td>
+                </tr>
+              }
+              else if (!loading && error is null)
+              {
+                <tr>
+                  <td colspan="5" class="sentry-table-empty">Indica empresa y sede y pulsa «Cargar configuración».</td>
+                </tr>
+              }
+              else
+              {
+                <tr>
+                  <td colspan="5" class="sentry-table-empty">Cargando…</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       </div>
-    }
-    else if (error is not null)
-    {
-      <div class="alert alert-danger mt-2" role="alert">@error</div>
-    }
-    else if (cfg is null)
-    {
-      <div class="empty">
-        <div class="empty-illustration" aria-hidden="true">🗂️</div>
-        <p class="empty-text">Sin datos. Indica empresa y sede y pulsa <strong>“Cargar configuración”</strong>.</p>
-      </div>
-    }
-    else
-    {
-      <div class="kv" role="table" aria-label="Detalles de configuración cargada">
-        <div role="row"><span role="rowheader">Vestimenta</span><code role="cell">@cfg.Vestimenta</code></div>
-        <div role="row"><span role="rowheader">Fondo</span><code role="cell">@cfg.Fondo</code></div>
-        <div role="row"><span role="rowheader">Proveedor TTS</span><code role="cell">@cfg.ProveedorTts</code></div>
-        <div role="row"><span role="rowheader">Voz</span><code role="cell">@cfg.Voz</code></div>
-        <div role="row"><span role="rowheader">Idioma</span><code role="cell">@cfg.Idioma</code></div>
-        <div role="row"><span role="rowheader">Color Cabello</span><code role="cell">@cfg.ColorCabello</code></div>
 
-        <div class="kv-logo" role="row">
-          <span role="rowheader">Logo</span>
-          <div class="logo-row" role="cell">
-            <code class="logo-path" title="@cfg.LogoPath">@cfg.LogoPath</code>
-            @if (!string.IsNullOrWhiteSpace(cfg.LogoPath))
+      <div class="config-grid">
+        <div class="sentry-card">
+          <div class="sentry-card-header--simple">
+            <h5 class="sentry-card-title">Empresa / Sede</h5>
+            <p class="sentry-card-subtitle">Selecciona el ámbito a revisar</p>
+          </div>
+          <div class="sentry-card-body">
+            <div class="form-row">
+              <label class="form-label" for="empresa-input">Empresa</label>
+              <div class="input-icon">
+                <span class="ii material-symbols-outlined" aria-hidden="true">domain</span>
+                <input id="empresa-input" class="form-control" @bind="empresa" disabled="@(!Auth.IsAdmin)" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="sede-input">Sede</label>
+              <div class="input-icon">
+                <span class="ii material-symbols-outlined" aria-hidden="true">location_on</span>
+                <input id="sede-input" class="form-control" @bind="sede" disabled="@(!Auth.IsAdmin)" />
+              </div>
+            </div>
+            <div class="mt-4 d-grid">
+              <button class="btn btn-primary w-full" @onclick="LoadAsync" disabled="@loading">
+                @(loading ? "Cargando..." : "Cargar configuración")
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sentry-card card--wide">
+          <div class="sentry-card-header--flex">
+            <h5 class="sentry-card-title">Configuración actual</h5>
+            @if (cfg is not null)
             {
-              <img src="@Abs(cfg.LogoPath)" alt="Logo cargado" class="logo-preview" />
+              <span class="sentry-card-subtitle">ID: @cfg.Id</span>
+            }
+          </div>
+          <div class="sentry-card-body">
+            @if (loading)
+            {
+              <div class="skeleton">
+                <div class="skeleton-line w-60"></div>
+                <div class="skeleton-line w-40"></div>
+                <div class="skeleton-grid"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+              </div>
+            }
+            else if (error is not null)
+            {
+              <div class="alert alert-danger">@error</div>
+            }
+            else if (cfg is null)
+            {
+              <div class="empty-state">
+                <span class="material-symbols-outlined empty-icon">folder_open</span>
+                <p>Sin datos. Indica empresa y sede para cargar.</p>
+              </div>
+            }
+            else
+            {
+              <div class="kv-grid">
+                <div class="kv-item"><span>Vestimenta</span><code>@cfg.Vestimenta</code></div>
+                <div class="kv-item"><span>Fondo</span><code>@cfg.Fondo</code></div>
+                <div class="kv-item"><span>Proveedor TTS</span><code>@cfg.ProveedorTts</code></div>
+                <div class="kv-item"><span>Voz</span><code>@cfg.Voz</code></div>
+                <div class="kv-item"><span>Idioma</span><code>@cfg.Idioma</code></div>
+                <div class="kv-item"><span>Color Cabello</span><code>@cfg.ColorCabello</code></div>
+                <div class="kv-item kv-full">
+                  <span>Logo</span>
+                  <div class="logo-preview-box">
+                    <code>@cfg.LogoPath</code>
+                    @if (!string.IsNullOrWhiteSpace(cfg.LogoPath))
+                    {
+                      <img src="@Abs(cfg.LogoPath)" alt="Logo" class="logo-img" />
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 flex-end">
+                <button class="btn btn-primary" @onclick="GoEditor">Abrir editor</button>
+              </div>
             }
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="mt-3 d-flex justify-content-end">
-        <button class="btn btn-primary u-anim" @onclick="GoEditor" aria-label="Abrir editor">
-          Abrir editor
-        </button>
-      </div>
-    }
-  </div>
-    </div>
-  </div>
-  <aside class="dashboard-sidebar" role="complementary">
-    <div class="dashboard-panel">
-      <h3 class="dashboard-panel-title">Estado del Sistema</h3>
-      <div class="dashboard-progress-list">
-        <div class="dashboard-progress-item">
-          <div class="dashboard-progress-head"><span>Servidores de Renderizado</span><span class="dashboard-progress-pct">98%</span></div>
-          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--red" style="width:98%"></div></div>
-        </div>
-        <div class="dashboard-progress-item">
-          <div class="dashboard-progress-head"><span>Base de Datos</span><span class="dashboard-progress-pct dashboard-progress-pct--ok">45%</span></div>
-          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--ok" style="width:45%"></div></div>
-        </div>
-        <div class="dashboard-progress-item">
-          <div class="dashboard-progress-head"><span>API Gateway</span><span class="dashboard-progress-pct dashboard-progress-pct--info">12%</span></div>
-          <div class="dashboard-progress-bar"><div class="dashboard-progress-fill dashboard-progress-fill--info" style="width:12%"></div></div>
+    <aside class="dashboard-sidebar" role="complementary">
+
+      <div class="sentry-card p-6">
+        <h3 class="sentry-card-title mb-4">Estado del Sistema</h3>
+        <div class="progress-list">
+          <div class="progress-item">
+            <div class="progress-head"><span>Servidores de Renderizado</span><span class="pct text-primary">98%</span></div>
+            <div class="progress-track"><div class="progress-fill bg-primary" style="width:98%"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-head"><span>Base de Datos</span><span class="pct text-green">45%</span></div>
+            <div class="progress-track"><div class="progress-fill bg-green" style="width:45%"></div></div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-head"><span>API Gateway</span><span class="pct text-blue">12%</span></div>
+            <div class="progress-track"><div class="progress-fill bg-blue" style="width:12%"></div></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="dashboard-panel">
-      <h3 class="dashboard-panel-title">Acciones Rápidas</h3>
-      <div class="dashboard-actions">
-        <button type="button" class="dashboard-action-btn" @onclick="GoUsers" aria-label="Nuevo usuario">👤<span>Nuevo Usuario</span></button>
-        <button type="button" class="dashboard-action-btn" @onclick="GoConfigs" aria-label="Config global">⚙️<span>Config Global</span></button>
-        <button type="button" class="dashboard-action-btn" @onclick="GoEditor" aria-label="Editor de avatar">🎨<span>Editor Avatar</span></button>
-        <a href="/gallery" class="dashboard-action-btn" aria-label="Galería">🖼️<span>Galería</span></a>
+
+      <div class="sentry-card p-6">
+        <h3 class="sentry-card-title mb-4">Acciones Rápidas</h3>
+        <div class="action-grid">
+          <button class="action-btn" @onclick="GoUsers">
+            <span class="material-symbols-outlined">person_add</span>
+            <span>Nuevo Usuario</span>
+          </button>
+          <button class="action-btn" @onclick="GoConfigs">
+            <span class="material-symbols-outlined">add_business</span>
+            <span>Nueva Empresa</span>
+          </button>
+          <button class="action-btn" @onclick="GoConfigs">
+            <span class="material-symbols-outlined">settings_applications</span>
+            <span>Config Global</span>
+          </button>
+          <a href="/gallery" class="action-btn">
+            <span class="material-symbols-outlined">help_outline</span>
+            <span>Soporte</span>
+          </a>
+        </div>
       </div>
-    </div>
-  </aside>
-</section>
+
+    </aside>
+  </section>
+</div>
 
 @code {
   private string empresa = "ACME";
   private string sede = "CENTRO";
 
   private bool loading;
+  private bool loadingStats;
+  private bool statsLoaded;
+  private int totalUsers;
+  private int totalCompanies;
+  private int totalConfigs;
+  private int pendingConfigs;
+
   private string? error;
   private AvatarConfigDto? cfg;
 
-  // Convierte rutas relativas del backend en absolutas
   private string Abs(string? path)
   {
     if (string.IsNullOrWhiteSpace(path)) return "";
@@ -213,10 +302,56 @@
 
     await Auth.EnsureHydratedAsync();
 
-    if (Auth.IsAuthenticated && !string.IsNullOrWhiteSpace(empresa) && !string.IsNullOrWhiteSpace(sede))
+    if (Auth.IsAuthenticated)
     {
-      await LoadAsync();
+      if (Auth.IsAdmin)
+      {
+        _ = LoadStatsAsync();
+      }
+      if (!string.IsNullOrWhiteSpace(empresa) && !string.IsNullOrWhiteSpace(sede))
+      {
+        await LoadAsync();
+      }
     }
+  }
+
+  private async Task LoadStatsAsync()
+  {
+    if (loadingStats) return;
+    loadingStats = true;
+    StateHasChanged();
+    try
+    {
+      if (Auth.IsAdmin)
+      {
+        var usersTask = Api.ListUsersAsync(page: 1, pageSize: 1, ct: default);
+        var companiesTask = Api.ListCompaniesAsync(page: 1, pageSize: 1, ct: default);
+        var configsTask = Api.ListConfigsAsync(page: 1, pageSize: 1, ct: default);
+
+        await Task.WhenAll(usersTask, companiesTask, configsTask);
+
+        totalUsers = (await usersTask).Total;
+        totalCompanies = (await companiesTask).Total;
+        totalConfigs = (await configsTask).Total;
+
+        try
+        {
+          var kpisJson = await Api.GetKpisGlobalAsync(default);
+          if (!string.IsNullOrWhiteSpace(kpisJson))
+          {
+            using var doc = System.Text.Json.JsonDocument.Parse(kpisJson);
+            if (doc.RootElement.TryGetProperty("pendingConfigs", out var p))
+              pendingConfigs = p.TryGetInt32(out var v) ? v : 0;
+            else if (doc.RootElement.TryGetProperty("PendientesConfig", out var p2))
+              pendingConfigs = p2.TryGetInt32(out var v2) ? v2 : 0;
+          }
+        }
+        catch { pendingConfigs = 0; }
+        statsLoaded = true;
+      }
+    }
+    catch { statsLoaded = false; }
+    finally { loadingStats = false; StateHasChanged(); }
   }
 
   private async Task LoadAsync()
@@ -225,10 +360,7 @@
     try
     {
       cfg = await Api.GetConfigAsync(empresa, sede);
-      if (cfg is null)
-      {
-        error = "No existe una configuración para esta empresa/sede.";
-      }
+      if (cfg is null) error = "No existe una configuración para esta empresa/sede.";
     }
     catch (Exception ex) { error = ex.Message; }
     finally { loading = false; StateHasChanged(); }
@@ -237,14 +369,5 @@
   private void GoEditor() => Nav.NavigateTo("/editor");
   private void GoConfigs() => Nav.NavigateTo("/configs");
   private void GoUsers()  => Nav.NavigateTo("/users");
-
-  private static string FormatEta(TimeSpan? ts)
-  {
-    if (ts is null || ts.Value <= TimeSpan.Zero) return "—";
-    var t = ts.Value;
-    return t.TotalHours >= 1
-      ? $"{(int)t.TotalHours}h {t.Minutes}m"
-      : $"{t.Minutes}m {t.Seconds}s";
-  }
 }
 </AuthGuard>

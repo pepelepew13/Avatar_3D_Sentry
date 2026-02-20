@@ -1,3 +1,4 @@
+using AvatarSentry.Application.InternalApi;
 using AvatarSentry.Application.InternalApi.Clients;
 using AvatarSentry.Application.InternalApi.Models;
 using AvatarSentry.Application.Users;
@@ -13,10 +14,12 @@ namespace Avatar_3D_Sentry.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IInternalUserClient _internalUserClient;
+    private readonly ICompanySiteResolutionService _resolution;
 
-    public UsersController(IInternalUserClient internalUserClient)
+    public UsersController(IInternalUserClient internalUserClient, ICompanySiteResolutionService resolution)
     {
         _internalUserClient = internalUserClient;
+        _resolution = resolution;
     }
 
     [HttpGet]
@@ -50,11 +53,20 @@ public class UsersController : ControllerBase
             }
         }
 
+        int? companyId = null, siteId = null;
+        var emp = isGlobalAdmin ? empresa : scopeEmpresa;
+        var sed = isGlobalAdmin ? sede : scopeSede;
+        if (!string.IsNullOrWhiteSpace(emp) || !string.IsNullOrWhiteSpace(sed))
+        {
+            var ids = await _resolution.ResolveToIdsAsync(emp, sed, ct);
+            if (ids.HasValue) { companyId = ids.Value.CompanyId; siteId = ids.Value.SiteId; }
+        }
+
         var filter = new UserFilter
         {
-            Empresa = isGlobalAdmin ? empresa : scopeEmpresa,
-            Sede = isGlobalAdmin ? sede : scopeSede,
-            Q = q,
+            Company = companyId,
+            Site = siteId,
+            Email = q,
             Role = role,
             Page = page,
             PageSize = pageSize
@@ -81,7 +93,7 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(user.Empresa, user.Sede))
+        if (!CanAccess(user.CompanyName, user.SiteName))
         {
             return Forbid();
         }
@@ -98,13 +110,22 @@ public class UsersController : ControllerBase
         }
 
         var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
-        var payload = new InternalUserDto
+        var emp = isGlobalAdmin ? request.Empresa : scopeEmpresa;
+        var sed = isGlobalAdmin ? request.Sede : scopeSede;
+        var ids = await _resolution.ResolveToIdsAsync(emp, sed, ct);
+        if (!ids.HasValue && (!string.IsNullOrWhiteSpace(emp) || !string.IsNullOrWhiteSpace(sed)))
+        {
+            return BadRequest("Empresa y/o sede no se pudieron resolver (códigos no encontrados).");
+        }
+
+        var payload = new CreateInternalUserRequest
         {
             Email = request.Email,
-            PasswordHash = request.Password,
+            Password = request.Password,
             Role = request.Role,
-            Empresa = isGlobalAdmin ? request.Empresa : scopeEmpresa,
-            Sede = isGlobalAdmin ? request.Sede : scopeSede,
+            FullName = request.Email,
+            CompanyId = ids?.CompanyId,
+            SiteId = ids?.SiteId,
             IsActive = request.IsActive
         };
 
@@ -121,24 +142,32 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-        if (!CanAccess(existing.Empresa, existing.Sede) || !CanAccess(request.Empresa, request.Sede))
+        if (!CanAccess(existing.CompanyName, existing.SiteName) || !CanAccess(request.Empresa, request.Sede))
         {
             return Forbid();
         }
 
         var (scopeEmpresa, scopeSede, isGlobalAdmin) = GetScope();
-        var updated = new InternalUserDto
+        var emp = isGlobalAdmin ? request.Empresa : scopeEmpresa;
+        var sed = isGlobalAdmin ? request.Sede : scopeSede;
+        var ids = await _resolution.ResolveToIdsAsync(emp, sed, ct);
+        if (!ids.HasValue && (!string.IsNullOrWhiteSpace(emp) || !string.IsNullOrWhiteSpace(sed)))
         {
-            Id = existing.Id,
+            return BadRequest("Empresa y/o sede no se pudieron resolver (códigos no encontrados).");
+        }
+
+        var payload = new UpdateInternalUserRequest
+        {
             Email = request.Email,
-            PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? existing.PasswordHash : request.Password,
+            Password = string.IsNullOrWhiteSpace(request.Password) ? null : request.Password,
             Role = request.Role,
-            Empresa = isGlobalAdmin ? request.Empresa : scopeEmpresa,
-            Sede = isGlobalAdmin ? request.Sede : scopeSede,
+            FullName = request.Email,
+            CompanyId = ids?.CompanyId,
+            SiteId = ids?.SiteId,
             IsActive = request.IsActive
         };
 
-        var saved = await _internalUserClient.UpdateAsync(id, updated, ct);
+        var saved = await _internalUserClient.UpdateAsync(id, payload, ct);
         return Ok(MapToUserDto(saved));
     }
 
@@ -153,7 +182,7 @@ public class UsersController : ControllerBase
                 return NotFound();
             }
 
-            if (!CanAccess(existing.Empresa, existing.Sede))
+            if (!CanAccess(existing.CompanyName, existing.SiteName))
             {
                 return Forbid();
             }
@@ -177,8 +206,8 @@ public class UsersController : ControllerBase
         Id = user.Id,
         Email = user.Email,
         Role = user.Role,
-        Empresa = user.Empresa,
-        Sede = user.Sede,
+        Empresa = user.CompanyName,
+        Sede = user.SiteName,
         IsActive = user.IsActive
     };
 

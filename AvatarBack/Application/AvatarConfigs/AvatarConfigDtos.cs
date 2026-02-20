@@ -73,6 +73,7 @@ public class CreateAvatarConfigRequest
     public string? LogoPath { get; set; }
     public string? ColorCabello { get; set; }
     public string? BackgroundPath { get; set; }
+    public int[]? VoiceIds { get; set; }
 }
 
 public class UpdateAvatarConfigRequest
@@ -90,4 +91,5 @@ public class UpdateAvatarConfigRequest
     public string? LogoPath { get; set; }
     public string? ColorCabello { get; set; }
     public string? BackgroundPath { get; set; }
+    public int[]? VoiceIds { get; set; }
 }

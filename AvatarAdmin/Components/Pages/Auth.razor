@@ -9,84 +9,97 @@
 @inject NavigationManager Nav
 @inject ILogger<Auth> Log
 
-<section class="auth-shell">
-  <div class="auth-card">
-    <!-- Lado marca Stitch (se oculta en móviles) -->
-    <aside class="auth-side auth-side-stitch">
-      <div class="auth-side-bg">
-        <img class="auth-side-img" src="/assets/sentry/login/avatar-bg.png" alt="" aria-hidden="true" />
-        <div class="auth-side-overlay"></div>
-        <div class="auth-side-pattern"></div>
+<div class="auth-login-root">
+  <!-- Panel izquierdo: solo lg -->
+  <aside class="auth-left">
+    <div class="auth-left-bg">
+      <img class="auth-left-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ6WumXbg1MBuHKtrRSE-0pOgYJxd4GWXaLXyq42Lwf62pZNETD6jyXeDDNVgK8oNMBmeNOwRtpouK1QICNzNBFIs1GY6LdlL3gcwxcX0qSJqhUDe-6_pd19LgiB1xw2g64vC0KrGvgnJmx0VUw05h9PpE7G3X-m-JQN9QYrWGf4Cm4eqcslpeRlW_bovmMZIqlz5HZkAdkzlkP9J3ZMgPeS4jwvVopXNILy04GHIOpsSBgCtrRvE1ogRXbUB0tIFL19e9953SZA" alt="" aria-hidden="true" />
+      <div class="auth-left-overlay"></div>
+      <div class="auth-left-pattern"></div>
+    </div>
+    <div class="auth-left-brand">
+      <div class="auth-left-icon-box">
+        <img src="/img/Logo_Sentry.png" alt="Sentry" class="auth-left-logo" />
       </div>
-      <div class="auth-side-brand">
-        <div class="auth-side-icon" aria-hidden="true">raven</div>
-        <span class="auth-side-title">SISTEMAS SENTRY</span>
-      </div>
-      <div class="auth-side-copy">
-        <span class="auth-badge">Sistema Operativo</span>
-        <h1 class="auth-side-headline">Gestiona tu <span class="auth-side-accent">identidad digital</span></h1>
-        <p class="auth-sub">Accede a la plataforma avanzada de gestión de avatares para configurar activos 3D, empresas y roles de usuario en tiempo real.</p>
-      </div>
-      <div class="auth-side-meta">
-        <span>v4.2.0 (Estable)</span>
-        <span class="auth-dot"></span>
-        <span>Solo Personal Autorizado</span>
-      </div>
-    </aside>
+      <span class="auth-left-title">SISTEMAS SENTRY</span>
+    </div>
+    <div class="auth-left-copy">
+      <span class="auth-left-badge">
+        <span class="auth-left-badge-dot"></span>
+        Sistema Operativo
+      </span>
+      <h1 class="auth-left-headline">
+        Gestiona tu <span class="auth-left-headline-accent">identidad digital</span>
+      </h1>
+      <p class="auth-left-text">
+        Accede a la plataforma avanzada de gestión de avatares para configurar activos 3D, empresas y roles de usuario en tiempo real.
+      </p>
+    </div>
+    <div class="auth-left-meta">
+      <span>v 1.0.0</span>
+      <span class="auth-left-meta-dot"></span>
+      <span>Solo Personal Autorizado</span>
+    </div>
+  </aside>
 
-    <!-- Formulario -->
-    <section class="auth-form">
-      <div class="auth-mobile-header">
-        <img class="auth-logo auth-logo--mobile" src="/img/Logo_Sentry.png" alt="Sentry" />
-      </div>
-
-      <div class="auth-form-card">
-        <div class="auth-form-card-bar"></div>
-        <div class="auth-form-head">
-          <div class="auth-form-icon" aria-hidden="true">raven</div>
-          <div>
-            <h2 class="auth-form-title">Bienvenido de nuevo</h2>
-            <p id="login-help" class="auth-form-sub">Inicia sesión en tu panel</p>
-          </div>
+  <!-- Panel derecho: formulario -->
+  <section class="auth-right">
+    <div class="auth-right-pattern" aria-hidden="true"></div>
+    <div class="auth-form-card">
+      <div class="auth-form-card-bar"></div>
+      <div class="auth-form-head">
+        <div class="auth-form-icon-circle">
+          <img src="/img/Logo_Sentry.png" alt="Sentry" class="auth-form-logo" />
         </div>
+        <div>
+          <h2 class="auth-form-title">Bienvenido de nuevo</h2>
+          <p id="login-help" class="auth-form-sub">Inicia sesión en tu panel</p>
+        </div>
+      </div>
 
       @if (!string.IsNullOrWhiteSpace(_error))
       {
-        <div class="alert alert-danger" role="alert" aria-live="assertive">
+        <div class="auth-form-error" role="alert" aria-live="assertive">
           @(_error)
         </div>
       }
 
-      <EditForm class="auth-form-inner" Model="_model" OnValidSubmit="OnLoginAsync">
+      <EditForm class="auth-form-fields" Model="_model" OnValidSubmit="OnLoginAsync">
         <DataAnnotationsValidator />
         <ValidationSummary class="visually-hidden" />
 
-        <div class="mb-3">
-          <label class="form-label" for="login-email">Correo electrónico</label>
-          <InputText id="login-email"
-                     class="form-control"
-                     @bind-Value="_model.Email"
-                     inputmode="email"
-                     autocomplete="username"
-                     autofocus
-                     aria-describedby="login-help" />
+        <div class="auth-field">
+          <label class="auth-label" for="login-email">Correo electrónico</label>
+          <div class="auth-input-group">
+            <span class="auth-input-icon" aria-hidden="true"><span class="material-symbols-outlined">mail</span></span>
+            <InputText id="login-email"
+                       class="auth-input"
+                       @bind-Value="_model.Email"
+                       placeholder="nombre@sistemassentry.com"
+                       inputmode="email"
+                       autocomplete="username"
+                       autofocus
+                       aria-describedby="login-help" />
+          </div>
           <ValidationMessage For="() => _model.Email" />
         </div>
 
-        <div class="mb-2">
-          <div class="d-flex align-items-center justify-content-between mb-1">
-            <label class="form-label mb-0" for="login-pass">Contraseña</label>
+        <div class="auth-field">
+          <div class="auth-label-row">
+            <label class="auth-label" for="login-pass">Contraseña</label>
             <a class="auth-forgot" href="#">¿Olvidaste tu contraseña?</a>
           </div>
-          <div class="input-with-toggle">
+          <div class="auth-input-group auth-input-password">
+            <span class="auth-input-icon" aria-hidden="true"><span class="material-symbols-outlined">lock</span></span>
             <InputText id="login-pass"
-                       class="form-control"
+                       class="auth-input"
                        type="@(_showPwd ? "text" : "password")"
+                       placeholder="••••••••••••"
                        @bind-Value="_model.Password"
                        autocomplete="current-password"
                        aria-describedby="login-help" />
             <button type="button"
-                    class="pwd-toggle"
+                    class="auth-pwd-toggle"
                     @onclick="TogglePwd"
                     title="@(_showPwd ? "Ocultar" : "Mostrar") contraseña"
                     aria-label="@(_showPwd ? "Ocultar contraseña" : "Mostrar contraseña")"
@@ -97,91 +110,98 @@
           <ValidationMessage For="() => _model.Password" />
         </div>
 
-        <button class="btn-sentry btn-sentry-login w-100"
+        <button class="auth-submit"
+                type="submit"
                 disabled="@_loading"
                 aria-busy="@_loading">
           @if (_loading)
           {
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            <span class="auth-spinner" role="status" aria-hidden="true"></span>
           }
           <span>@(_loading ? "Entrando..." : "Iniciar Sesión")</span>
+          @if (!_loading)
+          {
+            <span class="material-symbols-outlined auth-submit-arrow" aria-hidden="true">arrow_forward</span>
+          }
         </button>
       </EditForm>
-        <div class="auth-form-footer">
-          <p class="auth-terms">Al continuar, aceptas los <a href="#">Términos de servicio</a> y la <a href="#">Política de privacidad</a> de Sistemas Sentry.</p>
-        </div>
+
+      <div class="auth-form-footer">
+        <p class="auth-terms">
+          Al continuar, aceptas los
+          <a class="auth-terms-link" href="#">Términos de servicio</a>
+          y la
+          <a class="auth-terms-link" href="#">Política de privacidad</a>
+          de Sistemas Sentry.
+        </p>
       </div>
-      <div class="auth-footer-mobile">
-        <span class="auth-side-icon auth-side-icon--sm" aria-hidden="true">raven</span>
-        <span class="auth-side-title auth-side-title--sm">SISTEMAS SENTRY</span>
-      </div>
-    </section>
-  </div>
-</section>
+    </div>
+
+    <div class="auth-mobile-footer">
+      <img src="/img/Logo_Sentry.png" alt="" class="auth-mobile-footer-logo" aria-hidden="true" />
+      <span class="auth-mobile-footer-text">SISTEMAS SENTRY</span>
+    </div>
+  </section>
+</div>
 
 @code {
-    [Parameter, SupplyParameterFromQuery(Name = "returnUrl")]
-    public string? ReturnUrl { get; set; }
+  [Parameter, SupplyParameterFromQuery(Name = "returnUrl")]
+  public string? ReturnUrl { get; set; }
 
-    private LoginVM _model = new();
-    private bool _loading;
-    private string? _error;
-    private bool _showPwd;
+  private LoginVM _model = new();
+  private bool _loading;
+  private string? _error;
+  private bool _showPwd;
 
-    private void TogglePwd() => _showPwd = !_showPwd;
+  private void TogglePwd() => _showPwd = !_showPwd;
 
-    // SVGs del toggle
-    private const string EyeSvg = @"<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/></svg>";
-    private const string EyeOffSvg = @"<svg viewBox='0 0 24 24' width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>";
+  private const string EyeSvg = @"<svg viewBox='0 0 24 24' width='20' height='20' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><circle cx='12' cy='12' r='3' stroke='currentColor' stroke-width='1.8'/></svg>";
+  private const string EyeOffSvg = @"<svg viewBox='0 0 24 24' width='20' height='20' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M3 3l18 18' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M2 12s4-7 10-7c2.3 0 4.3.9 6 2.1M22 12s-4 7-10 7c-2.3 0-4.3-.9-6-2.1' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><path d='M9.9 9.9A3 3 0 0012 15a3 3 0 002.1-.9' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>";
 
-    private async Task OnLoginAsync()
+  private async Task OnLoginAsync()
+  {
+    _error = null;
+    _loading = true;
+    try
     {
-        _error = null;
-        _loading = true;
-        try
-        {
-            await Api.LoginAsync(new LoginRequest
-            {
-                Email = _model.Email,
-                Password = _model.Password
-            });
-
-            var target = NormalizeReturnUrl(ReturnUrl) ?? "/editor";
-            Nav.NavigateTo(target, replace: true);
-        }
-        catch (Exception ex)
-        {
-            Log.LogError(ex, "Error de login");
-            _error = ex.Message;
-        }
-        finally
-        {
-            _loading = false;
-        }
+      await Api.LoginAsync(new LoginRequest
+      {
+        Email = _model.Email,
+        Password = _model.Password
+      });
+      var target = NormalizeReturnUrl(ReturnUrl) ?? "/editor";
+      Nav.NavigateTo(target, replace: true);
     }
-
-    private string? NormalizeReturnUrl(string? url)
+    catch (Exception ex)
     {
-        if (string.IsNullOrWhiteSpace(url)) return null;
-
-        if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
-        {
-            var baseUri = new Uri(Nav.BaseUri);
-            if (abs.Scheme == baseUri.Scheme && abs.Host == baseUri.Host && abs.Port == baseUri.Port)
-                return string.IsNullOrEmpty(abs.PathAndQuery) ? "/" : abs.PathAndQuery;
-
-            return "/editor";
-        }
-
-        return url.StartsWith("/") ? url : "/" + url;
+      Log.LogError(ex, "Error de login");
+      _error = ex.Message;
     }
-
-    public sealed class LoginVM
+    finally
     {
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress]
-        public string Email { get; set; } = "";
-
-        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(6)]
-        public string Password { get; set; } = "";
+      _loading = false;
     }
+  }
+
+  private string? NormalizeReturnUrl(string? url)
+  {
+    if (string.IsNullOrWhiteSpace(url)) return null;
+    if (Uri.TryCreate(url, UriKind.Absolute, out var abs))
+    {
+      var baseUri = new Uri(Nav.BaseUri);
+      if (abs.Scheme == baseUri.Scheme && abs.Host == baseUri.Host && abs.Port == baseUri.Port)
+        return string.IsNullOrEmpty(abs.PathAndQuery) ? "/" : abs.PathAndQuery;
+      return "/editor";
+    }
+    return url.StartsWith("/") ? url : "/" + url;
+  }
+
+  public sealed class LoginVM
+  {
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress]
+    public string Email { get; set; } = "";
+
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(6)]
+    public string Password { get; set; } = "";
+  }
 }

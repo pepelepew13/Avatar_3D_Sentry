@@ -1,12 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Avatar_3D_Sentry.Modelos;
 using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Settings;
-using Microsoft.AspNetCore.WebUtilities;
+using AvatarSentry.Application.InternalApi;
+using AvatarSentry.Application.InternalApi.Clients;
+using AvatarSentry.Application.InternalApi.Models;
 using Microsoft.Extensions.Options;
 
 namespace Avatar_3D_Sentry.Services;
@@ -15,54 +12,56 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
 {
     private readonly InternalApiOptions _options;
     private readonly HttpClient _httpClient;
-    private readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private readonly IInternalUserClient _userClient;
+    private readonly IInternalAvatarConfigClient _avatarConfigClient;
+    private readonly ICompanySiteResolutionService _resolution;
     private readonly Uri _baseUri;
-    private readonly SemaphoreSlim _authLock = new(1, 1);
-    private string? _token;
-    private DateTimeOffset _tokenExpiresAtUtc = DateTimeOffset.MinValue;
 
-    public InternalApiAvatarDataStore(IOptions<InternalApiOptions> options, HttpClient httpClient)
+    public InternalApiAvatarDataStore(
+        IOptions<InternalApiOptions> options,
+        HttpClient httpClient,
+        IInternalUserClient userClient,
+        IInternalAvatarConfigClient avatarConfigClient,
+        ICompanySiteResolutionService resolution)
     {
         _options = options.Value;
         _httpClient = httpClient;
+        _userClient = userClient;
+        _avatarConfigClient = avatarConfigClient;
+        _resolution = resolution;
         _baseUri = BuildBaseUri(_options.BaseUrl);
     }
 
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email, CancellationToken ct)
     {
-        var uri = $"internal/users/by-email/{Uri.EscapeDataString(email)}";
-        return await GetOrNullAsync<ApplicationUser>(uri, ct);
+        var dto = await _userClient.GetByEmailAsync(email, ct);
+        if (dto is null) return null;
+        return MapByEmailToUser(dto);
     }
 
     public async Task<ApplicationUser?> FindUserByIdAsync(int id, CancellationToken ct)
     {
-        var uri = $"internal/users/{id}";
-        return await GetOrNullAsync<ApplicationUser>(uri, ct);
+        var dto = await _userClient.GetByIdAsync(id, ct);
+        if (dto is null) return null;
+        return MapToUser(dto);
     }
 
     public async Task<(int total, List<ApplicationUser> items)> ListUsersAsync(int skip, int take, string? q, string? role, CancellationToken ct)
     {
         var page = Math.Max(1, (skip / Math.Max(1, take)) + 1);
         var pageSize = Math.Max(1, take);
-        var query = new Dictionary<string, string?>
+        var filter = new UserFilter
         {
-            ["page"] = page.ToString(),
-            ["pageSize"] = pageSize.ToString(),
-            ["email"] = string.IsNullOrWhiteSpace(q) ? null : q,
-            ["role"] = string.IsNullOrWhiteSpace(role) ? null : role
+            Company = null,
+            Site = null,
+            Email = q,
+            Role = role,
+            Page = page,
+            PageSize = pageSize
         };
-
-        var uri = QueryHelpers.AddQueryString("internal/users", query);
-        var response = await SendAsync(HttpMethod.Get, uri, ct);
-        response.EnsureSuccessStatusCode();
-
-        var payload = await response.Content.ReadFromJsonAsync<UserListResponse>(_jsonOptions, ct);
-        if (payload is null) return (0, new List<ApplicationUser>());
-
-        return (payload.Total, payload.Items ?? new List<ApplicationUser>());
+        var result = await _userClient.GetUsersAsync(filter, ct);
+        var items = (result.Items ?? new List<InternalUserDto>()).Select(MapToUser).ToList();
+        return (result.Total, items);
     }
 
     public async Task<bool> UserEmailExistsAsync(string email, CancellationToken ct)
@@ -73,193 +72,163 @@ public class InternalApiAvatarDataStore : IAvatarDataStore
 
     public async Task<ApplicationUser> CreateUserAsync(ApplicationUser user, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Post, "internal/users", ct, user);
-        response.EnsureSuccessStatusCode();
-
-        var created = await FindUserByEmailAsync(user.Email, ct);
-        return created ?? user;
+        var ids = await _resolution.ResolveToIdsAsync(user.Empresa, user.Sede, ct);
+        var payload = new CreateInternalUserRequest
+        {
+            Email = user.Email,
+            Password = user.PasswordHash,
+            Role = user.Role,
+            FullName = user.Email,
+            CompanyId = ids?.CompanyId,
+            SiteId = ids?.SiteId,
+            IsActive = user.IsActive
+        };
+        var created = await _userClient.CreateAsync(payload, ct);
+        return MapToUser(created);
     }
 
     public async Task UpdateUserAsync(ApplicationUser user, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Put, $"internal/users/{user.Id}", ct, user);
-        response.EnsureSuccessStatusCode();
+        var ids = await _resolution.ResolveToIdsAsync(user.Empresa, user.Sede, ct);
+        var payload = new UpdateInternalUserRequest
+        {
+            Email = user.Email,
+            Password = null,
+            Role = user.Role,
+            FullName = user.Email,
+            CompanyId = ids?.CompanyId,
+            SiteId = ids?.SiteId,
+            IsActive = user.IsActive
+        };
+        await _userClient.UpdateAsync(user.Id, payload, ct);
     }
 
     public async Task DeleteUserAsync(ApplicationUser user, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Delete, $"internal/users/{user.Id}", ct);
-        response.EnsureSuccessStatusCode();
+        await _userClient.DeleteAsync(user.Id, ct);
     }
 
     public async Task UpdateUserPasswordHashAsync(int userId, string passwordHash, CancellationToken ct)
     {
-        var user = await FindUserByIdAsync(userId, ct);
-        if (user is null)
-            throw new InvalidOperationException($"No se encontró usuario con Id={userId}.");
-
-        user.PasswordHash = passwordHash;
-        await UpdateUserAsync(user, ct);
+        await _userClient.ResetPasswordAsync(userId, new ResetPasswordRequest { NewPassword = passwordHash }, ct);
     }
 
     public async Task<AvatarConfig?> FindAvatarConfigAsync(string empresa, string sede, CancellationToken ct)
     {
-        var query = new Dictionary<string, string?>
-        {
-            ["empresa"] = empresa,
-            ["sede"] = sede
-        };
-
-        var uri = QueryHelpers.AddQueryString("internal/avatar-config/by-scope", query);
-        return await GetOrNullAsync<AvatarConfig>(uri, ct);
+        var ids = await _resolution.ResolveToIdsAsync(empresa, sede, ct);
+        if (!ids.HasValue) return null;
+        var dto = await _avatarConfigClient.GetByScopeAsync(ids.Value.CompanyId, ids.Value.SiteId, ct);
+        if (dto is null) return null;
+        return MapToAvatarConfig(dto, empresa, sede);
     }
 
     public async Task<AvatarConfig> CreateAvatarConfigAsync(AvatarConfig config, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Post, "internal/avatar-config", ct, config);
-        response.EnsureSuccessStatusCode();
-
-        var created = await FindAvatarConfigAsync(config.Empresa, config.Sede, ct);
-        return created ?? config;
+        var ids = await _resolution.ResolveToIdsAsync(config.Empresa, config.Sede, ct);
+        if (!ids.HasValue)
+            throw new InvalidOperationException($"No se pudieron resolver empresa/sede: {config.Empresa}/{config.Sede}");
+        var request = new CreateInternalAvatarConfigRequest
+        {
+            CompanyId = ids.Value.CompanyId,
+            SiteId = ids.Value.SiteId,
+            ModelPath = config.Vestimenta,
+            BackgroundPath = config.Fondo ?? config.BackgroundPath,
+            LogoPath = config.LogoPath,
+            Language = config.Idioma,
+            HairColor = config.ColorCabello,
+            VoiceIds = Array.Empty<int>(),
+            Status = "Draft",
+            IsActive = config.IsActive
+        };
+        var created = await _avatarConfigClient.CreateAsync(request, ct);
+        return MapToAvatarConfig(created, config.Empresa, config.Sede);
     }
 
     public async Task UpdateAvatarConfigAsync(AvatarConfig config, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Put, $"internal/avatar-config/{config.Id}", ct, config);
-        response.EnsureSuccessStatusCode();
+        var ids = await _resolution.ResolveToIdsAsync(config.Empresa, config.Sede, ct);
+        if (!ids.HasValue)
+            throw new InvalidOperationException($"No se pudieron resolver empresa/sede: {config.Empresa}/{config.Sede}");
+        var request = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = ids.Value.CompanyId,
+            SiteId = ids.Value.SiteId,
+            ModelPath = config.Vestimenta,
+            BackgroundPath = config.Fondo ?? config.BackgroundPath,
+            LogoPath = config.LogoPath,
+            Language = config.Idioma,
+            HairColor = config.ColorCabello,
+            VoiceIds = Array.Empty<int>(),
+            Status = "Draft",
+            IsActive = config.IsActive
+        };
+        await _avatarConfigClient.UpdateAsync(config.Id, request, ct);
     }
 
     public async Task DeleteAvatarConfigAsync(AvatarConfig config, CancellationToken ct)
     {
-        var response = await SendAsync(HttpMethod.Delete, $"internal/avatar-config/{config.Id}", ct);
-        response.EnsureSuccessStatusCode();
+        await _avatarConfigClient.DeleteAsync(config.Id, ct);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string uri, CancellationToken ct, object? body = null)
+    private static ApplicationUser MapByEmailToUser(InternalUserByEmailDto dto)
     {
-        var request = new HttpRequestMessage(method, BuildAbsoluteUri(uri));
-        if (body is not null)
+        return new ApplicationUser
         {
-            request.Content = JsonContent.Create(body);
-        }
-
-        await ApplyAuthHeadersAsync(request, ct);
-        return await _httpClient.SendAsync(request, ct);
+            Id = dto.Id,
+            Email = dto.Email,
+            PasswordHash = dto.PasswordHash ?? string.Empty,
+            Role = dto.Role,
+            Empresa = null,
+            Sede = null,
+            IsActive = dto.IsActive
+        };
     }
 
-    private async Task ApplyAuthHeadersAsync(HttpRequestMessage request, CancellationToken ct)
+    private static ApplicationUser MapToUser(InternalUserDto dto)
     {
-        if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+        return new ApplicationUser
         {
-            request.Headers.Remove("X-Api-Key");
-            request.Headers.TryAddWithoutValidation("X-Api-Key", _options.ApiKey);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_options.AuthUser) && !string.IsNullOrWhiteSpace(_options.AuthPassword))
-        {
-            var token = await GetTokenAsync(ct);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
+            Id = dto.Id,
+            Email = dto.Email,
+            PasswordHash = string.Empty,
+            Role = dto.Role,
+            Empresa = dto.CompanyName,
+            Sede = dto.SiteName,
+            IsActive = dto.IsActive
+        };
     }
 
-    private async Task<string> GetTokenAsync(CancellationToken ct)
+    private static AvatarConfig MapToAvatarConfig(InternalAvatarConfigDto dto, string empresa, string sede)
     {
-        var now = DateTimeOffset.UtcNow;
-        if (!string.IsNullOrWhiteSpace(_token) && _tokenExpiresAtUtc > now.AddMinutes(5))
+        return new AvatarConfig
         {
-            return _token!;
-        }
-
-        await _authLock.WaitAsync(ct);
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(_token) && _tokenExpiresAtUtc > now.AddMinutes(5))
-            {
-                return _token!;
-            }
-
-            if (string.IsNullOrWhiteSpace(_options.AuthUser) || string.IsNullOrWhiteSpace(_options.AuthPassword))
-            {
-                return string.Empty;
-            }
-
-            var payload = new AuthRequest(_options.AuthUser, _options.AuthPassword);
-            var response = await _httpClient.PostAsJsonAsync(BuildAbsoluteUri("api/Token/Authentication"), payload, ct);
-            response.EnsureSuccessStatusCode();
-
-            var auth = await response.Content.ReadFromJsonAsync<AuthResponse>(_jsonOptions, ct);
-            if (auth is null || string.IsNullOrWhiteSpace(auth.Token))
-                throw new InvalidOperationException("La API interna no devolvió un token válido.");
-
-            _token = auth.Token;
-            _tokenExpiresAtUtc = ReadTokenExpiry(auth.Token) ?? now.AddHours(1);
-            return _token;
-        }
-        finally
-        {
-            _authLock.Release();
-        }
+            Id = dto.Id,
+            Empresa = empresa,
+            Sede = sede,
+            Vestimenta = dto.ModelUrl,
+            Fondo = dto.BackgroundUrl,
+            BackgroundPath = dto.BackgroundUrl,
+            LogoPath = dto.LogoUrl,
+            Idioma = dto.Language,
+            ColorCabello = dto.HairColor,
+            IsActive = dto.IsActive
+        };
     }
-
-    private DateTimeOffset? ReadTokenExpiry(string token)
-    {
-        try
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(token);
-            if (jwt.ValidTo == DateTime.MinValue)
-            {
-                return null;
-            }
-
-            return new DateTimeOffset(jwt.ValidTo, TimeSpan.Zero);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private async Task<T?> GetOrNullAsync<T>(string uri, CancellationToken ct)
-    {
-        var response = await SendAsync(HttpMethod.Get, uri, ct);
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            return default;
-        }
-
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, ct);
-    }
-
-    private sealed record AuthRequest(string User, string Password);
-    private sealed record AuthResponse(string Token);
-
-    private sealed record UserListResponse(int Page, int PageSize, int Total, List<ApplicationUser>? Items);
 
     private Uri BuildAbsoluteUri(string relativeOrAbsolute)
     {
         if (Uri.TryCreate(relativeOrAbsolute, UriKind.Absolute, out var absolute))
-        {
             return absolute;
-        }
-
         return new Uri(_baseUri, relativeOrAbsolute);
     }
 
     private static Uri BuildBaseUri(string baseUrl)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
-        {
             throw new InvalidOperationException("Falta InternalApi:BaseUrl para consumir la API interna.");
-        }
-
         var normalized = baseUrl.Trim().TrimEnd('/') + "/";
         if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
-        {
             throw new InvalidOperationException($"InternalApi:BaseUrl inválido: {baseUrl}");
-        }
-
         return uri;
     }
 }

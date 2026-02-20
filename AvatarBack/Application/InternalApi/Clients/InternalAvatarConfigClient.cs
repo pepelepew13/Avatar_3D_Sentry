@@ -25,8 +25,8 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
     {
         var query = new Dictionary<string, string?>
         {
-            ["empresa"] = string.IsNullOrWhiteSpace(filter.Empresa) ? null : filter.Empresa,
-            ["sede"] = string.IsNullOrWhiteSpace(filter.Sede) ? null : filter.Sede,
+            ["company"] = filter.Company.HasValue ? filter.Company.Value.ToString() : null,
+            ["site"] = filter.Site.HasValue ? filter.Site.Value.ToString() : null,
             ["page"] = Math.Max(filter.Page, 1).ToString(),
             ["pageSize"] = Math.Max(filter.PageSize, 1).ToString()
         };
@@ -50,6 +50,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
             Page = payload.Page,
             PageSize = payload.PageSize,
             Total = payload.Total,
+            TotalPages = payload.TotalPages,
             Items = payload.Items ?? new List<InternalAvatarConfigDto>()
         };
     }
@@ -72,33 +73,29 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
             var response = await _httpClient.GetAsync(uri, ct);
             response.EnsureSuccessStatusCode();
 
-            var payload = await ReadJsonOrDefaultAsync<PagedResponse<InternalAvatarConfigDto>>(response, ct)
-                        ?? new PagedResponse<InternalAvatarConfigDto>();
-
-            var items = payload.Items ?? new List<InternalAvatarConfigDto>();
+            var payload = await ReadJsonOrDefaultAsync<InternalAvatarConfigPagedResponse>(response, ct);
+            var items = payload?.Items ?? new List<InternalAvatarConfigDto>();
             var match = items.FirstOrDefault(x => x.Id == id);
             if (match is not null)
                 return match;
 
-            // cortar si no hay más items
             if (items.Count == 0)
                 return null;
-
-            // cortar si ya leímos todo el total
-            if (payload.Total > 0 && page * pageSize >= payload.Total)
+            if (payload is not null && payload.Total > 0 && page * pageSize >= payload.Total)
                 return null;
 
             page++;
         }
     }
 
-    public async Task<InternalAvatarConfigDto?> GetByScopeAsync(string empresa, string sede, CancellationToken ct = default)
+    public async Task<InternalAvatarConfigDto?> GetByScopeAsync(int? company, int? site, CancellationToken ct = default)
     {
-        var query = new Dictionary<string, string?>
-        {
-            ["empresa"] = empresa,
-            ["sede"] = sede
-        };
+        var query = new Dictionary<string, string?>();
+        if (company.HasValue) query["company"] = company.Value.ToString();
+        if (site.HasValue) query["site"] = site.Value.ToString();
+
+        if (query.Count == 0)
+            return null;
 
         var uri = QueryHelpers.AddQueryString("internal/avatar-config/by-scope", query);
         var response = await _httpClient.GetAsync(uri, ct);
@@ -111,9 +108,9 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         return await ReadJsonOrDefaultAsync<InternalAvatarConfigDto>(response, ct);
     }
 
-    public async Task<InternalAvatarConfigDto> CreateAsync(InternalAvatarConfigDto config, CancellationToken ct = default)
+    public async Task<InternalAvatarConfigDto> CreateAsync(CreateInternalAvatarConfigRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", config, ct);
+        var response = await _httpClient.PostAsJsonAsync("internal/avatar-config", request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var body = await ReadBodyAsync(response, ct);
@@ -121,13 +118,27 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         }
         await EnsureInternalSuccessAsync(response, ct);
 
-        var fetched = await GetByScopeAsync(config.Empresa, config.Sede, ct);
-        return fetched ?? config;
+        var fetched = await GetByScopeAsync(request.CompanyId, request.SiteId, ct);
+        if (fetched is not null)
+            return fetched;
+        return new InternalAvatarConfigDto
+        {
+            CompanyId = request.CompanyId,
+            SiteId = request.SiteId,
+            ModelUrl = request.ModelPath,
+            BackgroundUrl = request.BackgroundPath,
+            LogoUrl = request.LogoPath,
+            Language = request.Language,
+            HairColor = request.HairColor,
+            VoiceIds = request.VoiceIds ?? Array.Empty<int>(),
+            Status = request.Status,
+            IsActive = request.IsActive
+        };
     }
 
-    public async Task<InternalAvatarConfigDto> UpdateAsync(int id, InternalAvatarConfigDto config, CancellationToken ct = default)
+    public async Task<InternalAvatarConfigDto> UpdateAsync(int id, UpdateInternalAvatarConfigRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", config, ct);
+        var response = await _httpClient.PutAsJsonAsync($"internal/avatar-config/{id}", request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var body = await ReadBodyAsync(response, ct);
@@ -136,7 +147,22 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         await EnsureInternalSuccessAsync(response, ct);
 
         var refreshed = await GetByIdAsync(id, ct);
-        return refreshed ?? config;
+        if (refreshed is not null)
+            return refreshed;
+        return new InternalAvatarConfigDto
+        {
+            Id = id,
+            CompanyId = request.CompanyId,
+            SiteId = request.SiteId,
+            ModelUrl = request.ModelPath,
+            BackgroundUrl = request.BackgroundPath,
+            LogoUrl = request.LogoPath,
+            Language = request.Language,
+            HairColor = request.HairColor,
+            VoiceIds = request.VoiceIds ?? Array.Empty<int>(),
+            Status = request.Status,
+            IsActive = request.IsActive
+        };
     }
 
     public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -150,7 +176,7 @@ public class InternalAvatarConfigClient : IInternalAvatarConfigClient
         await EnsureInternalSuccessAsync(response, ct);
     }
 
-    private static Uri BuildBaseUri(string baseUrl)
+    internal static Uri BuildBaseUri(string baseUrl)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
         {

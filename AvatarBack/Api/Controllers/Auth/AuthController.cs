@@ -3,8 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Settings;
+using AvatarSentry.Application.InternalApi;
 using AvatarSentry.Application.InternalApi.Clients;
-using Microsoft.AspNetCore.Http;
+using AvatarSentry.Application.InternalApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -18,15 +19,18 @@ public class AuthController : ControllerBase
 {
     private readonly IInternalUserClient _internalUserClient;
     private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
+    private readonly ICompanySiteResolutionService _resolution;
     private readonly JwtSettings _jwt;
 
     public AuthController(
         IInternalUserClient internalUserClient,
         IInternalAvatarConfigClient internalAvatarConfigClient,
+        ICompanySiteResolutionService resolution,
         IOptions<JwtSettings> jwt)
     {
         _internalUserClient = internalUserClient;
         _internalAvatarConfigClient = internalAvatarConfigClient;
+        _resolution = resolution;
         _jwt = jwt.Value;
     }
 
@@ -40,7 +44,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Credenciales inválidas." });
         }
 
-        AvatarSentry.Application.InternalApi.Models.InternalUserDto? user;
+        InternalUserByEmailDto? user;
         try
         {
             user = await _internalUserClient.GetByEmailAsync(normalizedEmail, ct);
@@ -60,72 +64,82 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "Usuario inactivo." });
         }
 
-        if (!string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(user.PasswordHash) || !string.Equals(user.PasswordHash, req.Password, StringComparison.Ordinal))
         {
             return Unauthorized(new { error = "Credenciales inválidas." });
         }
 
-        user.Role = NormalizeRole(user.Role);
+        var role = NormalizeRole(user.Role);
+        string? empresa = null;
+        string? sede = null;
 
-        if (!string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        // SuperAdmin/Admin: sin empresa ni sede (acceso global).
+        if (IsGlobalAdminRole(role))
         {
-            if (string.IsNullOrWhiteSpace(user.Empresa) || string.IsNullOrWhiteSpace(user.Sede))
+            // No validar avatar config ni resolver nombres; empresa y sede quedan null.
+        }
+        // CompanyAdmin: puede tener solo CompanyId (SiteId null).
+        else if (string.Equals(role, "CompanyAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!user.CompanyId.HasValue)
+            {
+                return Unauthorized(new { error = "Usuario sin empresa asignada." });
+            }
+            var names = await _resolution.GetNamesAsync(user.CompanyId.Value, 0, ct);
+            empresa = names?.CompanyName;
+            sede = null;
+        }
+        // SiteAdmin, AvatarEditor, User: requieren CompanyId y SiteId.
+        else
+        {
+            if (!user.CompanyId.HasValue || !user.SiteId.HasValue)
             {
                 return Unauthorized(new { error = "Usuario sin empresa/sede asignada." });
             }
 
-            AvatarSentry.Application.InternalApi.Models.InternalAvatarConfigDto? config;
-            try
-            {
-                config = await _internalAvatarConfigClient.GetByScopeAsync(user.Empresa, user.Sede, ct);
-            }
-            catch (HttpRequestException)
-            {
-                return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                    new { error = "No se pudo validar la configuración de avatar en la API interna." });
-            }
+            var config = await _internalAvatarConfigClient.GetByScopeAsync(user.CompanyId, user.SiteId, ct);
             if (config is null)
             {
                 return Unauthorized(new { error = "No se encontró configuración de avatar para este usuario." });
             }
 
-            user.Empresa = config.Empresa;
-            user.Sede = config.Sede;
+            var names = await _resolution.GetNamesAsync(user.CompanyId.Value, user.SiteId.Value, ct);
+            empresa = names?.CompanyName;
+            sede = names?.SiteName;
         }
 
-        var (token, exp) = GenerateJwt(user);
+        var (token, exp) = GenerateJwt(user.Id, user.Email, role, empresa, sede);
         return Ok(new LoginResponse
         {
             Token = token,
-            Role = user.Role,
-            Empresa = user.Empresa,
-            Sede = user.Sede,
+            Role = role,
+            Empresa = empresa,
+            Sede = sede,
             ExpiresAtUtc = exp
         });
     }
 
-
-    private (string token, DateTime expiresUtc) GenerateJwt(AvatarSentry.Application.InternalApi.Models.InternalUserDto user)
+    private (string token, DateTime expiresUtc) GenerateJwt(int userId, string email, string role, string? empresa, string? sede)
     {
         var now = DateTime.UtcNow;
         var exp = now.AddHours(8);
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role),
-            new("role", user.Role)
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.Role, role),
+            new("role", role)
         };
 
-        if (!string.IsNullOrWhiteSpace(user.Empresa))
-            claims.Add(new Claim("empresa", user.Empresa!.Trim().ToLowerInvariant()));
+        if (!string.IsNullOrWhiteSpace(empresa))
+            claims.Add(new Claim("empresa", empresa.Trim().ToLowerInvariant()));
 
-        if (!string.IsNullOrWhiteSpace(user.Sede))
-            claims.Add(new Claim("sede", user.Sede!.Trim().ToLowerInvariant()));
+        if (!string.IsNullOrWhiteSpace(sede))
+            claims.Add(new Claim("sede", sede.Trim().ToLowerInvariant()));
 
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
@@ -139,18 +153,27 @@ public class AuthController : ControllerBase
         return (new JwtSecurityTokenHandler().WriteToken(token), exp);
     }
 
+    /// <summary>Roles que no requieren empresa/sede (CompanyId/SiteId pueden ser NULL).</summary>
+    private static bool IsGlobalAdminRole(string role)
+    {
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string NormalizeRole(string? role)
     {
         if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-        {
             return "Admin";
-        }
-
+        if (string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
+            return "Admin"; // El panel usa "Admin" para menú admin; SuperAdmin se emite como Admin en JWT.
         if (string.Equals(role, "User", StringComparison.OrdinalIgnoreCase))
-        {
             return "User";
-        }
-
+        if (string.Equals(role, "CompanyAdmin", StringComparison.OrdinalIgnoreCase))
+            return "CompanyAdmin";
+        if (string.Equals(role, "SiteAdmin", StringComparison.OrdinalIgnoreCase))
+            return "SiteAdmin";
+        if (string.Equals(role, "AvatarEditor", StringComparison.OrdinalIgnoreCase))
+            return "AvatarEditor";
         return role?.Trim() ?? string.Empty;
     }
 

@@ -1,21 +1,31 @@
 @inherits LayoutComponentBase
+@inject AvatarAdmin.Services.AuthState Auth
 
 <a href="#main-content" class="visually-hidden">Saltar al contenido</a>
 
-<div class="layout-shell" role="application">
-  <aside class="layout-sidebar" aria-label="Barra lateral">
-    <div class="layout-brand">
-      <img class="brand-logo" src="img/Logo_Sentry.png" alt="Sentry" />
-      <div class="brand-copy">
-        <strong>Sentry · Panel de avatar 3D</strong>
-        <span>Personalización corporativa</span>
-      </div>
+<div class="sentry-layout" role="application">
+  <aside class="sentry-sidebar" aria-label="Navegación principal">
+    <div class="sentry-sidebar-brand">
+      <span class="material-symbols-outlined sentry-brand-icon" aria-hidden="true">local_fire_department</span>
+      <span class="sentry-brand-text">Sistemas <span class="sentry-brand-accent">Sentry</span></span>
     </div>
     <NavMenu />
+    <div class="sentry-sidebar-footer">
+      @if (Auth.IsAuthenticated)
+      {
+        <a href="/profile/avatar" class="sentry-user-card">
+          <img class="sentry-user-avatar" src="/img/avatar-silhouette.svg" alt="" />
+          <div class="sentry-user-info">
+            <span class="sentry-user-name">@(Auth.Email?.Split('@').FirstOrDefault() ?? "Usuario")</span>
+            <span class="sentry-user-role">Ver perfil</span>
+          </div>
+        </a>
+      }
+    </div>
   </aside>
 
-  <main id="main-content" class="layout-main" role="main">
-    <article class="layout-content">
+  <main id="main-content" class="sentry-main" role="main">
+    <article class="sentry-content">
       @Body
     </article>
   </main>
@@ -24,5 +34,5 @@
 <div id="blazor-error-ui" role="status" aria-live="polite">
   Ha ocurrido un error.
   <a href="" class="reload">Recargar</a>
-  <button class="dismiss" type="button" onclick="document.getElementById('blazor-error-ui').style.display='none'">🗙</button>
+  <button class="dismiss" type="button" onclick="document.getElementById('blazor-error-ui').style.display='none'">×</button>
 </div>

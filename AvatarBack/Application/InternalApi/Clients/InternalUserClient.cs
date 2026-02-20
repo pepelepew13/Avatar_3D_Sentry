@@ -16,19 +16,19 @@ public class InternalUserClient : IInternalUserClient
     public InternalUserClient(HttpClient httpClient, IOptions<InternalApiSettings> options)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = BuildBaseUri(options.Value.BaseUrl);
+        _httpClient.BaseAddress = InternalAvatarConfigClient.BuildBaseUri(options.Value.BaseUrl);
     }
 
     public async Task<PagedResponse<InternalUserDto>> GetUsersAsync(UserFilter filter, CancellationToken ct = default)
     {
         var query = new Dictionary<string, string?>
         {
-            ["empresa"] = string.IsNullOrWhiteSpace(filter.Empresa) ? null : filter.Empresa,
-            ["sede"] = string.IsNullOrWhiteSpace(filter.Sede) ? null : filter.Sede,
+            ["company"] = filter.Company.HasValue ? filter.Company.Value.ToString() : null,
+            ["site"] = filter.Site.HasValue ? filter.Site.Value.ToString() : null,
             ["role"] = string.IsNullOrWhiteSpace(filter.Role) ? null : filter.Role,
-            ["email"] = string.IsNullOrWhiteSpace(filter.Q) ? null : filter.Q,
-            ["page"] = filter.Page.ToString(),
-            ["pageSize"] = filter.PageSize.ToString()
+            ["email"] = string.IsNullOrWhiteSpace(filter.Email) ? null : filter.Email,
+            ["page"] = Math.Max(filter.Page, 1).ToString(),
+            ["pageSize"] = Math.Max(filter.PageSize, 1).ToString()
         };
 
         var uri = QueryHelpers.AddQueryString("internal/users", query);
@@ -51,7 +51,7 @@ public class InternalUserClient : IInternalUserClient
         return await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
     }
 
-    public async Task<InternalUserDto?> GetByEmailAsync(string email, CancellationToken ct = default)
+    public async Task<InternalUserByEmailDto?> GetByEmailAsync(string email, CancellationToken ct = default)
     {
         var response = await _httpClient.GetAsync($"internal/users/by-email/{Uri.EscapeDataString(email)}", ct);
         if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.InternalServerError)
@@ -60,25 +60,52 @@ public class InternalUserClient : IInternalUserClient
         }
 
         response.EnsureSuccessStatusCode();
-        return await ReadJsonOrDefaultAsync<InternalUserDto>(response, ct);
+        return await ReadJsonOrDefaultAsync<InternalUserByEmailDto>(response, ct);
     }
 
-    public async Task<InternalUserDto> CreateAsync(InternalUserDto user, CancellationToken ct = default)
+    public async Task<InternalUserDto> CreateAsync(CreateInternalUserRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("internal/users", user, ct);
+        var response = await _httpClient.PostAsJsonAsync("internal/users", request, ct);
         response.EnsureSuccessStatusCode();
 
-        var created = await GetByEmailAsync(user.Email, ct);
-        return created ?? user;
+        var created = await GetByEmailAsync(request.Email, ct);
+        if (created is not null)
+            return MapByEmailToDto(created);
+        return new InternalUserDto
+        {
+            Email = request.Email,
+            FullName = request.FullName ?? string.Empty,
+            Role = request.Role,
+            CompanyId = request.CompanyId,
+            SiteId = request.SiteId,
+            IsActive = request.IsActive
+        };
     }
 
-    public async Task<InternalUserDto> UpdateAsync(int id, InternalUserDto user, CancellationToken ct = default)
+    public async Task<InternalUserDto> UpdateAsync(int id, UpdateInternalUserRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"internal/users/{id}", user, ct);
+        var response = await _httpClient.PutAsJsonAsync($"internal/users/{id}", request, ct);
         response.EnsureSuccessStatusCode();
 
         var refreshed = await GetByIdAsync(id, ct);
-        return refreshed ?? user;
+        if (refreshed is not null)
+            return refreshed;
+        return new InternalUserDto
+        {
+            Id = id,
+            Email = request.Email,
+            FullName = request.FullName ?? string.Empty,
+            Role = request.Role,
+            CompanyId = request.CompanyId,
+            SiteId = request.SiteId,
+            IsActive = request.IsActive
+        };
+    }
+
+    public async Task ResetPasswordAsync(int id, ResetPasswordRequest request, CancellationToken ct = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"internal/users/{id}/reset-password", request, ct);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -98,38 +125,6 @@ public class InternalUserClient : IInternalUserClient
         );
     }
 
-    private static Uri BuildBaseUri(string baseUrl)
-    {
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("Falta InternalApi:BaseUrl para consumir la API interna.");
-        }
-
-        var normalized = NormalizeBaseUrl(baseUrl).TrimEnd('/') + "/";
-        if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
-        {
-            throw new InvalidOperationException($"InternalApi:BaseUrl inválido: {baseUrl}");
-        }
-
-        return uri;
-    }
-
-    private static string NormalizeBaseUrl(string baseUrl)
-    {
-        var trimmed = baseUrl.Trim();
-        if (trimmed.StartsWith("https:https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return "https://" + trimmed[14..];
-        }
-
-        if (trimmed.StartsWith("http:http://", StringComparison.OrdinalIgnoreCase))
-        {
-            return "http://" + trimmed[12..];
-        }
-
-        return trimmed;
-    }
-
     private async Task<T?> ReadJsonOrDefaultAsync<T>(HttpResponseMessage response, CancellationToken ct)
     {
         if (response.Content is null)
@@ -144,5 +139,19 @@ public class InternalUserClient : IInternalUserClient
         }
 
         return JsonSerializer.Deserialize<T>(raw, _jsonOptions);
+    }
+
+    private static InternalUserDto MapByEmailToDto(InternalUserByEmailDto byEmail)
+    {
+        return new InternalUserDto
+        {
+            Id = byEmail.Id,
+            Email = byEmail.Email,
+            FullName = byEmail.FullName ?? string.Empty,
+            Role = byEmail.Role,
+            CompanyId = byEmail.CompanyId,
+            SiteId = byEmail.SiteId,
+            IsActive = byEmail.IsActive
+        };
     }
 }

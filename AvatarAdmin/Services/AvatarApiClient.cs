@@ -327,14 +327,16 @@ public sealed class AvatarApiClient
         public bool IsActive { get; set; } = true;
     }
 
-    /// <summary>GET /api/users?page=1&pageSize=10&q=...&role=User|Admin</summary>
-    public async Task<UserListResponse> ListUsersAsync(int page = 1, int pageSize = 10, string? q = null, string? role = null, CancellationToken ct = default)
+    /// <summary>GET /api/users?page=1&pageSize=10&q=...&role=...&empresa=...&sede=...</summary>
+    public async Task<UserListResponse> ListUsersAsync(int page = 1, int pageSize = 10, string? q = null, string? role = null, string? empresa = null, string? sede = null, CancellationToken ct = default)
     {
         AttachBearerIfAny();
         var qs = new List<string> { $"page={page}", $"pageSize={pageSize}" };
         if (!string.IsNullOrWhiteSpace(q)) qs.Add("q=" + Uri.EscapeDataString(q));
         if (!string.IsNullOrWhiteSpace(role)) qs.Add("role=" + Uri.EscapeDataString(role));
-        var url = "/api/users" + (qs.Count > 0 ? "?" + string.Join("&", qs) : "");
+        if (!string.IsNullOrWhiteSpace(empresa)) qs.Add("empresa=" + Uri.EscapeDataString(empresa));
+        if (!string.IsNullOrWhiteSpace(sede)) qs.Add("sede=" + Uri.EscapeDataString(sede));
+        var url = "/api/users?" + string.Join("&", qs);
         var resp = await _http.GetAsync(url, ct);
         await EnsureSuccessAsync(resp, ct);
         return (await resp.Content.ReadFromJsonAsync<UserListResponse>(_json, ct))!;
@@ -356,5 +358,123 @@ public sealed class AvatarApiClient
         var url = "/api/users/" + Uri.EscapeDataString(id.ToString());
         var resp = await _http.DeleteAsync(url, ct);
         await EnsureSuccessAsync(resp, ct);
+    }
+
+    // ========= Companies (solo Admin) =========
+
+    public sealed class CompanyItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Code { get; set; }
+        public string? CorporateId { get; set; }
+        public string? Sector { get; set; }
+        public string? LogoPath { get; set; }
+        public string? LogoUrl { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public sealed class CompanyListResponse
+    {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int Total { get; set; }
+        public int TotalPages { get; set; }
+        public List<CompanyItem> Items { get; set; } = new();
+    }
+
+    public async Task<CompanyListResponse> ListCompaniesAsync(string? code = null, string? name = null, string? sector = null, bool? isActive = null, int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var qs = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (!string.IsNullOrWhiteSpace(code)) qs.Add("code=" + Uri.EscapeDataString(code));
+        if (!string.IsNullOrWhiteSpace(name)) qs.Add("name=" + Uri.EscapeDataString(name));
+        if (!string.IsNullOrWhiteSpace(sector)) qs.Add("sector=" + Uri.EscapeDataString(sector));
+        if (isActive.HasValue) qs.Add("isActive=" + isActive.Value.ToString().ToLowerInvariant());
+        var url = "/api/companies?" + string.Join("&", qs);
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<CompanyListResponse>(_json, ct))!;
+    }
+
+    public async Task<CompanyItem?> GetCompanyAsync(int id, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.GetAsync($"/api/companies/{id}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadFromJsonAsync<CompanyItem>(_json, ct);
+    }
+
+    // ========= Sites (solo Admin) =========
+
+    public sealed class SiteItem
+    {
+        public int Id { get; set; }
+        public int CompanyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Code { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public sealed class SiteListResponse
+    {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int Total { get; set; }
+        public int TotalPages { get; set; }
+        public List<SiteItem> Items { get; set; } = new();
+    }
+
+    public async Task<SiteListResponse> ListSitesAsync(int? companyId = null, string? code = null, string? name = null, bool? isActive = null, int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var qs = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+        if (companyId.HasValue) qs.Add("companyId=" + companyId.Value);
+        if (!string.IsNullOrWhiteSpace(code)) qs.Add("code=" + Uri.EscapeDataString(code));
+        if (!string.IsNullOrWhiteSpace(name)) qs.Add("name=" + Uri.EscapeDataString(name));
+        if (isActive.HasValue) qs.Add("isActive=" + isActive.Value.ToString().ToLowerInvariant());
+        var url = "/api/sites?" + string.Join("&", qs);
+        var resp = await _http.GetAsync(url, ct);
+        await EnsureSuccessAsync(resp, ct);
+        return (await resp.Content.ReadFromJsonAsync<SiteListResponse>(_json, ct))!;
+    }
+
+    public async Task<SiteItem?> GetSiteAsync(int id, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.GetAsync($"/api/sites/{id}", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadFromJsonAsync<SiteItem>(_json, ct);
+    }
+
+    // ========= KPIs (solo Admin) =========
+
+    public async Task<string> GetKpisGlobalAsync(CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.GetAsync("/api/kpis/global", ct);
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadAsStringAsync(ct) ?? "{}";
+    }
+
+    public async Task<string> GetKpisCompanyAsync(int companyId, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.GetAsync($"/api/kpis/company/{companyId}", ct);
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadAsStringAsync(ct) ?? "{}";
+    }
+
+    public async Task<string> GetKpisSiteAsync(int siteId, CancellationToken ct = default)
+    {
+        AttachBearerIfAny();
+        var resp = await _http.GetAsync($"/api/kpis/site/{siteId}", ct);
+        await EnsureSuccessAsync(resp, ct);
+        return await resp.Content.ReadAsStringAsync(ct) ?? "{}";
     }
 }

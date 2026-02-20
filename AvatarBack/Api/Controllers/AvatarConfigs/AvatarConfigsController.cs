@@ -3,6 +3,7 @@ using Avatar_3D_Sentry.Models;
 using Avatar_3D_Sentry.Services.Storage;
 using AvatarSentry.Application.AvatarConfigs;
 using AvatarSentry.Application.Exceptions;
+using AvatarSentry.Application.InternalApi;
 using AvatarSentry.Application.InternalApi.Clients;
 using AvatarSentry.Application.InternalApi.Models;
 using Avatar_3D_Sentry.Settings;
@@ -18,15 +19,18 @@ namespace Avatar_3D_Sentry.Controllers;
 public class AvatarConfigsController : ControllerBase
 {
     private readonly IInternalAvatarConfigClient _internalAvatarConfigClient;
+    private readonly ICompanySiteResolutionService _resolution;
     private readonly IAssetStorage _storage;
     private readonly AzureStorageOptions _storageOptions;
 
     public AvatarConfigsController(
         IInternalAvatarConfigClient internalAvatarConfigClient,
+        ICompanySiteResolutionService resolution,
         IAssetStorage storage,
         IOptions<AzureStorageOptions> storageOptions)
     {
         _internalAvatarConfigClient = internalAvatarConfigClient;
+        _resolution = resolution;
         _storage = storage;
         _storageOptions = storageOptions.Value;
     }
@@ -39,10 +43,17 @@ public class AvatarConfigsController : ControllerBase
         [FromQuery] int pageSize = 10,
         CancellationToken ct = default)
     {
+        int? companyId = null, siteId = null;
+        if (!string.IsNullOrWhiteSpace(empresa) || !string.IsNullOrWhiteSpace(sede))
+        {
+            var ids = await _resolution.ResolveToIdsAsync(empresa, sede, ct);
+            if (ids.HasValue) { companyId = ids.Value.CompanyId; siteId = ids.Value.SiteId; }
+        }
+
         var filter = new AvatarConfigFilter
         {
-            Empresa = string.IsNullOrWhiteSpace(empresa) ? null : empresa,
-            Sede = string.IsNullOrWhiteSpace(sede) ? null : sede,
+            Company = companyId,
+            Site = siteId,
             Page = page,
             PageSize = pageSize
         };
@@ -50,12 +61,19 @@ public class AvatarConfigsController : ControllerBase
         try
         {
             var result = await _internalAvatarConfigClient.GetConfigsAsync(filter, ct);
+            var items = new List<AvatarConfigListItemDto>();
+            foreach (var config in result.Items)
+            {
+                var names = await _resolution.GetNamesAsync(config.CompanyId, config.SiteId, ct);
+                items.Add(MapToListItemWithUrls(config, names?.CompanyName, names?.SiteName));
+            }
+
             var response = new PagedResult<AvatarConfigListItemDto>
             {
                 Page = result.Page,
                 PageSize = result.PageSize,
                 Total = result.Total,
-                Items = result.Items.Select(MapToListItemWithUrls).ToList()
+                Items = items
             };
 
             return Ok(response);
@@ -78,30 +96,38 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(MapToDtoWithUrls(config));
+        var names = await _resolution.GetNamesAsync(config.CompanyId, config.SiteId, ct);
+        return Ok(MapToDtoWithUrls(config, names?.CompanyName, names?.SiteName));
     }
 
     [HttpPost]
     public async Task<ActionResult<AvatarConfigDto>> Create([FromBody] CreateAvatarConfigRequest request, CancellationToken ct)
     {
-        var payload = new InternalAvatarConfigDto
+        var ids = await _resolution.ResolveToIdsAsync(request.Empresa, request.Sede, ct);
+        if (!ids.HasValue)
         {
-            Empresa = request.Empresa,
-            Sede = request.Sede,
-            Vestimenta = request.Vestimenta,
-            Fondo = request.Fondo,
-            Voz = request.Voz,
-            Idioma = request.Idioma,
-            LogoPath = request.LogoPath,
-            ColorCabello = request.ColorCabello,
+            return BadRequest("Empresa y sede no se pudieron resolver (códigos no encontrados).");
+        }
+
+        var payload = new CreateInternalAvatarConfigRequest
+        {
+            CompanyId = ids.Value.CompanyId,
+            SiteId = ids.Value.SiteId,
+            ModelPath = request.Vestimenta,
             BackgroundPath = request.BackgroundPath,
+            LogoPath = request.LogoPath,
+            Language = request.Idioma,
+            HairColor = request.ColorCabello,
+            VoiceIds = request.VoiceIds ?? Array.Empty<int>(),
+            Status = "Draft",
             IsActive = true
         };
 
         try
         {
             var created = await _internalAvatarConfigClient.CreateAsync(payload, ct);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDtoWithUrls(created));
+            var names = await _resolution.GetNamesAsync(created.CompanyId, created.SiteId, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDtoWithUrls(created, names?.CompanyName, names?.SiteName));
         }
         catch (AvatarSentryException ex)
         {
@@ -121,25 +147,31 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        var payload = new InternalAvatarConfigDto
+        var ids = await _resolution.ResolveToIdsAsync(request.Empresa, request.Sede, ct);
+        if (!ids.HasValue)
         {
-            Id = existing.Id,
-            Empresa = request.Empresa,
-            Sede = request.Sede,
-            Vestimenta = request.Vestimenta,
-            Fondo = request.Fondo,
-            Voz = request.Voz,
-            Idioma = request.Idioma,
-            LogoPath = request.LogoPath,
-            ColorCabello = request.ColorCabello,
+            return BadRequest("Empresa y sede no se pudieron resolver (códigos no encontrados).");
+        }
+
+        var payload = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = ids.Value.CompanyId,
+            SiteId = ids.Value.SiteId,
+            ModelPath = request.Vestimenta,
             BackgroundPath = request.BackgroundPath,
+            LogoPath = request.LogoPath,
+            Language = request.Idioma,
+            HairColor = request.ColorCabello,
+            VoiceIds = request.VoiceIds ?? Array.Empty<int>(),
+            Status = existing.Status,
             IsActive = existing.IsActive
         };
 
         try
         {
             var updated = await _internalAvatarConfigClient.UpdateAsync(id, payload, ct);
-            return Ok(MapToDtoWithUrls(updated));
+            var names = await _resolution.GetNamesAsync(updated.CompanyId, updated.SiteId, ct);
+            return Ok(MapToDtoWithUrls(updated, names?.CompanyName, names?.SiteName));
         }
         catch (AvatarSentryException ex)
         {
@@ -159,16 +191,23 @@ public class AvatarConfigsController : ControllerBase
             return NotFound();
         }
 
-        existing.Vestimenta = request.Vestimenta ?? existing.Vestimenta;
-        existing.Fondo = request.Fondo ?? existing.Fondo;
-        existing.Voz = request.Voz ?? existing.Voz;
-        existing.Idioma = request.Idioma ?? existing.Idioma;
-        existing.LogoPath = request.LogoPath ?? existing.LogoPath;
-        existing.ColorCabello = request.ColorCabello ?? existing.ColorCabello;
-        existing.BackgroundPath = request.BackgroundPath ?? existing.BackgroundPath;
+        var payload = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = existing.CompanyId,
+            SiteId = existing.SiteId,
+            ModelPath = request.Vestimenta ?? existing.ModelUrl,
+            BackgroundPath = request.BackgroundPath ?? request.Fondo ?? existing.BackgroundUrl,
+            LogoPath = request.LogoPath ?? existing.LogoUrl,
+            Language = request.Idioma ?? existing.Language,
+            HairColor = request.ColorCabello ?? existing.HairColor,
+            VoiceIds = existing.VoiceIds ?? Array.Empty<int>(),
+            Status = existing.Status ?? "Draft",
+            IsActive = existing.IsActive
+        };
 
-        var updated = await _internalAvatarConfigClient.UpdateAsync(id, existing, ct);
-        return Ok(MapToDtoWithUrls(updated));
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, payload, ct);
+        var names = await _resolution.GetNamesAsync(updated.CompanyId, updated.SiteId, ct);
+        return Ok(MapToDtoWithUrls(updated, names?.CompanyName, names?.SiteName));
     }
 
     [HttpDelete("{id:int}")]
@@ -202,15 +241,29 @@ public class AvatarConfigsController : ControllerBase
             return BadRequest("Archivo requerido.");
         }
 
-        var blobPath = BuildLogoPath(config.Empresa, config.Sede, request.File.FileName);
+        var names = await _resolution.GetNamesAsync(config.CompanyId, config.SiteId, ct);
+        var empresa = names?.CompanyName ?? "default";
+        var sede = names?.SiteName ?? "default";
+        var blobPath = BuildLogoPath(empresa, sede, request.File.FileName);
 
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
 
-        config.LogoPath = blobPath;
-        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
-
-        return Ok(MapToDtoWithUrls(updated));
+        var updateReq = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = config.CompanyId,
+            SiteId = config.SiteId,
+            ModelPath = config.ModelUrl,
+            BackgroundPath = config.BackgroundUrl,
+            LogoPath = blobPath,
+            Language = config.Language,
+            HairColor = config.HairColor,
+            VoiceIds = config.VoiceIds ?? Array.Empty<int>(),
+            Status = config.Status ?? "Draft",
+            IsActive = config.IsActive
+        };
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, updateReq, ct);
+        return Ok(MapToDtoWithUrls(updated, names?.CompanyName, names?.SiteName));
     }
 
     [HttpPost("{id:int}/fondo")]
@@ -231,15 +284,29 @@ public class AvatarConfigsController : ControllerBase
             return BadRequest("Archivo requerido.");
         }
 
-        var blobPath = BuildBackgroundPath(config.Empresa, config.Sede, request.File.FileName);
+        var names = await _resolution.GetNamesAsync(config.CompanyId, config.SiteId, ct);
+        var empresa = names?.CompanyName ?? "default";
+        var sede = names?.SiteName ?? "default";
+        var blobPath = BuildBackgroundPath(empresa, sede, request.File.FileName);
 
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, request.File.ContentType ?? "application/octet-stream", ct);
 
-        config.BackgroundPath = blobPath;
-        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
-
-        return Ok(MapToDtoWithUrls(updated));
+        var updateReq = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = config.CompanyId,
+            SiteId = config.SiteId,
+            ModelPath = config.ModelUrl,
+            BackgroundPath = blobPath,
+            LogoPath = config.LogoUrl,
+            Language = config.Language,
+            HairColor = config.HairColor,
+            VoiceIds = config.VoiceIds ?? Array.Empty<int>(),
+            Status = config.Status ?? "Draft",
+            IsActive = config.IsActive
+        };
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, updateReq, ct);
+        return Ok(MapToDtoWithUrls(updated, names?.CompanyName, names?.SiteName));
     }
 
     [HttpPost("{id:int}/model")]
@@ -260,7 +327,10 @@ public class AvatarConfigsController : ControllerBase
             return BadRequest("Archivo requerido.");
         }
 
-        var blobPath = BuildModelPath(config.Empresa, config.Sede, request.File.FileName);
+        var names = await _resolution.GetNamesAsync(config.CompanyId, config.SiteId, ct);
+        var empresa = names?.CompanyName ?? "default";
+        var sede = names?.SiteName ?? "default";
+        var blobPath = BuildModelPath(empresa, sede, request.File.FileName);
         var contentType = request.File.FileName.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)
             ? "model/gltf-binary"
             : request.File.ContentType ?? "application/octet-stream";
@@ -268,58 +338,69 @@ public class AvatarConfigsController : ControllerBase
         await using var stream = request.File.OpenReadStream();
         await _storage.UploadAsync(stream, blobPath, contentType, ct);
 
-        config.Vestimenta = blobPath;
-        var updated = await _internalAvatarConfigClient.UpdateAsync(id, config, ct);
-
-        return Ok(MapToDtoWithUrls(updated));
+        var updateReq = new UpdateInternalAvatarConfigRequest
+        {
+            CompanyId = config.CompanyId,
+            SiteId = config.SiteId,
+            ModelPath = blobPath,
+            BackgroundPath = config.BackgroundUrl,
+            LogoPath = config.LogoUrl,
+            Language = config.Language,
+            HairColor = config.HairColor,
+            VoiceIds = config.VoiceIds ?? Array.Empty<int>(),
+            Status = config.Status ?? "Draft",
+            IsActive = config.IsActive
+        };
+        var updated = await _internalAvatarConfigClient.UpdateAsync(id, updateReq, ct);
+        return Ok(MapToDtoWithUrls(updated, names?.CompanyName, names?.SiteName));
     }
 
-    private AvatarConfigDto MapToDtoWithUrls(InternalAvatarConfigDto config)
+    private AvatarConfigDto MapToDtoWithUrls(InternalAvatarConfigDto config, string? empresa, string? sede)
     {
-        var expiry = DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
+        var expiry = config.UrlExpiresAtUtc ?? DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
         var dto = new AvatarConfigDto
         {
             Id = config.Id,
-            Empresa = config.Empresa,
-            Sede = config.Sede,
-            Vestimenta = config.Vestimenta,
-            Fondo = config.Fondo,
-            Voz = config.Voz,
-            Idioma = config.Idioma,
-            LogoPath = config.LogoPath,
-            ColorCabello = config.ColorCabello,
-            BackgroundPath = config.BackgroundPath,
+            Empresa = empresa ?? string.Empty,
+            Sede = sede ?? string.Empty,
+            Vestimenta = config.ModelUrl,
+            Fondo = config.BackgroundUrl,
+            Voz = config.VoiceIds?.Length > 0 ? string.Join(",", config.VoiceIds) : null,
+            Idioma = config.Language,
+            LogoPath = config.LogoUrl,
+            ColorCabello = config.HairColor,
+            BackgroundPath = config.BackgroundUrl,
             UrlExpiresAtUtc = expiry,
             IsActive = config.IsActive
         };
 
-        dto.LogoUrl = BuildAssetUrl(config.LogoPath);
-        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundPath);
+        dto.LogoUrl = BuildAssetUrl(config.LogoUrl);
+        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundUrl);
 
         return dto;
     }
 
-    private AvatarConfigListItemDto MapToListItemWithUrls(InternalAvatarConfigDto config)
+    private AvatarConfigListItemDto MapToListItemWithUrls(InternalAvatarConfigDto config, string? empresa, string? sede)
     {
-        var expiry = DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
+        var expiry = config.UrlExpiresAtUtc ?? DateTime.UtcNow.AddMinutes(_storageOptions.SasExpiryMinutes);
         var dto = new AvatarConfigListItemDto
         {
             Id = config.Id,
-            Empresa = config.Empresa,
-            Sede = config.Sede,
-            Vestimenta = config.Vestimenta,
-            Fondo = config.Fondo,
-            Voz = config.Voz,
-            Idioma = config.Idioma,
-            LogoPath = config.LogoPath,
-            ColorCabello = config.ColorCabello,
-            BackgroundPath = config.BackgroundPath,
+            Empresa = empresa ?? string.Empty,
+            Sede = sede ?? string.Empty,
+            Vestimenta = config.ModelUrl,
+            Fondo = config.BackgroundUrl,
+            Voz = config.VoiceIds?.Length > 0 ? string.Join(",", config.VoiceIds) : null,
+            Idioma = config.Language,
+            LogoPath = config.LogoUrl,
+            ColorCabello = config.HairColor,
+            BackgroundPath = config.BackgroundUrl,
             UrlExpiresAtUtc = expiry,
             IsActive = config.IsActive
         };
 
-        dto.LogoUrl = BuildAssetUrl(config.LogoPath);
-        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundPath);
+        dto.LogoUrl = BuildAssetUrl(config.LogoUrl);
+        dto.BackgroundUrl = BuildAssetUrl(config.BackgroundUrl);
 
         return dto;
     }

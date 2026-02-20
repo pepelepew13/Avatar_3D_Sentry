@@ -9,20 +9,15 @@
 <PageTitle>Configuraciones de Avatar</PageTitle>
 
 <AdminGuard>
-  <section class="configs-hero" role="region" aria-label="Configuraciones de avatar">
-    <div class="hero-copy">
-      <h1>Configuraciones de Avatar</h1>
-      <p>Consulta todas las configuraciones registradas por empresa y sede.</p>
-      <div class="hero-tags">
-        <span class="tag">@Auth.Email</span>
-        <span class="tag">Rol: @Auth.Role</span>
-        <span class="tag">@((Auth.Empresa ?? "—")) / @((Auth.Sede ?? "—"))</span>
+  <header class="sentry-page-header" role="banner">
+    <div class="sentry-page-header-inner">
+      <h1 class="sentry-page-title">Configuraciones de Avatar</h1>
+      <div class="sentry-page-header-actions">
+        <button type="button" class="btn btn-outline-sentry" @onclick="ReloadAsync" disabled="@loading">Recargar</button>
       </div>
     </div>
-    <div class="hero-actions">
-      <button class="btn btn-outline-light" @onclick="ReloadAsync" disabled="@loading">Recargar</button>
-    </div>
-  </section>
+  </header>
+  <p class="sentry-page-subtitle">Consulta todas las configuraciones registradas por empresa y sede.</p>
 
   <section class="card configs-filters">
     <div class="filter-grid">

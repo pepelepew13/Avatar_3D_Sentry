@@ -2,120 +2,87 @@
 @inject NavigationManager Nav
 @inject AvatarAdmin.Services.AuthState Auth
 
-<nav class="nav-shell">
-    <header class="nav-brand">
-        <p class="nav-brand-title">Sentry · Panel de avatar 3D</p>
-        <p class="nav-brand-subtitle">Personalización corporativa</p>
-    </header>
+<nav class="sentry-nav" aria-label="Menú">
+  <div class="sentry-nav-section">
+    <NavLink class="sentry-nav-link" href="" Match="NavLinkMatch.All">
+      <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
+      Panel Principal
+    </NavLink>
+  </div>
 
-    <section class="nav-card">
-        <div class="nav-card-header">
-            <span class="nav-card-icon nav-card-icon-panel" aria-hidden="true"></span>
-            <div>
-                <p class="nav-card-title">Panel</p>
-                <p class="nav-card-description">Accede al editor principal</p>
-            </div>
-        </div>
+  @if (Auth.IsAdmin)
+  {
+    <div class="sentry-nav-group">
+      <p class="sentry-nav-group-title">Administración</p>
+      <NavLink class="sentry-nav-link" href="/users">
+        <span class="material-symbols-outlined" aria-hidden="true">people</span>
+        Usuarios
+      </NavLink>
+      <NavLink class="sentry-nav-link" href="/companies">
+        <span class="material-symbols-outlined" aria-hidden="true">business</span>
+        Compañías
+      </NavLink>
+      <NavLink class="sentry-nav-link" href="/sites">
+        <span class="material-symbols-outlined" aria-hidden="true">store</span>
+        Sucursales
+      </NavLink>
+    </div>
+  }
 
-        <NavLink class="nav-card-link" href="" Match="NavLinkMatch.All">
-            <span class="nav-card-link-icon nav-card-link-icon-home" aria-hidden="true"></span>
-            <span>Panel principal</span>
-        </NavLink>
+  <div class="sentry-nav-group">
+    <p class="sentry-nav-group-title">Configuración 3D</p>
+    <NavLink class=@($"sentry-nav-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/editor">
+      <span class="material-symbols-outlined" aria-hidden="true">face</span>
+      Editor de Avatar
+    </NavLink>
+    <NavLink class=@($"sentry-nav-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/gallery">
+      <span class="material-symbols-outlined" aria-hidden="true">photo_library</span>
+      Galería por Sede
+    </NavLink>
+    <NavLink class=@($"sentry-nav-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/profile/avatar">
+      <span class="material-symbols-outlined" aria-hidden="true">person</span>
+      Perfil de Avatar
+    </NavLink>
+    @if (Auth.IsAdmin)
+    {
+      <NavLink class="sentry-nav-link" href="/configs">
+        <span class="material-symbols-outlined" aria-hidden="true">palette</span>
+        Config. Avatares
+      </NavLink>
+    }
+  </div>
 
-        <!-- Deshabilita si no hay sesión -->
-        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/editor">
-            <span class="nav-card-link-icon nav-card-link-icon-edit" aria-hidden="true"></span>
-            <span>Editor de Avatar</span>
-        </NavLink>
-
-        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/gallery">
-            <span class="nav-card-link-icon nav-card-link-icon-edit" aria-hidden="true"></span>
-            <span>Galería por Sede</span>
-        </NavLink>
-
-        <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/profile/avatar">
-            <span class="nav-card-link-icon nav-card-link-icon-user" aria-hidden="true"></span>
-            <span>Perfil de Avatar</span>
-        </NavLink>
-
-        @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            <NavLink class=@($"nav-card-link {(Auth.IsAuthenticated ? "" : "is-disabled")}") href="/configs">
-                <span class="nav-card-link-icon nav-card-link-icon-configs" aria-hidden="true"></span>
-                <span>Avatar Configs</span>
-            </NavLink>
-        }
-
-        @* Mostrar Usuarios solo si el rol es Admin *@
-        @if (string.Equals(Auth.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            <NavLink class="nav-card-link" href="/users">
-                <span class="nav-card-link-icon nav-card-link-icon-users" aria-hidden="true"></span>
-                <span>Usuarios</span>
-            </NavLink>
-        }
-    </section>
-
-    <section class="nav-card">
-        <div class="nav-card-header">
-            <span class="nav-card-icon nav-card-icon-session" aria-hidden="true"></span>
-            <div>
-                <p class="nav-card-title">Tu sesión</p>
-                <p class="nav-card-description">
-                    @(Auth.IsAuthenticated ? Auth.Email : "No has iniciado sesión")
-                </p>
-            </div>
-        </div>
-
-        @if (Auth.IsAuthenticated)
-        {
-            <button class=@($"nav-card-link as-button {(_showUserInfo ? "is-open" : "")}") @onclick="ToggleUserInfo">
-                <span class="nav-card-link-icon nav-card-link-icon-user" aria-hidden="true"></span>
-                <span>@Auth.Email</span>
-            </button>
-
-            @if (_showUserInfo)
-            {
-                <div class="nav-card-userinfo" role="region" aria-label="Información de usuario">
-                    <div><strong>Rol</strong><span class="kv-value">@Auth.Role</span></div>
-                    <div><strong>Empresa</strong><span class="kv-value">@((Auth.Empresa ?? "—"))</span></div>
-                    <div><strong>Sede</strong><span class="kv-value">@((Auth.Sede ?? "—"))</span></div>
-                </div>
-            }
-
-            <button class="nav-card-link as-button" @onclick="Logout">
-                <span class="nav-card-link-icon nav-card-link-icon-logout" aria-hidden="true"></span>
-                <span>Cerrar sesión</span>
-            </button>
-        }
-        else
-        {
-            <NavLink class="nav-card-link" href="/auth">
-                <span class="nav-card-link-icon nav-card-link-icon-login" aria-hidden="true"></span>
-                <span>Iniciar sesión</span>
-            </NavLink>
-        }
-    </section>
+  <div class="sentry-nav-section sentry-nav-actions">
+    @if (Auth.IsAuthenticated)
+    {
+      <button type="button" class="sentry-nav-link sentry-nav-btn" @onclick="Logout">
+        <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        Cerrar sesión
+      </button>
+    }
+    else
+    {
+      <NavLink class="sentry-nav-link" href="/auth">
+        <span class="material-symbols-outlined" aria-hidden="true">login</span>
+        Iniciar sesión
+      </NavLink>
+    }
+  </div>
 </nav>
 
 @code {
-    private bool _showUserInfo;
+  protected override void OnInitialized()
+  {
+    Auth.Changed += OnAuthChanged;
+  }
 
-    protected override void OnInitialized()
-    {
-        Auth.Changed += OnAuthChanged;
-    }
+  private void OnAuthChanged() => InvokeAsync(StateHasChanged);
 
-    private void OnAuthChanged() => InvokeAsync(StateHasChanged);
+  private void Logout()
+  {
+    Auth.Logout();
+    Nav.NavigateTo("/auth", forceLoad: true);
+  }
 
-    private void ToggleUserInfo() => _showUserInfo = !_showUserInfo;
-
-    private void Logout()
-    {
-        Auth.Logout();
-        _showUserInfo = false;
-        Nav.NavigateTo("/auth", forceLoad: true);
-    }
-
-    public void Dispose() => Auth.Changed -= OnAuthChanged;
+  public void Dispose() => Auth.Changed -= OnAuthChanged;
 }

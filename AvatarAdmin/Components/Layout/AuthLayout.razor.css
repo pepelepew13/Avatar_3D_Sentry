@@ -1,36 +1,19 @@
-/* AuthLayout.razor.css — Contenedor de Auth */
-:host{ display:block }
+/* AuthLayout — Contenedor full viewport (mockup login) */
+:host { display: block }
 
-.auth-layout{
-  min-height: 100dvh;                    /* viewport real (evita barras en móvil) */
-  display:grid; place-items:center; position:relative;
-  padding: clamp(1rem, 3vw, 2rem);
-  overflow: clip;                        /* ← recorta orbs/sombras para NO crear scroll */
-  background:
-    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--brand-red) 18%, transparent) 0 40%, transparent 41%),
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--brand-blue) 16%, transparent) 0 38%, transparent 39%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+.auth-layout-root {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  color: #111827;
+  background: #ffffff;
 }
 
-/* ancho máximo del contenedor del login */
-#auth-main{ width: min(1160px, 100%); }
-
-/* orbes decorativos */
-.auth-bg.orb{
-  position:absolute; filter: blur(40px); opacity:.25; z-index:0; pointer-events:none
-}
-.orb-1{ width:360px;height:360px; background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--brand-red) 58%, transparent) 0 60%, transparent 61%); top:-60px; left:-60px }
-.orb-2{ width:320px;height:320px; background: radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--brand-yellow) 55%, transparent) 0 60%, transparent 61%); bottom:-40px; right:-40px }
-
-/* reduce orbs en pantallas pequeñas para bajar aún más el riesgo de overflow */
-@media (max-width: 480px){
-  .orb-1{ width:260px;height:260px; top:-40px; left:-40px }
-  .orb-2{ width:240px;height:240px; bottom:-30px; right:-30px }
-}
-
-@media (prefers-reduced-motion: no-preference){
-  .orb-1{ animation: float1 18s ease-in-out infinite }
-  .orb-2{ animation: float2 22s ease-in-out infinite }
-  @keyframes float1{ 50%{ transform: translate3d(8px,10px,0) scale(1.02) } }
-  @keyframes float2{ 50%{ transform: translate3d(-10px,-8px,0) scale(1.015) } }
+#auth-main {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
 }

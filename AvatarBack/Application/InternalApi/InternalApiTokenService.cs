@@ -10,7 +10,14 @@ public class InternalApiTokenService : IInternalApiTokenService
     private readonly HttpClient _httpClient;
     private readonly InternalApiSettings _settings;
     private readonly SemaphoreSlim _authLock = new(1, 1);
-    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    /// <summary>La API interna espera "User" y "Password" en PascalCase (documentación UserAvatarApi).</summary>
+    private static readonly JsonSerializerOptions AuthRequestOptions = new()
+    {
+        PropertyNamingPolicy = null,
+        PropertyNameCaseInsensitive = false,
+        WriteIndented = false
+    };
+    private static readonly JsonSerializerOptions AuthResponseOptions = new() { PropertyNameCaseInsensitive = true };
     private string? _cachedToken;
 
     public InternalApiTokenService(HttpClient httpClient, IOptions<InternalApiSettings> options)
@@ -41,10 +48,17 @@ public class InternalApiTokenService : IInternalApiTokenService
             }
 
             var payload = new AuthRequest(_settings.AuthUser, _settings.AuthPassword);
-            var response = await _httpClient.PostAsJsonAsync("api/Token/Authentication", payload, ct);
-            response.EnsureSuccessStatusCode();
+            var response = await _httpClient.PostAsJsonAsync("api/Token/Authentication", payload, AuthRequestOptions, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(ct);
+                throw new InvalidOperationException(
+                    $"La API interna rechazó la autenticación ({(int)response.StatusCode}). " +
+                    "Compruebe InternalApi:BaseUrl, InternalApi:AuthUser e InternalApi:AuthPassword. " +
+                    "User y Password deben ser los valores con encriptación del comconfig. Respuesta: " + (string.IsNullOrEmpty(body) ? response.ReasonPhrase : body));
+            }
 
-            var auth = await response.Content.ReadFromJsonAsync<AuthResponse>(_jsonOptions, ct);
+            var auth = await response.Content.ReadFromJsonAsync<AuthResponse>(AuthResponseOptions, ct);
             if (auth is null || string.IsNullOrWhiteSpace(auth.Token))
             {
                 throw new InvalidOperationException("La API interna no devolvió un token válido.");

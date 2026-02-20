@@ -70,12 +70,23 @@ if (!string.IsNullOrWhiteSpace(internalApiOptions.BaseUrl))
         .AddHttpMessageHandler<InternalApiAuthHandler>();
     builder.Services.AddHttpClient<IInternalAvatarConfigClient, InternalAvatarConfigClient>()
         .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<IInternalCompanyClient, InternalCompanyClient>()
+        .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<IInternalSiteClient, InternalSiteClient>()
+        .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddHttpClient<IInternalKpisClient, InternalKpisClient>()
+        .AddHttpMessageHandler<InternalApiAuthHandler>();
+    builder.Services.AddScoped<ICompanySiteResolutionService, CompanySiteResolutionService>();
 }
 else
 {
     builder.Services.AddSingleton<IAvatarDataStore, StubAvatarDataStore>();
     builder.Services.AddSingleton<IInternalUserClient, StubInternalUserClient>();
     builder.Services.AddSingleton<IInternalAvatarConfigClient, StubInternalAvatarConfigClient>();
+    builder.Services.AddSingleton<IInternalCompanyClient, StubInternalCompanyClient>();
+    builder.Services.AddSingleton<IInternalSiteClient, StubInternalSiteClient>();
+    builder.Services.AddSingleton<IInternalKpisClient, StubInternalKpisClient>();
+    builder.Services.AddSingleton<ICompanySiteResolutionService, StubCompanySiteResolutionService>();
 }
 
 // ==================================================================
